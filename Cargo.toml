@@ -30,4 +30,10 @@ codegen-units = 1
 strip = true
 
 [profile.dev]
-opt-level = 1  # un peu d'optim sinon le RAG est lent en dev
+# opt-level = 0 (défaut Rust). Le 1 précédent générait du code
+# agressivement monomorphisé qui ne survivait pas aux rebuilds
+# incrémentaux sur macOS récent + rustc 1.95+, déclenchant des
+# linker errors « symbol not found ».
+# Si le RAG redevient lent en dev, restaurer mais penser à
+# CARGO_INCREMENTAL=0.
+opt-level = 0

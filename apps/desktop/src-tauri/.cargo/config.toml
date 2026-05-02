@@ -1,9 +1,16 @@
-# Force le min deployment target macOS à 13.0.
-# Évite les warnings « built for newer 'macOS' version (26.2) than being
-# linked (11.0) » et l'undefined symbol qui en découle sur ARM64 récent
-# avec rustc 1.95+.
+# Configuration Cargo locale pour `apps/desktop/src-tauri`.
 #
-# Si tu es sur un Mac Intel ou un OS plus ancien, ajuste à 11.0 ou 12.0.
+# Force le min deployment target macOS à 13.0 pour éviter les warnings
+# « built for newer 'macOS' version (26.2) than being linked (11.0) »
+# qui dégénèrent en linker errors sur ARM64 récent + rustc 1.95+.
+# Ajuster à 11.0 ou 12.0 sur Mac Intel / OS ancien.
+#
+# Désactive aussi l'incremental compilation : les linker errors
+# « _anon.<hash>.llvm.<hash> symbol not found » récurrents chez Hugo
+# venaient de divergences entre artefacts incrémentaux successifs
+# (rustc 1.95 + arm64 macOS récent). Builds full plus longs mais
+# stables.
 
 [env]
 MACOSX_DEPLOYMENT_TARGET = "13.0"
+CARGO_INCREMENTAL = "0"
