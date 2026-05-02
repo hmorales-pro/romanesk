@@ -4,6 +4,18 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
 
 ## [Unreleased]
 
+_Rien pour l'instant — Phase 2 démarre au prochain commit._
+
+## [0.1.0] — 2026-05-02
+
+Tag de fin de Phase 1 (Lore MVP). Romanesk est désormais un **outil
+de worldbuilding utilisable bout-en-bout** : créer un univers,
+peupler de Personnages et de Lieux avec biographies riches Tiptap,
+les tagger, les relier sémantiquement (graphe interactif), leur
+attacher une image de couverture, exporter le tout en Markdown
+portable. Tout en local, sous Elastic License 2.0, gratuit, sans
+télémétrie ni cloud obligatoire.
+
 ### Added — Phase 1
 - **P1.5** : **Images de couverture** sur les fiches Personnage et Lieu.
   - Plugin Tauri `tauri-plugin-dialog` v2 (Cargo + npm) + capability `dialog:default`. Plugin enregistré dans `lib.rs::run()`.
@@ -53,6 +65,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
   - Fix : le summary d'un Personnage n'était pas inclus dans `characterUpdate` (perte silencieuse). Corrigé.
 - Hotfix Phase 0 : icônes placeholder dans `apps/desktop/src-tauri/icons/` (32, 128, 256, 512) pour débloquer `pnpm tauri dev` (Tauri 2 `generate_context!()` cherche `icons/icon.png` même avec `bundle.active = false`).
 - Hotfix Phase 0 : port dev 1420 → 1430 (HMR 1431) pour cohabiter avec d'autres projets Tauri locaux.
+
+### Versions
+- Workspace Cargo + crates/core + apps/desktop/src-tauri + tauri.conf.json + 2 package.json : 0.0.1 → **0.1.0**.
+- Rétro complète : voir [`docs/RETRO-PHASE-1.md`](./docs/RETRO-PHASE-1.md).
+
+[0.1.0]: https://github.com/hmorales-pro/romanesk/releases/tag/v0.1.0
 
 ## [0.0.1-phase0] — 2026-05-02
 
@@ -141,5 +159,5 @@ fiche avec Tiptap, et tout ça testé par CI offline-only sur 5 jobs.
 - Note de décision sur la licence (`docs/LICENSE-CHOICE.md`).
 - Structure initiale du repo (README, CONTRIBUTING, CODE_OF_CONDUCT, .gitignore).
 
-[Unreleased]: https://github.com/hmorales-pro/romanesk/compare/v0.0.1-phase0...HEAD
+[Unreleased]: https://github.com/hmorales-pro/romanesk/compare/v0.1.0...HEAD
 [0.0.0]: https://github.com/hmorales-pro/romanesk/releases/tag/v0.0.0

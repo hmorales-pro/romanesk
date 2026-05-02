@@ -1,6 +1,6 @@
 [package]
 name = "romanesk-desktop"
-version = "0.0.1"
+version = "0.1.0"
 description = "Romanesk desktop app (Tauri 2 + React)."
 edition = "2021"
 license.workspace = true
