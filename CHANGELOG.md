@@ -4,7 +4,16 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
 
 ## [Unreleased]
 
-_Rien pour l'instant — Phase 1 démarre au prochain commit._
+### Added — Phase 1
+- **P1.1** : Fiches **Lieu** (EntityType::Location), symétriques aux Personnages.
+  - Refactor backend : commandes `entity_create` / `entity_update` génériques sur `EntityType` (kind paramétrable + content JSON libre).
+  - Côté front : nouveaux types `LocationKind` + `LocationContent` (city/region/building/naturalFeature/celestial/other), helpers `locationContent`, `entityTypeLabel`, `locationKindLabel`.
+  - 4 builders API typés : `characterCreate/Update`, `locationCreate/Update`.
+  - `UniversePage` réécrite avec 2 sections empilées (Personnages + Lieux), chacune avec son form inline et sa queryKey.
+  - `EntityPage` devenu un dispatcher minimal qui route vers `CharacterDetail` ou `LocationDetail` (factorisés dans `pages/details/`).
+  - Fix : le summary d'un Personnage n'était pas inclus dans `characterUpdate` (perte silencieuse). Corrigé.
+- Hotfix Phase 0 : icônes placeholder dans `apps/desktop/src-tauri/icons/` (32, 128, 256, 512) pour débloquer `pnpm tauri dev` (Tauri 2 `generate_context!()` cherche `icons/icon.png` même avec `bundle.active = false`).
+- Hotfix Phase 0 : port dev 1420 → 1430 (HMR 1431) pour cohabiter avec d'autres projets Tauri locaux.
 
 ## [0.0.1-phase0] — 2026-05-02
 

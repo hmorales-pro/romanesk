@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Plus, User } from "lucide-react";
+import { ArrowLeft, MapPin, Plus, User } from "lucide-react";
 
 import {
-  entityCreate,
+  characterCreate,
   entityListInUniverse,
+  locationCreate,
   universeGet,
 } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  type Entity,
+  type LocationKind,
+  locationKindLabel,
+} from "@/lib/types";
 
 export default function UniversePage() {
   const { universeId } = useParams<{ universeId: string }>();
@@ -30,50 +36,17 @@ export default function UniversePage() {
     enabled: !!universeId,
   });
 
-  const entitiesQuery = useQuery({
-    queryKey: ["entities", universeId],
-    queryFn: () => entityListInUniverse(universeId!),
+  const charactersQuery = useQuery({
+    queryKey: ["entities", universeId, "Character"],
+    queryFn: () => entityListInUniverse(universeId!, "Character"),
     enabled: !!universeId,
   });
 
-  const createMutation = useMutation({
-    mutationFn: entityCreate,
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["entities", universeId] }),
+  const locationsQuery = useQuery({
+    queryKey: ["entities", universeId, "Location"],
+    queryFn: () => entityListInUniverse(universeId!, "Location"),
+    enabled: !!universeId,
   });
-
-  const [showForm, setShowForm] = useState(false);
-  const [name, setName] = useState("");
-  const [archetype, setArchetype] = useState("");
-  const [traitsRaw, setTraitsRaw] = useState("");
-  const [biography, setBiography] = useState("");
-
-  const resetForm = () => {
-    setName("");
-    setArchetype("");
-    setTraitsRaw("");
-    setBiography("");
-    setShowForm(false);
-  };
-
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !universeId) return;
-    const traits = traitsRaw
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
-    createMutation.mutate(
-      {
-        universeId,
-        name: name.trim(),
-        archetype: archetype.trim() || undefined,
-        traits,
-        biography: biography.trim() || undefined,
-      },
-      { onSuccess: () => resetForm() },
-    );
-  };
 
   if (!universeId) {
     return (
@@ -96,34 +69,106 @@ export default function UniversePage() {
         </Link>
       </nav>
 
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          {universeQuery.isPending && (
-            <p className="text-sm text-muted-foreground">Chargement…</p>
-          )}
-          {universeQuery.data && (
-            <>
-              <h1 className="text-2xl font-semibold">{universeQuery.data.name}</h1>
-              {universeQuery.data.description && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {universeQuery.data.description}
-                </p>
-              )}
-            </>
-          )}
-          {universeQuery.data === null && (
-            <p className="text-destructive" role="alert">
-              Cet univers n'existe pas (ou a été supprimé).
-            </p>
-          )}
-        </div>
-        {!showForm && universeQuery.data && (
-          <Button onClick={() => setShowForm(true)}>
-            <Plus className="size-4" aria-hidden />
-            Nouveau personnage
-          </Button>
+      <header>
+        {universeQuery.isPending && (
+          <p className="text-sm text-muted-foreground">Chargement…</p>
+        )}
+        {universeQuery.data && (
+          <>
+            <h1 className="text-2xl font-semibold">{universeQuery.data.name}</h1>
+            {universeQuery.data.description && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {universeQuery.data.description}
+              </p>
+            )}
+          </>
+        )}
+        {universeQuery.data === null && (
+          <p className="text-destructive" role="alert">
+            Cet univers n'existe pas (ou a été supprimé).
+          </p>
         )}
       </header>
+
+      <CharacterSection
+        universeId={universeId}
+        items={charactersQuery.data ?? []}
+        loading={charactersQuery.isPending}
+        error={charactersQuery.error}
+        onCreated={() =>
+          qc.invalidateQueries({ queryKey: ["entities", universeId, "Character"] })
+        }
+      />
+
+      <LocationSection
+        universeId={universeId}
+        items={locationsQuery.data ?? []}
+        loading={locationsQuery.isPending}
+        error={locationsQuery.error}
+        onCreated={() =>
+          qc.invalidateQueries({ queryKey: ["entities", universeId, "Location"] })
+        }
+      />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Personnages
+// ---------------------------------------------------------------------------
+
+interface SectionProps {
+  universeId: string;
+  items: Entity[];
+  loading: boolean;
+  error: unknown;
+  onCreated: () => void;
+}
+
+function CharacterSection({ universeId, items, loading, error, onCreated }: SectionProps) {
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState("");
+  const [archetype, setArchetype] = useState("");
+  const [traitsRaw, setTraitsRaw] = useState("");
+  const [biography, setBiography] = useState("");
+
+  const createMutation = useMutation({
+    mutationFn: characterCreate,
+    onSuccess: () => {
+      onCreated();
+      setName("");
+      setArchetype("");
+      setTraitsRaw("");
+      setBiography("");
+      setShowForm(false);
+    },
+  });
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    const traits = traitsRaw.split(",").map((t) => t.trim()).filter(Boolean);
+    createMutation.mutate({
+      universeId,
+      name: name.trim(),
+      archetype: archetype.trim() || undefined,
+      traits,
+      biography: biography.trim() || undefined,
+    });
+  };
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+          Personnages
+        </h2>
+        {!showForm && (
+          <Button size="sm" onClick={() => setShowForm(true)}>
+            <Plus className="size-3.5" aria-hidden /> Personnage
+          </Button>
+        )}
+      </div>
 
       {showForm && (
         <Card>
@@ -176,13 +221,10 @@ export default function UniversePage() {
                 />
               </div>
               <div className="flex gap-2">
-                <Button
-                  type="submit"
-                  disabled={createMutation.isPending || !name.trim()}
-                >
+                <Button type="submit" disabled={createMutation.isPending || !name.trim()}>
                   {createMutation.isPending ? "Création…" : "Créer"}
                 </Button>
-                <Button type="button" variant="ghost" onClick={resetForm}>
+                <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>
                   Annuler
                 </Button>
               </div>
@@ -196,51 +238,248 @@ export default function UniversePage() {
         </Card>
       )}
 
-      <section>
-        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
-          Personnages
+      <EntityList
+        items={items}
+        loading={loading}
+        error={error}
+        universeId={universeId}
+        emptyLabel="Aucun personnage encore. Crée le premier ↑"
+        renderIcon={() => <User className="size-4 text-muted-foreground" aria-hidden />}
+        renderMeta={() => null}
+      />
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Lieux
+// ---------------------------------------------------------------------------
+
+const LOCATION_KINDS: LocationKind[] = [
+  "city",
+  "region",
+  "building",
+  "naturalFeature",
+  "celestial",
+  "other",
+];
+
+function LocationSection({ universeId, items, loading, error, onCreated }: SectionProps) {
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState("");
+  const [kind, setKind] = useState<LocationKind>("city");
+  const [climate, setClimate] = useState("");
+  const [population, setPopulation] = useState("");
+  const [summary, setSummary] = useState("");
+
+  const createMutation = useMutation({
+    mutationFn: locationCreate,
+    onSuccess: () => {
+      onCreated();
+      setName("");
+      setKind("city");
+      setClimate("");
+      setPopulation("");
+      setSummary("");
+      setShowForm(false);
+    },
+  });
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    createMutation.mutate({
+      universeId,
+      name: name.trim(),
+      summary: summary.trim() || undefined,
+      kind,
+      climate: climate.trim() || undefined,
+      population: population.trim() || undefined,
+    });
+  };
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+          Lieux
         </h2>
-        {entitiesQuery.isPending && (
-          <p className="text-sm text-muted-foreground">Chargement…</p>
+        {!showForm && (
+          <Button size="sm" onClick={() => setShowForm(true)}>
+            <Plus className="size-3.5" aria-hidden /> Lieu
+          </Button>
         )}
-        {entitiesQuery.isError && (
-          <p className="text-sm text-destructive" role="alert">
-            Erreur : {String(entitiesQuery.error)}
-          </p>
-        )}
-        {entitiesQuery.data && entitiesQuery.data.length === 0 && (
-          <p className="text-sm text-muted-foreground italic">
-            Aucun personnage encore. Crée le premier ↑
-          </p>
-        )}
-        {entitiesQuery.data && entitiesQuery.data.length > 0 && (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {entitiesQuery.data.map((e) => (
-              <Card key={e.id} className="hover:border-primary/50 transition-colors">
-                <CardHeader>
-                  <CardTitle>
-                    <Link
-                      to={`/u/${universeId}/e/${e.id}`}
-                      className="hover:underline flex items-center gap-2"
-                    >
-                      <User
-                        className="size-4 text-muted-foreground"
-                        aria-hidden
-                      />
-                      {e.name}
-                    </Link>
-                  </CardTitle>
-                  {e.summary && <CardDescription>{e.summary}</CardDescription>}
-                </CardHeader>
-                <CardContent className="text-xs text-muted-foreground">
-                  Créé le{" "}
-                  {new Date(e.created_at).toLocaleDateString("fr-FR")}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </section>
+      </div>
+
+      {showForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Nouveau lieu</CardTitle>
+            <CardDescription>
+              Description longue et relations (qui y vit, qui y a régné…) viendront sur la fiche.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={onSubmit} className="flex flex-col gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="loc-name">Nom *</Label>
+                  <Input
+                    id="loc-name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Bren, Forêt d'Iren, Cité de Verre…"
+                    autoFocus
+                    required
+                    maxLength={120}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="loc-kind">Type</Label>
+                  <select
+                    id="loc-kind"
+                    value={kind}
+                    onChange={(e) => setKind(e.target.value as LocationKind)}
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {LOCATION_KINDS.map((k) => (
+                      <option key={k} value={k}>
+                        {locationKindLabel(k)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="loc-summary">Résumé court</Label>
+                <Input
+                  id="loc-summary"
+                  value={summary}
+                  onChange={(e) => setSummary(e.target.value)}
+                  placeholder="Une phrase pour situer le lieu."
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="loc-climate">Climat</Label>
+                  <Input
+                    id="loc-climate"
+                    value={climate}
+                    onChange={(e) => setClimate(e.target.value)}
+                    placeholder="tempéré, polaire, brumeux…"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="loc-population">Population / peuples</Label>
+                  <Input
+                    id="loc-population"
+                    value={population}
+                    onChange={(e) => setPopulation(e.target.value)}
+                    placeholder="humains, elfes, ~30 000 hab.…"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={createMutation.isPending || !name.trim()}>
+                  {createMutation.isPending ? "Création…" : "Créer"}
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>
+                  Annuler
+                </Button>
+              </div>
+              {createMutation.isError && (
+                <p className="text-sm text-destructive" role="alert">
+                  Erreur : {String(createMutation.error)}
+                </p>
+              )}
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      <EntityList
+        items={items}
+        loading={loading}
+        error={error}
+        universeId={universeId}
+        emptyLabel="Aucun lieu encore. Crée le premier ↑"
+        renderIcon={() => <MapPin className="size-4 text-muted-foreground" aria-hidden />}
+        renderMeta={(e) => {
+          const k =
+            typeof (e.content as { kind?: unknown }).kind === "string"
+              ? ((e.content as { kind: LocationKind }).kind)
+              : null;
+          return k ? <span>{locationKindLabel(k)}</span> : null;
+        }}
+      />
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Liste partagée
+// ---------------------------------------------------------------------------
+
+interface EntityListProps {
+  items: Entity[];
+  loading: boolean;
+  error: unknown;
+  universeId: string;
+  emptyLabel: string;
+  renderIcon: () => React.ReactNode;
+  renderMeta: (entity: Entity) => React.ReactNode;
+}
+
+function EntityList({
+  items,
+  loading,
+  error,
+  universeId,
+  emptyLabel,
+  renderIcon,
+  renderMeta,
+}: EntityListProps) {
+  if (loading) {
+    return <p className="text-sm text-muted-foreground">Chargement…</p>;
+  }
+  if (error) {
+    return (
+      <p className="text-sm text-destructive" role="alert">
+        Erreur : {String(error)}
+      </p>
+    );
+  }
+  if (items.length === 0) {
+    return <p className="text-sm text-muted-foreground italic">{emptyLabel}</p>;
+  }
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {items.map((e) => {
+        const meta = renderMeta(e);
+        return (
+          <Card key={e.id} className="hover:border-primary/50 transition-colors">
+            <CardHeader>
+              <CardTitle>
+                <Link
+                  to={`/u/${universeId}/e/${e.id}`}
+                  className="hover:underline flex items-center gap-2"
+                >
+                  {renderIcon()}
+                  {e.name}
+                </Link>
+              </CardTitle>
+              {e.summary && <CardDescription>{e.summary}</CardDescription>}
+            </CardHeader>
+            <CardContent className="text-xs text-muted-foreground flex items-center justify-between">
+              <span>
+                {meta}
+                {meta && " · "}
+                Créé le {new Date(e.created_at).toLocaleDateString("fr-FR")}
+              </span>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
