@@ -152,3 +152,109 @@ export function locationKindLabel(kind: LocationKind): string {
       return "Autre";
   }
 }
+
+// ---------------------------------------------------------------------------
+// Relation (graphe de lore)
+// ---------------------------------------------------------------------------
+
+/**
+ * Set figé des 14 types de relations en v1 (cf. ADR 0003).
+ * Sérialisé en snake_case côté Rust → on reflète les mêmes strings ici.
+ */
+export type RelationType =
+  | "ally_of"
+  | "enemy_of"
+  | "mentor_of"
+  | "parent_of"
+  | "sibling_of"
+  | "married_to"
+  | "member_of"
+  | "leader_of"
+  | "ruled_over"
+  | "located_in"
+  | "owns"
+  | "created"
+  | "derived_from"
+  | "mentions";
+
+export const RELATION_TYPES: RelationType[] = [
+  "ally_of",
+  "enemy_of",
+  "mentor_of",
+  "parent_of",
+  "sibling_of",
+  "married_to",
+  "member_of",
+  "leader_of",
+  "ruled_over",
+  "located_in",
+  "owns",
+  "created",
+  "derived_from",
+  "mentions",
+];
+
+const SYMMETRIC_RELATIONS: Set<RelationType> = new Set([
+  "ally_of",
+  "enemy_of",
+  "sibling_of",
+  "married_to",
+]);
+
+export function isSymmetric(type: RelationType): boolean {
+  return SYMMETRIC_RELATIONS.has(type);
+}
+
+/**
+ * Libellé humain pour un type de relation, sous deux formes :
+ * - active : « est mentor de » (utilisée quand l'entité est SOURCE)
+ * - passive : « a pour mentor » (utilisée quand l'entité est TARGET)
+ *
+ * Pour les types symétriques (ally_of…), les deux formes sont identiques.
+ */
+export function relationTypeLabel(
+  type: RelationType,
+  direction: "active" | "passive" = "active",
+): string {
+  switch (type) {
+    case "ally_of":
+      return "allié de";
+    case "enemy_of":
+      return "ennemi de";
+    case "mentor_of":
+      return direction === "active" ? "mentor de" : "a pour mentor";
+    case "parent_of":
+      return direction === "active" ? "parent de" : "enfant de";
+    case "sibling_of":
+      return "frère/sœur de";
+    case "married_to":
+      return "marié(e) à";
+    case "member_of":
+      return direction === "active" ? "membre de" : "compte parmi ses membres";
+    case "leader_of":
+      return direction === "active" ? "dirige" : "est dirigé par";
+    case "ruled_over":
+      return direction === "active" ? "a régné sur" : "a été gouverné par";
+    case "located_in":
+      return direction === "active" ? "situé dans" : "contient";
+    case "owns":
+      return direction === "active" ? "possède" : "appartient à";
+    case "created":
+      return direction === "active" ? "a créé" : "créé par";
+    case "derived_from":
+      return direction === "active" ? "dérive de" : "a inspiré";
+    case "mentions":
+      return direction === "active" ? "mentionne" : "mentionné par";
+  }
+}
+
+export interface Relation {
+  id: Uuid;
+  source_id: Uuid;
+  target_id: Uuid;
+  /** Sérialisé sous le nom JSON `type`. */
+  type: RelationType;
+  era_id: Uuid | null;
+  description: string | null;
+  created_at: Timestamp;
+}

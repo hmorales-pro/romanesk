@@ -14,6 +14,8 @@ import type {
   Entity,
   EntityType,
   LocationKind,
+  Relation,
+  RelationType,
   Universe,
   Uuid,
 } from "./types";
@@ -207,6 +209,43 @@ export function locationUpdate(args: UpdateLocationArgs): Promise<Entity> {
     coverImage: null,
     isReal: false,
   });
+}
+
+// ---------------------------------------------------------------------------
+// Relation
+// ---------------------------------------------------------------------------
+
+export interface CreateRelationArgs {
+  sourceId: Uuid;
+  targetId: Uuid;
+  type: RelationType;
+  description?: string;
+  /** Optionnel — Phase 2+ avec les époques. */
+  eraId?: Uuid;
+}
+
+export function relationCreate(args: CreateRelationArgs): Promise<Relation> {
+  return invoke<Relation>("relation_create", {
+    payload: {
+      sourceId: args.sourceId,
+      targetId: args.targetId,
+      type: args.type,
+      description: args.description ?? null,
+      eraId: args.eraId ?? null,
+    },
+  });
+}
+
+export function relationListForEntity(entityId: Uuid): Promise<Relation[]> {
+  return invoke<Relation[]>("relation_list_for_entity", { entityId });
+}
+
+export function relationListInUniverse(universeId: Uuid): Promise<Relation[]> {
+  return invoke<Relation[]>("relation_list_in_universe", { universeId });
+}
+
+export function relationDelete(id: Uuid): Promise<void> {
+  return invoke<void>("relation_delete", { id });
 }
 
 // ---------------------------------------------------------------------------

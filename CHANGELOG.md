@@ -5,6 +5,15 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
 ## [Unreleased]
 
 ### Added — Phase 1
+- **P1.2** : **Relations entre entités** (Aldric *mentor de* Lyra, Aldric *situé dans* Bren, etc.).
+  - Domain Rust : `RelationType` enum (14 variants conformes à ADR 0003) avec `as_str()`, `parse()`, `is_symmetric()`. `Relation` et `NewRelation`.
+  - `RelationRepo` (create / get / list_for_entity / list_in_universe / delete). `list_in_universe` JOIN bidirectionnel (source OR target) avec DISTINCT pour ne pas rater les arcs cross-univers.
+  - 8 tests d'intégration + 2 unit (round-trip + symétrie). Self-relation rejetée par CHECK SQL + validation Rust, FK violation détectée, cascade vérifiée à la suppression d'une entité.
+  - 4 commandes Tauri : `relation_create / list_for_entity / list_in_universe / delete`.
+  - Front : types TS, helpers `relationTypeLabel(type, direction)` (active/passive selon le côté), `isSymmetric`, `RELATION_TYPES` exportée.
+  - `<RelationsSection>` intégré dans `CharacterDetail` et `LocationDetail` : liste les relations entrantes/sortantes (avec libellé directionnel), bouton « + » qui ouvre un form (select type + select cible parmi les autres entités de l'univers) + suppression inline.
+  - Bug attrapé en relecture : `list_in_universe` ne JOIN que sur source_id (raterait les relations entrantes vers cet univers depuis un autre). Corrigé.
+  - Typo française corrigée : « à inspiré » → « a inspiré ».
 - **P1.1** : Fiches **Lieu** (EntityType::Location), symétriques aux Personnages.
   - Refactor backend : commandes `entity_create` / `entity_update` génériques sur `EntityType` (kind paramétrable + content JSON libre).
   - Côté front : nouveaux types `LocationKind` + `LocationContent` (city/region/building/naturalFeature/celestial/other), helpers `locationContent`, `entityTypeLabel`, `locationKindLabel`.

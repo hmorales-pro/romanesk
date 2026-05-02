@@ -231,6 +231,127 @@ pub struct EmbeddingHit {
     pub score: f32,
 }
 
+// ---------------------------------------------------------------------------
+// Relation (graphe de lore)
+// ---------------------------------------------------------------------------
+
+/// Set figé des types de relations en v1, conformément à l'ADR 0003.
+///
+/// Stocké en TEXT côté DB sous la forme snake_case via `as_str()`. Les types
+/// marqués comme « symétriques » (ally_of, enemy_of, sibling_of, married_to)
+/// ne sont stockés qu'une fois — la lecture doit considérer l'arc des deux
+/// côtés (cf. PRD ADR 0003).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[serde(rename_all = "snake_case")]
+pub enum RelationType {
+    /// Alliance déclarée (symétrique).
+    AllyOf,
+    /// Inimitié (symétrique).
+    EnemyOf,
+    /// A formé / a guidé.
+    MentorOf,
+    /// Parent biologique ou adoptif.
+    ParentOf,
+    /// Fratrie (symétrique).
+    SiblingOf,
+    /// Conjoint (symétrique).
+    MarriedTo,
+    /// Appartenance à une faction.
+    MemberOf,
+    /// Dirige une faction.
+    LeaderOf,
+    /// A gouverné un lieu.
+    RuledOver,
+    /// Contenu géographiquement.
+    LocatedIn,
+    /// Possession.
+    Owns,
+    /// A créé / fondé.
+    Created,
+    /// Dérive de / inspiré de.
+    DerivedFrom,
+    /// Référence narrative faible (pour le RAG).
+    Mentions,
+}
+
+impl RelationType {
+    /// Représentation textuelle stockée en DB (colonne `type`). Snake_case.
+    #[must_use]
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::AllyOf => "ally_of",
+            Self::EnemyOf => "enemy_of",
+            Self::MentorOf => "mentor_of",
+            Self::ParentOf => "parent_of",
+            Self::SiblingOf => "sibling_of",
+            Self::MarriedTo => "married_to",
+            Self::MemberOf => "member_of",
+            Self::LeaderOf => "leader_of",
+            Self::RuledOver => "ruled_over",
+            Self::LocatedIn => "located_in",
+            Self::Owns => "owns",
+            Self::Created => "created",
+            Self::DerivedFrom => "derived_from",
+            Self::Mentions => "mentions",
+        }
+    }
+
+    /// Parse une valeur lue en DB. `None` si la string est inconnue
+    /// (donnée corrompue ou ajoutée à la main hors du code Rust).
+    #[must_use]
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "ally_of" => Some(Self::AllyOf),
+            "enemy_of" => Some(Self::EnemyOf),
+            "mentor_of" => Some(Self::MentorOf),
+            "parent_of" => Some(Self::ParentOf),
+            "sibling_of" => Some(Self::SiblingOf),
+            "married_to" => Some(Self::MarriedTo),
+            "member_of" => Some(Self::MemberOf),
+            "leader_of" => Some(Self::LeaderOf),
+            "ruled_over" => Some(Self::RuledOver),
+            "located_in" => Some(Self::LocatedIn),
+            "owns" => Some(Self::Owns),
+            "created" => Some(Self::Created),
+            "derived_from" => Some(Self::DerivedFrom),
+            "mentions" => Some(Self::Mentions),
+            _ => None,
+        }
+    }
+
+    /// `true` si la relation est sémantiquement symétrique (peu importe le
+    /// sens de l'arc en DB, on la considère valide dans les deux sens).
+    #[must_use]
+    pub const fn is_symmetric(&self) -> bool {
+        matches!(
+            self,
+            Self::AllyOf | Self::EnemyOf | Self::SiblingOf | Self::MarriedTo
+        )
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Relation {
+    pub id: Uuid,
+    pub source_id: Uuid,
+    pub target_id: Uuid,
+    /// Sérialisé sous le nom JSON `type` (mot-clé Rust → renommé).
+    #[serde(rename = "type")]
+    pub kind: RelationType,
+    pub era_id: Option<Uuid>,
+    pub description: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NewRelation {
+    pub source_id: Uuid,
+    pub target_id: Uuid,
+    pub kind: RelationType,
+    pub era_id: Option<Uuid>,
+    pub description: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

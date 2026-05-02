@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { TiptapEditor, type TiptapDoc } from "@/components/TiptapEditor";
+import { RelationsSection } from "@/components/RelationsSection";
 
 interface Props {
   entity: Entity;
@@ -227,6 +228,8 @@ export function CharacterDetail({ entity, universeId }: Props) {
           )}
         </CardContent>
       </Card>
+
+      <RelationsSection entity={entity} />
     </article>
   );
 }

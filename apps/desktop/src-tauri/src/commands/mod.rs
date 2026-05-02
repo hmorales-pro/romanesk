@@ -12,6 +12,7 @@
 
 pub mod entity;
 pub mod error;
+pub mod relation;
 pub mod universe;
 
 pub use error::{CommandError, CommandResult};
