@@ -30,6 +30,7 @@ import {
 
 import { aiComplete } from "@/lib/api";
 import type { Story } from "@/lib/types";
+import { useSettings } from "@/lib/use-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { TiptapDoc } from "@/components/TiptapEditor";
@@ -63,6 +64,7 @@ export function AiActionsPanel({
 }: AiActionsPanelProps) {
   const [instruction, setInstruction] = useState("");
   const [result, setResult] = useState<RunResult | null>(null);
+  const { pickModel } = useSettings();
 
   const mutation = useMutation({
     mutationFn: async ({ kind, instruction: instr }: RunArgs) => {
@@ -75,10 +77,14 @@ export function AiActionsPanel({
         chapterText: text,
         instruction: instr,
       });
+      // brainstorm = créatif (divergence), rewrite/summarize = littéral.
+      const modelKind: "creative" | "literal" =
+        kind === "brainstorm" ? "creative" : "literal";
       const res = await aiComplete({
         system: SYSTEM_PROMPTS[kind],
         user: userPrompt,
         temperature: kind === "brainstorm" ? 0.9 : 0.7,
+        model: pickModel(modelKind),
       });
       return { kind, text: res.content.trim(), replaceable: kind === "rewrite" } as RunResult;
     },

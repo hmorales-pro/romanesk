@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 use romanesk_core::ai::{Capabilities, OllamaConfig, OllamaProvider};
 use serde::{Deserialize, Serialize};
-use tauri::{Manager, State};
+use tauri::{Emitter, Manager, State};
 
 use super::ai::{AiEmbedder, AiProvider};
 use super::{CommandError, CommandResult};
@@ -24,6 +24,16 @@ pub struct AppSettings {
     pub ollama_base_url: String,
     pub chat_model: String,
     pub embed_model: String,
+    /// Phase 6 (P6.2) : modèle préféré pour les actions « créatives »
+    /// (continuation, brainstorm, atelier description, draft de fiche).
+    /// Si `None`, on retombe sur `chat_model`.
+    #[serde(default)]
+    pub creative_model: Option<String>,
+    /// Modèle préféré pour les actions « littérales » (réécriture stricte,
+    /// résumé, vérification de cohérence). Si `None`, on retombe sur
+    /// `chat_model`.
+    #[serde(default)]
+    pub literal_model: Option<String>,
 }
 
 impl Default for AppSettings {
@@ -32,6 +42,8 @@ impl Default for AppSettings {
             ollama_base_url: "http://localhost:11434".into(),
             chat_model: "gemma4:e2b".into(),
             embed_model: "nomic-embed-text:latest".into(),
+            creative_model: None,
+            literal_model: None,
         }
     }
 }
@@ -54,6 +66,12 @@ impl AppSettings {
             chat_model: std::env::var("OLLAMA_MODEL").unwrap_or(from_disk.chat_model),
             embed_model: std::env::var("OLLAMA_EMBED_MODEL")
                 .unwrap_or(from_disk.embed_model),
+            creative_model: std::env::var("OLLAMA_CREATIVE_MODEL")
+                .ok()
+                .or(from_disk.creative_model),
+            literal_model: std::env::var("OLLAMA_LITERAL_MODEL")
+                .ok()
+                .or(from_disk.literal_model),
         }
     }
 
@@ -132,6 +150,14 @@ pub async fn settings_save(
         embed = %settings.embed_model,
         "Providers IA hot-reloaded depuis settings_save"
     );
+
+    // P6.2 : émet un event Tauri pour que le front rafraîchisse les
+    // composants qui dépendent des settings (badge IA, panels qui
+    // sélectionnent un modèle dérivé, etc.) sans attendre le prochain
+    // ping de 30s.
+    if let Err(e) = app.emit("settings-changed", &settings) {
+        tracing::warn!(error = %e, "échec emit settings-changed");
+    }
 
     Ok(settings)
 }

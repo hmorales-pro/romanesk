@@ -21,6 +21,7 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 
 import { aiComplete } from "@/lib/api";
 import type { Story } from "@/lib/types";
+import { useSettings } from "@/lib/use-settings";
 import { Button } from "@/components/ui/button";
 import type { TiptapDoc } from "@/components/TiptapEditor";
 
@@ -48,6 +49,7 @@ export function AiContinuePanel({
   onAccept,
 }: AiContinuePanelProps) {
   const [suggestion, setSuggestion] = useState<string | null>(null);
+  const { pickModel } = useSettings();
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -63,6 +65,7 @@ export function AiContinuePanel({
         system: SYSTEM_PROMPT,
         user: userPrompt,
         temperature: 0.8,
+        model: pickModel("creative"),
       });
     },
     onSuccess: (res) => {

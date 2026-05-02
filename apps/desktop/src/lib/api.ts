@@ -893,6 +893,13 @@ export interface AppSettings {
   ollamaBaseUrl: string;
   chatModel: string;
   embedModel: string;
+  /** P6.2 : modèle préféré pour les actions créatives (continuation,
+   * brainstorm, atelier description, draft). Si null/empty, retombe sur
+   * chatModel. */
+  creativeModel: string | null;
+  /** P6.2 : modèle préféré pour les actions littérales (réécriture,
+   * résumé, cohérence). Si null/empty, retombe sur chatModel. */
+  literalModel: string | null;
 }
 
 export function settingsGet(): Promise<AppSettings> {

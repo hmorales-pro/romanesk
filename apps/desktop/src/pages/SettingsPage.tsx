@@ -33,6 +33,8 @@ export default function SettingsPage() {
   const [ollamaBaseUrl, setOllamaBaseUrl] = useState("");
   const [chatModel, setChatModel] = useState("");
   const [embedModel, setEmbedModel] = useState("");
+  const [creativeModel, setCreativeModel] = useState("");
+  const [literalModel, setLiteralModel] = useState("");
   const [savedOnce, setSavedOnce] = useState(false);
 
   // Hydrate le form quand les settings sont chargés.
@@ -41,6 +43,8 @@ export default function SettingsPage() {
       setOllamaBaseUrl(settingsQuery.data.ollamaBaseUrl);
       setChatModel(settingsQuery.data.chatModel);
       setEmbedModel(settingsQuery.data.embedModel);
+      setCreativeModel(settingsQuery.data.creativeModel ?? "");
+      setLiteralModel(settingsQuery.data.literalModel ?? "");
     }
   }, [settingsQuery.data]);
 
@@ -49,6 +53,8 @@ export default function SettingsPage() {
       ollamaBaseUrl: ollamaBaseUrl.trim() || "http://localhost:11434",
       chatModel: chatModel.trim() || "gemma4:e2b",
       embedModel: embedModel.trim() || "nomic-embed-text:latest",
+      creativeModel: creativeModel.trim() || null,
+      literalModel: literalModel.trim() || null,
     };
     saveMutation.mutate(next, { onSuccess: () => setSavedOnce(true) });
   };
@@ -119,7 +125,7 @@ export default function SettingsPage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="set-chat">Modèle chat</Label>
+                  <Label htmlFor="set-chat">Modèle chat (par défaut)</Label>
                   <Input
                     id="set-chat"
                     value={chatModel}
@@ -127,7 +133,7 @@ export default function SettingsPage() {
                     placeholder="gemma4:e2b"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Pour la génération de fiches et le RAG.
+                    Modèle utilisé par défaut pour toutes les actions IA.
                     Suggestions : gemma4:e2b, llama3.2:latest, mistral:latest.
                   </p>
                 </div>
@@ -143,6 +149,41 @@ export default function SettingsPage() {
                     Pour l'indexation RAG. Doit être un modèle d'embedding
                     (768-1024 dim). Suggestions : nomic-embed-text:latest,
                     qwen3-embedding:4b ou :8b, bge-m3:latest.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 border-t pt-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="set-creative">
+                    Modèle créatif (optionnel)
+                  </Label>
+                  <Input
+                    id="set-creative"
+                    value={creativeModel}
+                    onChange={(e) => setCreativeModel(e.target.value)}
+                    placeholder="(vide → modèle par défaut)"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Utilisé pour les actions divergentes : continuation,
+                    brainstorm, atelier description, drafts. Idéalement un
+                    modèle plus gros / plus créatif (mistral, llama3.3:70b…).
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="set-literal">
+                    Modèle littéral (optionnel)
+                  </Label>
+                  <Input
+                    id="set-literal"
+                    value={literalModel}
+                    onChange={(e) => setLiteralModel(e.target.value)}
+                    placeholder="(vide → modèle par défaut)"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Utilisé pour les actions strictes : réécriture, résumé,
+                    cohérence. Idéalement un modèle qui suit bien les
+                    instructions JSON (gemma3:12b, qwen2.5:14b…).
                   </p>
                 </div>
               </div>

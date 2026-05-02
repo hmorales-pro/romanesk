@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 
 import { aiComplete } from "@/lib/api";
+import { useSettings } from "@/lib/use-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -56,6 +57,7 @@ export function AiDescriptionPanel({
 }: AiDescriptionPanelProps) {
   const [hint, setHint] = useState("");
   const [text, setText] = useState<string | null>(null);
+  const { pickModel } = useSettings();
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -71,6 +73,7 @@ export function AiDescriptionPanel({
         user: userPrompt,
         temperature: 0.85,
         maxTokens: 1200,
+        model: pickModel("creative"),
       });
       return res.content.trim();
     },

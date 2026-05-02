@@ -1,5 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Brain, BrainCog } from "lucide-react";
+import { listen } from "@tauri-apps/api/event";
 
 import { aiPing } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -8,15 +10,32 @@ import { cn } from "@/lib/utils";
  * Badge minimal qui affiche l'état du provider IA configuré.
  * Ping périodique (30 s). Affiché en haut à droite de LibraryPage.
  *
- * Phase 3.1 : Ollama uniquement (hardcoded). Phase 3.2+ : settings configurables.
+ * P6.2 : écoute l'event Tauri "settings-changed" pour rafraîchir
+ * immédiatement après un save Settings (au lieu d'attendre les 30s).
+ * Invalide aussi la queryKey ["settings"] pour les composants qui
+ * dérivent leur modèle via useSettings().
  */
 export function AIStatusBadge() {
+  const qc = useQueryClient();
   const statusQuery = useQuery({
     queryKey: ["ai-status"],
     queryFn: aiPing,
     refetchInterval: 30_000,
     staleTime: 15_000,
   });
+
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+    void listen("settings-changed", () => {
+      void qc.invalidateQueries({ queryKey: ["ai-status"] });
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    }).then((fn) => {
+      unlisten = fn;
+    });
+    return () => {
+      unlisten?.();
+    };
+  }, [qc]);
 
   if (statusQuery.isPending) {
     return (

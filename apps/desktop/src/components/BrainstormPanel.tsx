@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 
 import { aiComplete, storyListInUniverse, universeGet } from "@/lib/api";
+import { useSettings } from "@/lib/use-settings";
 import { Button } from "@/components/ui/button";
 
 type Mode = "scenes" | "dilemmas" | "twists";
@@ -50,6 +51,7 @@ export function BrainstormPanel({ universeId }: BrainstormPanelProps) {
   const [result, setResult] = useState<{ mode: Mode; text: string } | null>(
     null,
   );
+  const { pickModel } = useSettings();
 
   const mutation = useMutation({
     mutationFn: async (mode: Mode) => {
@@ -70,6 +72,7 @@ export function BrainstormPanel({ universeId }: BrainstormPanelProps) {
         user: userPrompt,
         temperature: 0.95,
         maxTokens: 1200,
+        model: pickModel("creative"),
       });
       return { mode, text: res.content.trim() };
     },
