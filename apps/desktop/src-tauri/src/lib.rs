@@ -28,7 +28,7 @@ use serde::Serialize;
 use tauri::Manager;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
-use commands::ai::AiProvider;
+use commands::ai::{AiEmbedder, AiProvider};
 
 #[derive(Debug, Serialize)]
 pub struct PingResult {
@@ -124,11 +124,16 @@ pub fn run() {
 
             // Provider IA — Phase 3.1 : Ollama hardcoded sur localhost:11434
             // avec modèle gemma3:latest. Configuration dynamique en P3.2+.
-            let ollama = OllamaProvider::new(OllamaConfig {
-                base_url: std::env::var("OLLAMA_BASE_URL")
-                    .unwrap_or_else(|_| "http://localhost:11434".into()),
-                default_model: std::env::var("OLLAMA_MODEL")
-                    .unwrap_or_else(|_| "gemma4:e2b".into()),
+            let base_url = std::env::var("OLLAMA_BASE_URL")
+                .unwrap_or_else(|_| "http://localhost:11434".into());
+            let chat_model = std::env::var("OLLAMA_MODEL")
+                .unwrap_or_else(|_| "gemma4:e2b".into());
+            let embed_model = std::env::var("OLLAMA_EMBED_MODEL")
+                .unwrap_or_else(|_| "nomic-embed-text:latest".into());
+
+            let chat_provider = OllamaProvider::new(OllamaConfig {
+                base_url: base_url.clone(),
+                default_model: chat_model,
                 capabilities: romanesk_core::ai::Capabilities {
                     text: true,
                     vision: false,
@@ -137,8 +142,24 @@ pub fn run() {
                     long_context: true,
                 },
             });
-            app.manage(AiProvider(Arc::new(ollama)));
-            tracing::info!("Setup terminé, base prête, provider IA initialisé");
+            let embed_provider = OllamaProvider::new(OllamaConfig {
+                base_url: base_url.clone(),
+                default_model: embed_model.clone(),
+                capabilities: romanesk_core::ai::Capabilities {
+                    text: false,
+                    vision: false,
+                    embeddings: true,
+                    tool_use: false,
+                    long_context: false,
+                },
+            });
+
+            app.manage(AiProvider(Arc::new(chat_provider)));
+            app.manage(AiEmbedder {
+                provider: Arc::new(embed_provider),
+                model: embed_model,
+            });
+            tracing::info!("Setup terminé, base prête, providers IA initialisés");
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -184,6 +205,8 @@ pub fn run() {
             commands::ai::ai_ping,
             commands::ai::ai_complete,
             commands::ai::ai_generate_entity_draft,
+            commands::ai::ai_universe_reindex,
+            commands::ai::ai_rag_query,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

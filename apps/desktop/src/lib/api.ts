@@ -564,6 +564,45 @@ export function aiGenerateEntityDraft(args: {
   });
 }
 
+export interface ReindexResult {
+  indexedCount: number;
+  model: string;
+  dimension: number;
+}
+
+export function aiUniverseReindex(universeId: Uuid): Promise<ReindexResult> {
+  return invoke<ReindexResult>("ai_universe_reindex", { universeId });
+}
+
+export interface RagSource {
+  entityId: Uuid;
+  entityName: string;
+  entityType: EntityType;
+  score: number;
+  snippet: string;
+}
+
+export interface RagAnswer {
+  answer: string;
+  sources: RagSource[];
+  usedModelChat: string;
+  usedModelEmbed: string;
+}
+
+export function aiRagQuery(args: {
+  universeId: Uuid;
+  question: string;
+  topK?: number;
+}): Promise<RagAnswer> {
+  return invoke<RagAnswer>("ai_rag_query", {
+    payload: {
+      universeId: args.universeId,
+      question: args.question,
+      topK: args.topK ?? null,
+    },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Healthcheck
 // ---------------------------------------------------------------------------

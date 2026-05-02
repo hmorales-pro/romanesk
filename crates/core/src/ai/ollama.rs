@@ -30,7 +30,7 @@ impl Default for OllamaConfig {
             capabilities: Capabilities {
                 text: true,
                 vision: false, // à override selon le modèle chargé
-                embeddings: false,
+                embeddings: true,
                 tool_use: false,
                 long_context: true,
             },
@@ -208,10 +208,92 @@ impl Provider for OllamaProvider {
         Err(ProviderError::CapabilityMissing("vision"))
     }
 
-    async fn embed(&self, _texts: Vec<String>) -> Result<Vec<Vec<f32>>, ProviderError> {
-        // TODO Phase 3 : appeler `/api/embeddings` avec un modèle dédié
-        // (`nomic-embed-text` ou `bge-m3`) en parallèle du modèle de chat.
-        Err(ProviderError::CapabilityMissing("embeddings"))
+    async fn embed(&self, texts: Vec<String>) -> Result<Vec<Vec<f32>>, ProviderError> {
+        // Ollama 0.1.31+ expose `/api/embed` qui accepte une liste de textes
+        // et renvoie une liste de vecteurs. Fallback via `default_model` si
+        // aucun modèle d'embedding spécifique n'est configuré.
+        // En pratique, l'appelant override via `embedding_model` (cf.
+        // commands/ai.rs).
+        let url = format!("{}/api/embed", self.cfg.base_url.trim_end_matches('/'));
+        let payload = serde_json::json!({
+            "model": &self.cfg.default_model,
+            "input": texts,
+        });
+
+        let resp = self
+            .http
+            .post(&url)
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| ProviderError::Transport(e.to_string()))?;
+
+        if !resp.status().is_success() {
+            return Err(ProviderError::Unavailable(format!(
+                "Ollama embed HTTP {}",
+                resp.status()
+            )));
+        }
+
+        #[derive(serde::Deserialize)]
+        struct OllamaEmbedResponse {
+            embeddings: Vec<Vec<f32>>,
+        }
+
+        let parsed: OllamaEmbedResponse = resp
+            .json()
+            .await
+            .map_err(|e| ProviderError::MalformedResponse(e.to_string()))?;
+
+        Ok(parsed.embeddings)
+    }
+}
+
+/// Variante de `OllamaProvider::embed` qui permet de spécifier un modèle
+/// d'embedding différent du `default_model` (chat). Utile parce que les
+/// modèles de chat (gemma, llama) et les modèles d'embedding
+/// (nomic-embed-text, bge) sont en général distincts.
+impl OllamaProvider {
+    /// Embed une liste de textes avec un modèle donné, par exemple
+    /// `"nomic-embed-text:latest"`. Renvoie un `Vec<Vec<f32>>` aligné
+    /// avec l'ordre d'entrée.
+    pub async fn embed_with_model(
+        &self,
+        texts: Vec<String>,
+        model: &str,
+    ) -> Result<Vec<Vec<f32>>, ProviderError> {
+        let url = format!("{}/api/embed", self.cfg.base_url.trim_end_matches('/'));
+        let payload = serde_json::json!({
+            "model": model,
+            "input": texts,
+        });
+
+        let resp = self
+            .http
+            .post(&url)
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| ProviderError::Transport(e.to_string()))?;
+
+        if !resp.status().is_success() {
+            return Err(ProviderError::Unavailable(format!(
+                "Ollama embed HTTP {}",
+                resp.status()
+            )));
+        }
+
+        #[derive(serde::Deserialize)]
+        struct OllamaEmbedResponse {
+            embeddings: Vec<Vec<f32>>,
+        }
+
+        let parsed: OllamaEmbedResponse = resp
+            .json()
+            .await
+            .map_err(|e| ProviderError::MalformedResponse(e.to_string()))?;
+
+        Ok(parsed.embeddings)
     }
 }
 

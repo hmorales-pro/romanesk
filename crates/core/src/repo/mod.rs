@@ -72,6 +72,11 @@ impl Repo {
         SnapshotRepo::new(&self.db)
     }
 
+    #[must_use]
+    pub fn embeddings(&self) -> crate::rag::EmbeddingRepo<'_> {
+        crate::rag::EmbeddingRepo::new(&self.db)
+    }
+
     /// Accès direct au [`Database`] sous-jacent. Utile pour les tests ou
     /// pour des requêtes ad-hoc qu'on ne veut pas (encore) figer en repo.
     #[must_use]

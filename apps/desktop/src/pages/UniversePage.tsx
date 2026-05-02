@@ -14,6 +14,7 @@ import {
 } from "@/lib/api";
 import { TagChip } from "@/components/TagsSection";
 import { TimelineSection } from "@/components/TimelineSection";
+import { RagChatPanel } from "@/components/RagChatPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -214,6 +215,8 @@ export default function UniversePage() {
       />
 
       <TimelineSection universeId={universeId} />
+
+      <RagChatPanel universeId={universeId} />
     </div>
   );
 }
