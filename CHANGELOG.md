@@ -22,6 +22,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
   - Tri sur `id` (UUID v7 monotone temporellement) plutôt que `created_at` — pas d'index supplémentaire requis.
   - 11 tests d'intégration in-memory : CRUD, FK ON DELETE CASCADE, soft-delete, FK violation, round-trip JSON Unicode, `PRAGMA foreign_keys` actif.
   - ADR `0004-migrations.md` : abandon de `refinery` au profit de `sqlx::migrate!` (évite le double driver SQLite).
+- **Phase 0 — J4** : stockage vectoriel + recherche cosine dans `crates/core/src/rag/`.
+  - Module `rag/vec.rs` : `EmbeddingRepo` (insert, get, search_topk, delete_for) + helpers `encode_vector` / `decode_vector` (BLOB f32 little-endian) + `cosine`.
+  - Domain : `SourceType` (entity, snapshot, chapter, brief, note), `Embedding`, `NewEmbedding`, `EmbeddingHit`, `SearchFilter` (model + source_type optionnels).
+  - Filtre obligatoire par `dim` côté SQL avant le calcul cosine — vecteurs incompatibles automatiquement exclus.
+  - 5 tests unitaires (encode/decode bit-exact, cosine identique/orthogonal/opposite/zero) + 10 tests d'intégration (smoke top-k, filtres dim/model/source, delete_for, validation inputs).
+  - ADR `0005-vector-search.md` : report explicite de `sqlite-vec` à Phase 1, format BLOB choisi pour migration future à coût constant (compatibilité binaire avec `sqlite-vec`).
 
 ### Changed
 - **Pivot du modèle de distribution** : open-source AGPL → **propriétaire source-available, free-use** sous Elastic License 2.0.

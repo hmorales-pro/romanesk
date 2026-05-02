@@ -140,6 +140,84 @@ impl NewEntity {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Embedding (RAG)
+// ---------------------------------------------------------------------------
+
+/// Type d'origine d'un chunk indexé. Aligné avec la colonne `source_type`
+/// de la table `embeddings` (cf. `db/migrations/0001_init.sql`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SourceType {
+    Entity,
+    Snapshot,
+    Chapter,
+    Brief,
+    Note,
+}
+
+impl SourceType {
+    /// Représentation textuelle stockée en DB (colonne `source_type`).
+    #[must_use]
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Entity => "entity",
+            Self::Snapshot => "snapshot",
+            Self::Chapter => "chapter",
+            Self::Brief => "brief",
+            Self::Note => "note",
+        }
+    }
+
+    /// Parse une valeur lue en DB.
+    #[must_use]
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "entity" => Some(Self::Entity),
+            "snapshot" => Some(Self::Snapshot),
+            "chapter" => Some(Self::Chapter),
+            "brief" => Some(Self::Brief),
+            "note" => Some(Self::Note),
+            _ => None,
+        }
+    }
+}
+
+/// Une ligne `embeddings` en DB : un chunk de texte + son vecteur.
+///
+/// `Eq` non dérivé : `Vec<f32>` ne l'implémente pas (NaN).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Embedding {
+    pub id: Uuid,
+    pub source_type: SourceType,
+    pub source_id: Uuid,
+    /// Index du chunk dans le contenu source (0 si pas de chunking).
+    pub chunk_idx: i64,
+    pub content: String,
+    pub model: String,
+    pub dim: usize,
+    pub vector: Vec<f32>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NewEmbedding {
+    pub source_type: SourceType,
+    pub source_id: Uuid,
+    pub chunk_idx: i64,
+    pub content: String,
+    pub model: String,
+    pub vector: Vec<f32>,
+}
+
+/// Résultat d'une recherche top-k : un embedding + son score cosine.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct EmbeddingHit {
+    pub embedding: Embedding,
+    /// Similarité cosine ∈ [-1, 1] ; 1 = identique en direction.
+    pub score: f32,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

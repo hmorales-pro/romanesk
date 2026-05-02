@@ -20,11 +20,15 @@
 pub mod ai;
 pub mod db;
 pub mod domain;
+pub mod rag;
 pub mod repo;
-// pub mod rag;      // Phase 0 — J4
 // pub mod reality;  // Phase 3
 
 // Re-exports stratégiques pour les consommateurs (apps/desktop notamment).
 pub use db::{Database, DbError};
-pub use domain::{Entity, EntityType, NewEntity, NewUniverse, Universe};
+pub use domain::{
+    Embedding, EmbeddingHit, Entity, EntityType, NewEmbedding, NewEntity, NewUniverse,
+    SourceType, Universe,
+};
+pub use rag::{EmbeddingRepo, SearchFilter};
 pub use repo::{Repo, RepoError, RepoResult};

@@ -116,11 +116,12 @@ romanesk/
 **Livrable J3** : code écrit + relu par un agent indépendant + 2 bugs corrigés (DateTime decoding fragile, lints pedantic). Compilation et tests à valider en local.
 
 ### Jour 4 — sqlite-vec & embeddings
-- [ ] Compiler / linker `sqlite-vec` extension dans `crates/core`
-- [ ] Ajouter table `embeddings` (source_type, source_id, content, vector_blob, model, dim)
-- [ ] Smoke test : insertion d'un vecteur dummy 384-dim, recherche cosine top-k
+- [x] ~~`sqlite-vec` extension~~ → **report en Phase 1** : fallback BLOB + cosine pur Rust pour Phase 0 (cf. ADR 0005). Migration future à coût constant (format binaire identique à `sqlite-vec`).
+- [x] Table `embeddings` (déjà créée dans la migration 0001 au bootstrap)
+- [x] Smoke test : insertion de vecteurs dim 4, recherche cosine top-k, filtre par dimension/modèle/source — 5 tests unitaires + 10 tests d'intégration
+- [ ] **Validation chez Hugo** : `cargo test -p romanesk-core --test rag_integration`
 
-**Livrable J4** : `cargo test -p core test_vec_roundtrip` vert.
+**Livrable J4** : code écrit + relu par un agent indépendant + 5 warnings clippy fixés. Tests à valider en local.
 
 ### Jour 5 — Trait Provider IA + Ollama stub
 - [ ] Définir le trait `Provider` (cf. PRD §10.1)
