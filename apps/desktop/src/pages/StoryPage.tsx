@@ -47,6 +47,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TiptapEditor, type TiptapDoc } from "@/components/TiptapEditor";
 import { AiContinuePanel } from "@/components/AiContinuePanel";
+import { AiActionsPanel } from "@/components/AiActionsPanel";
 import type { Story } from "@/lib/types";
 
 export default function StoryPage() {
@@ -435,8 +436,26 @@ function ChapterEditor({
         body={body}
         onAccept={(paragraphs) => setBody(appendParagraphs(body, paragraphs))}
       />
+
+      <AiActionsPanel
+        story={story}
+        chapterTitle={chapter.title}
+        body={body}
+        onReplaceBody={(paragraphs) => setBody(replaceWithParagraphs(paragraphs))}
+      />
     </div>
   );
+}
+
+/** Crée un doc Tiptap dont le content = exactement les paragraphes donnés. */
+function replaceWithParagraphs(paragraphs: string[]): TiptapDoc {
+  return {
+    type: "doc",
+    content: paragraphs.map((text) => ({
+      type: "paragraph",
+      content: [{ type: "text", text }],
+    })),
+  };
 }
 
 /**
