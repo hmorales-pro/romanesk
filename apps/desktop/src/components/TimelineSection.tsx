@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { CalendarRange, Clock, Plus, Trash2 } from "lucide-react";
+import { CalendarRange, Clock, Pencil, Plus, Trash2 } from "lucide-react";
 
 import {
   eraCreate,
   eraDelete,
   eraListInUniverse,
+  eraUpdate,
   eventCreate,
   eventDelete,
   eventListInUniverse,
+  eventUpdate,
 } from "@/lib/api";
 import {
   type Era,
@@ -242,6 +244,9 @@ function ErasCard({ universeId }: { universeId: string }) {
                   }
                 }}
                 deleting={deleteMutation.isPending}
+                onUpdated={() =>
+                  qc.invalidateQueries({ queryKey: ["eras", universeId] })
+                }
               />
             ))}
           </ul>
@@ -255,11 +260,120 @@ function EraRow({
   era,
   onDelete,
   deleting,
+  onUpdated,
 }: {
   era: Era;
   onDelete: () => void;
   deleting: boolean;
+  onUpdated: () => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(era.name);
+  const [startYearRaw, setStartYearRaw] = useState(
+    era.start_year != null ? String(era.start_year) : "",
+  );
+  const [endYearRaw, setEndYearRaw] = useState(
+    era.end_year != null ? String(era.end_year) : "",
+  );
+  const [color, setColor] = useState(era.color ?? "#a78bfa");
+  const [description, setDescription] = useState(era.description ?? "");
+
+  const updateMutation = useMutation({
+    mutationFn: eraUpdate,
+    onSuccess: () => {
+      onUpdated();
+      setEditing(false);
+    },
+  });
+
+  const onEdit = () => {
+    setName(era.name);
+    setStartYearRaw(era.start_year != null ? String(era.start_year) : "");
+    setEndYearRaw(era.end_year != null ? String(era.end_year) : "");
+    setColor(era.color ?? "#a78bfa");
+    setDescription(era.description ?? "");
+    setEditing(true);
+  };
+
+  const onSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    const startYear = startYearRaw.trim() ? Number(startYearRaw) : undefined;
+    const endYear = endYearRaw.trim() ? Number(endYearRaw) : undefined;
+    if (startYear !== undefined && Number.isNaN(startYear)) return;
+    if (endYear !== undefined && Number.isNaN(endYear)) return;
+    updateMutation.mutate({
+      id: era.id,
+      name: name.trim(),
+      startYear,
+      endYear,
+      description: description.trim() || undefined,
+      color: color.trim() || undefined,
+      sortOrder: era.sort_order,
+    });
+  };
+
+  if (editing) {
+    return (
+      <li className="rounded-md border border-border bg-background/60 p-3">
+        <form onSubmit={onSave} className="flex flex-col gap-2.5">
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="h-8 text-sm"
+              required
+              autoFocus
+              aria-label="Nom de l'époque"
+            />
+            <Input
+              type="color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="h-8 w-12 p-1"
+              aria-label="Couleur"
+            />
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Input
+              type="number"
+              value={startYearRaw}
+              onChange={(e) => setStartYearRaw(e.target.value)}
+              placeholder="début"
+              className="h-8 text-sm"
+            />
+            <Input
+              type="number"
+              value={endYearRaw}
+              onChange={(e) => setEndYearRaw(e.target.value)}
+              placeholder="fin"
+              className="h-8 text-sm"
+            />
+          </div>
+          <Input
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Description (optionnelle)"
+            className="h-8 text-sm"
+          />
+          <div className="flex gap-2">
+            <Button type="submit" size="sm" disabled={updateMutation.isPending || !name.trim()}>
+              {updateMutation.isPending ? "Enregistrement…" : "Enregistrer"}
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(false)}>
+              Annuler
+            </Button>
+          </div>
+          {updateMutation.isError && (
+            <p className="text-xs text-destructive" role="alert">
+              {String(updateMutation.error)}
+            </p>
+          )}
+        </form>
+      </li>
+    );
+  }
+
   return (
     <li className="flex items-center justify-between gap-3 rounded-md border border-border bg-background/40 px-3 py-2 text-sm">
       <div className="flex items-center gap-2 min-w-0">
@@ -278,16 +392,27 @@ function EraRow({
           </span>
         )}
       </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="text-muted-foreground hover:text-destructive shrink-0"
-        onClick={onDelete}
-        disabled={deleting}
-        aria-label={`Supprimer ${era.name}`}
-      >
-        <Trash2 className="size-3.5" aria-hidden />
-      </Button>
+      <div className="flex gap-1 shrink-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-foreground"
+          onClick={onEdit}
+          aria-label={`Modifier ${era.name}`}
+        >
+          <Pencil className="size-3.5" aria-hidden />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-destructive"
+          onClick={onDelete}
+          disabled={deleting}
+          aria-label={`Supprimer ${era.name}`}
+        >
+          <Trash2 className="size-3.5" aria-hidden />
+        </Button>
+      </div>
     </li>
   );
 }
@@ -457,12 +582,16 @@ function EventsCard({ universeId }: { universeId: string }) {
                 key={ev.id}
                 event={ev}
                 era={ev.era_id ? erasById.get(ev.era_id) ?? null : null}
+                allEras={erasQuery.data ?? []}
                 onDelete={() => {
                   if (window.confirm(`Supprimer l'événement « ${ev.name} » ?`)) {
                     deleteMutation.mutate(ev.id);
                   }
                 }}
                 deleting={deleteMutation.isPending}
+                onUpdated={() =>
+                  qc.invalidateQueries({ queryKey: ["events", universeId] })
+                }
               />
             ))}
           </ul>
@@ -475,14 +604,111 @@ function EventsCard({ universeId }: { universeId: string }) {
 function EventRow({
   event,
   era,
+  allEras,
   onDelete,
   deleting,
+  onUpdated,
 }: {
   event: TimelineEvent;
   era: Era | null;
+  allEras: Era[];
   onDelete: () => void;
   deleting: boolean;
+  onUpdated: () => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(event.name);
+  const [yearRaw, setYearRaw] = useState(event.year != null ? String(event.year) : "");
+  const [eraId, setEraId] = useState(event.era_id ?? "");
+  const [description, setDescription] = useState(event.description ?? "");
+
+  const updateMutation = useMutation({
+    mutationFn: eventUpdate,
+    onSuccess: () => {
+      onUpdated();
+      setEditing(false);
+    },
+  });
+
+  const onEdit = () => {
+    setName(event.name);
+    setYearRaw(event.year != null ? String(event.year) : "");
+    setEraId(event.era_id ?? "");
+    setDescription(event.description ?? "");
+    setEditing(true);
+  };
+
+  const onSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    const year = yearRaw.trim() ? Number(yearRaw) : undefined;
+    if (year !== undefined && Number.isNaN(year)) return;
+    updateMutation.mutate({
+      id: event.id,
+      name: name.trim(),
+      year,
+      eraId: eraId || undefined,
+      description: description.trim() || undefined,
+    });
+  };
+
+  if (editing) {
+    return (
+      <li className="rounded-md border border-border bg-background/60 p-3">
+        <form onSubmit={onSave} className="flex flex-col gap-2.5">
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="h-8 text-sm"
+              required
+              autoFocus
+              aria-label="Nom de l'événement"
+            />
+            <Input
+              type="number"
+              value={yearRaw}
+              onChange={(e) => setYearRaw(e.target.value)}
+              placeholder="année"
+              className="h-8 w-24 text-sm"
+            />
+          </div>
+          <select
+            value={eraId}
+            onChange={(e) => setEraId(e.target.value)}
+            className="flex h-8 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <option value="">— Hors époque —</option>
+            {allEras.map((era) => (
+              <option key={era.id} value={era.id}>
+                {era.name}
+              </option>
+            ))}
+          </select>
+          <Input
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Description (optionnelle)"
+            className="h-8 text-sm"
+          />
+          <div className="flex gap-2">
+            <Button type="submit" size="sm" disabled={updateMutation.isPending || !name.trim()}>
+              {updateMutation.isPending ? "Enregistrement…" : "Enregistrer"}
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(false)}>
+              Annuler
+            </Button>
+          </div>
+          {updateMutation.isError && (
+            <p className="text-xs text-destructive" role="alert">
+              {String(updateMutation.error)}
+            </p>
+          )}
+        </form>
+      </li>
+    );
+  }
+
   return (
     <li className="flex items-center justify-between gap-3 rounded-md border border-border bg-background/40 px-3 py-2 text-sm">
       <div className="flex items-center gap-2 min-w-0">
@@ -511,16 +737,27 @@ function EventRow({
           </span>
         )}
       </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="text-muted-foreground hover:text-destructive shrink-0"
-        onClick={onDelete}
-        disabled={deleting}
-        aria-label={`Supprimer ${event.name}`}
-      >
-        <Trash2 className="size-3.5" aria-hidden />
-      </Button>
+      <div className="flex gap-1 shrink-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-foreground"
+          onClick={onEdit}
+          aria-label={`Modifier ${event.name}`}
+        >
+          <Pencil className="size-3.5" aria-hidden />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-destructive"
+          onClick={onDelete}
+          disabled={deleting}
+          aria-label={`Supprimer ${event.name}`}
+        >
+          <Trash2 className="size-3.5" aria-hidden />
+        </Button>
+      </div>
     </li>
   );
 }
