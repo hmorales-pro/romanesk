@@ -18,6 +18,8 @@ import { RelationsSection } from "@/components/RelationsSection";
 import { TagsSection } from "@/components/TagsSection";
 import { CoverImage } from "@/components/CoverImage";
 import { SnapshotsSection } from "@/components/SnapshotsSection";
+import { AiDescriptionPanel } from "@/components/AiDescriptionPanel";
+import { paragraphsToDoc, appendParagraphsToDoc } from "@/lib/tiptap-utils";
 
 interface Props {
   entity: Entity;
@@ -141,6 +143,25 @@ export function CharacterDetail({ entity, universeId }: Props) {
             placeholder="Histoire, motivations, secret… (mise en forme : **gras**, *italique*, listes, etc.)"
           />
         </div>
+
+        <AiDescriptionPanel
+          targetKind="character"
+          name={name}
+          summary={summary || null}
+          structuredFields={{
+            Archétype: archetype,
+            Traits: traitsRaw,
+          }}
+          onReplace={(paragraphs) => setBiography(paragraphsToDoc(paragraphs))}
+          onAppend={(paragraphs) =>
+            setBiography(
+              appendParagraphsToDoc(
+                biography as TiptapDoc | null | undefined,
+                paragraphs,
+              ),
+            )
+          }
+        />
 
         {updateMutation.isError && (
           <p className="text-sm text-destructive" role="alert">

@@ -32,6 +32,8 @@ import { RelationsSection } from "@/components/RelationsSection";
 import { TagsSection } from "@/components/TagsSection";
 import { CoverImage } from "@/components/CoverImage";
 import { SnapshotsSection } from "@/components/SnapshotsSection";
+import { AiDescriptionPanel } from "@/components/AiDescriptionPanel";
+import { paragraphsToDoc, appendParagraphsToDoc } from "@/lib/tiptap-utils";
 
 interface Props {
   entity: Entity;
@@ -191,6 +193,27 @@ export function ObjectDetail({ entity, universeId }: Props) {
             placeholder="Apparence, histoire, légendes liées…"
           />
         </div>
+
+        <AiDescriptionPanel
+          targetKind="object"
+          name={name}
+          summary={summary || null}
+          structuredFields={{
+            "Type d'objet": kind,
+            Origine: origin,
+            "Propriétaire actuel": owner,
+            Propriétés: propertiesRaw,
+          }}
+          onReplace={(paragraphs) => setDescription(paragraphsToDoc(paragraphs))}
+          onAppend={(paragraphs) =>
+            setDescription(
+              appendParagraphsToDoc(
+                description as TiptapDoc | null | undefined,
+                paragraphs,
+              ),
+            )
+          }
+        />
 
         {updateMutation.isError && (
           <p className="text-sm text-destructive" role="alert">

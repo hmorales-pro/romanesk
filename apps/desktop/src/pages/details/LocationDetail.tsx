@@ -23,6 +23,8 @@ import { RelationsSection } from "@/components/RelationsSection";
 import { TagsSection } from "@/components/TagsSection";
 import { CoverImage } from "@/components/CoverImage";
 import { SnapshotsSection } from "@/components/SnapshotsSection";
+import { AiDescriptionPanel } from "@/components/AiDescriptionPanel";
+import { paragraphsToDoc, appendParagraphsToDoc } from "@/lib/tiptap-utils";
 
 const LOCATION_KINDS: LocationKind[] = [
   "city",
@@ -172,6 +174,26 @@ export function LocationDetail({ entity, universeId }: Props) {
             placeholder="Géographie, atmosphère, histoire du lieu…"
           />
         </div>
+
+        <AiDescriptionPanel
+          targetKind="location"
+          name={name}
+          summary={summary || null}
+          structuredFields={{
+            "Type de lieu": kind,
+            Climat: climate,
+            "Population / peuples": population,
+          }}
+          onReplace={(paragraphs) => setDescription(paragraphsToDoc(paragraphs))}
+          onAppend={(paragraphs) =>
+            setDescription(
+              appendParagraphsToDoc(
+                description as TiptapDoc | null | undefined,
+                paragraphs,
+              ),
+            )
+          }
+        />
 
         {updateMutation.isError && (
           <p className="text-sm text-destructive" role="alert">
