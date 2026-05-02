@@ -35,6 +35,15 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
 - **Phase 0 — J6** : commandes Tauri pour universe + entity, init DB au démarrage.
   - `apps/desktop/src-tauri/src/lib.rs` : setup callback qui ouvre la base SQLite dans `<app_data_dir>/romanesk.db` (par OS) et la `manage()` en `tauri::State`.
   - `apps/desktop/src-tauri/src/commands/`: 8 commandes (`universe_list/create/get/delete`, `entity_list_in_universe/create/get/delete`) + `CommandError` sérialisable + `CreateEntityPayload` typé pour les fiches Personnage.
+- **Phase 0 — J7** : flow front end-to-end (3 pages + routing + persistance).
+  - Deps : `@tanstack/react-query` 5 (state serveur), `react-router-dom` 7 (routing).
+  - `src/lib/types.ts` : types TS qui miroitent `crates/core/src/domain.rs` (Universe, Entity, EntityType, CharacterContent + helper `characterContent(entity)`).
+  - `src/lib/api.ts` : wrappers typés autour d'`invoke<T>(...)` pour les 8 commandes Tauri + `ping`.
+  - `src/components/ui/{button,input,textarea,label,card}.tsx` : composants minimalistes shadcn-style avec `cn` helper et `forwardRef`.
+  - `src/components/Layout.tsx` + `src/router.tsx` : `createHashRouter` (compatible Tauri sans config serveur), header nav, 3 routes.
+  - `src/pages/{LibraryPage, UniversePage, EntityPage}.tsx` : Bibliothèque (liste univers + form inline), Univers (liste personnages + form), Fiche Personnage (read-only ; édition Tiptap arrive en J8).
+  - `main.tsx` réécrit : `QueryClientProvider` + `RouterProvider` ; ancien `App.tsx` réduit à un re-export du Layout.
+  - `pnpm typecheck` + `pnpm lint` verts.
 
 ### Changed
 - **Pivot du modèle de distribution** : open-source AGPL → **propriétaire source-available, free-use** sous Elastic License 2.0.

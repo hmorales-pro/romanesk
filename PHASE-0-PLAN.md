@@ -138,13 +138,13 @@ romanesk/
 ## Semaine 2 — Walking skeleton & CI
 
 ### Jour 6-7 — Premier flow end-to-end
-- [ ] UI : page « Bibliothèque » → liste les univers, bouton « Nouvel univers »
-- [ ] UI : page « Univers » → liste les fiches personnages, bouton « Nouveau personnage »
-- [ ] UI : page « Fiche personnage » → champs nom, archétype, traits[], texte libre (Tiptap minimal)
-- [ ] Tauri commands `universe_*`, `entity_*` qui wrappent le Repo
-- [ ] Persistance vérifiée : fermer l'app, rouvrir, données toujours là
+- [x] UI : page « Bibliothèque » → liste univers, form inline « Nouvel univers »
+- [x] UI : page « Univers » → liste personnages, form inline « Nouveau personnage » avec champs nom + archétype + traits + biographie
+- [x] UI : page « Fiche personnage » → affichage read-only (édition + Tiptap arrivent en J8)
+- [x] Tauri commands `universe_*` et `entity_*` qui wrappent le Repo (J6)
+- [ ] **Validation chez Hugo** : `pnpm tauri dev`, créer univers + perso, fermer/rouvrir, vérifier persistance
 
-**Livrable J7** : démo « créer univers → fiche perso → fermer/rouvrir » fonctionnelle.
+**Livrable J7** : démo « créer univers → fiche perso → fermer/rouvrir » assemblable. Compilation Rust/Tauri à valider en local.
 
 ### Jour 8 — Éditeur Tiptap intégré
 - [ ] Tiptap dans la fiche personnage (StarterKit + `@tiptap/extension-placeholder`)
