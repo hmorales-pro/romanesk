@@ -26,7 +26,7 @@ impl Default for OllamaConfig {
     fn default() -> Self {
         Self {
             base_url: "http://localhost:11434".to_string(),
-            default_model: "gemma:latest".to_string(),
+            default_model: "gemma4:e2b".to_string(),
             capabilities: Capabilities {
                 text: true,
                 vision: false, // à override selon le modèle chargé
