@@ -8,7 +8,8 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { BookOpen, ExternalLink, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import {
   storyCreate,
@@ -375,11 +376,16 @@ function StoryCard({
             {story.synopsis}
           </p>
         )}
-        <p className="text-xs text-muted-foreground mt-2">
-          Page d'écriture multi-chapitres : disponible en P4.3.
-        </p>
       </div>
       <div className="flex flex-col gap-1 shrink-0">
+        {story.universe_id && (
+          <Link
+            to={`/u/${story.universe_id}/s/${story.id}`}
+            className="inline-flex items-center justify-center gap-1 h-8 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            <ExternalLink className="size-3.5" aria-hidden /> Ouvrir
+          </Link>
+        )}
         <Button
           size="sm"
           variant="outline"

@@ -742,6 +742,76 @@ pub struct UpdateStory {
     pub pivot_era_id: Option<Uuid>,
 }
 
+// ---------------------------------------------------------------------------
+// Chapter (chapitre d'une story)
+// ---------------------------------------------------------------------------
+
+/// Statut éditorial d'un chapitre. Aligné avec la contrainte CHECK SQL.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ChapterStatus {
+    Draft,
+    Reviewed,
+    Final,
+}
+
+impl ChapterStatus {
+    #[must_use]
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Draft => "draft",
+            Self::Reviewed => "reviewed",
+            Self::Final => "final",
+        }
+    }
+
+    #[must_use]
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "draft" => Some(Self::Draft),
+            "reviewed" => Some(Self::Reviewed),
+            "final" => Some(Self::Final),
+            _ => None,
+        }
+    }
+}
+
+/// Un chapitre d'une story. `body_json` contient le doc Tiptap/ProseMirror
+/// sérialisé, `word_count` est calculé/maintenu par l'app (côté Rust ou
+/// côté front — Phase 4.x).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Chapter {
+    pub id: Uuid,
+    pub story_id: Uuid,
+    pub sort_order: i64,
+    pub title: Option<String>,
+    pub body_json: serde_json::Value,
+    pub word_count: i64,
+    pub status: ChapterStatus,
+    pub era_id: Option<Uuid>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NewChapter {
+    pub story_id: Uuid,
+    pub title: Option<String>,
+    pub body_json: Option<serde_json::Value>,
+    /// `None` = on auto-attribue `MAX(sort_order)+1` à l'insert.
+    pub sort_order: Option<i64>,
+    pub era_id: Option<Uuid>,
+}
+
+#[derive(Debug, Clone)]
+pub struct UpdateChapter {
+    pub title: Option<String>,
+    pub body_json: serde_json::Value,
+    pub word_count: i64,
+    pub status: ChapterStatus,
+    pub era_id: Option<Uuid>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -790,5 +860,21 @@ mod tests {
     fn story_type_parse_unknown_returns_none() {
         assert_eq!(StoryType::parse("essay"), None);
         assert_eq!(StoryType::parse(""), None);
+    }
+
+    #[test]
+    fn chapter_status_round_trip() {
+        for s in [
+            ChapterStatus::Draft,
+            ChapterStatus::Reviewed,
+            ChapterStatus::Final,
+        ] {
+            assert_eq!(ChapterStatus::parse(s.as_str()), Some(s));
+        }
+    }
+
+    #[test]
+    fn chapter_status_parse_unknown_returns_none() {
+        assert_eq!(ChapterStatus::parse("published"), None);
     }
 }

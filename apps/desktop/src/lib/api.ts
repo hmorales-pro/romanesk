@@ -12,6 +12,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
   BriefSource,
+  Chapter,
+  ChapterStatus,
   DivergenceAxis,
   DivergencePoint,
   Entity,
@@ -776,6 +778,72 @@ export function storyUpdate(args: UpdateStoryArgs): Promise<Story> {
 
 export function storyDelete(id: Uuid): Promise<void> {
   return invoke<void>("story_delete", { id });
+}
+
+// ---------------------------------------------------------------------------
+// Chapter (Phase 4)
+// ---------------------------------------------------------------------------
+
+export interface CreateChapterArgs {
+  storyId: Uuid;
+  title?: string;
+  /** Doc Tiptap. Optionnel — `undefined` = doc vide auto-créé côté Rust. */
+  bodyJson?: Record<string, unknown>;
+  /** Optionnel — `undefined` = MAX(sort_order)+1. */
+  sortOrder?: number;
+  eraId?: Uuid;
+}
+
+export function chapterCreate(args: CreateChapterArgs): Promise<Chapter> {
+  return invoke<Chapter>("chapter_create", {
+    payload: {
+      storyId: args.storyId,
+      title: args.title ?? null,
+      bodyJson: args.bodyJson ?? null,
+      sortOrder: args.sortOrder ?? null,
+      eraId: args.eraId ?? null,
+    },
+  });
+}
+
+export function chapterListForStory(storyId: Uuid): Promise<Chapter[]> {
+  return invoke<Chapter[]>("chapter_list_for_story", { storyId });
+}
+
+export function chapterGet(id: Uuid): Promise<Chapter | null> {
+  return invoke<Chapter | null>("chapter_get", { id });
+}
+
+export interface UpdateChapterArgs {
+  id: Uuid;
+  title?: string;
+  bodyJson: Record<string, unknown>;
+  wordCount: number;
+  status: ChapterStatus;
+  eraId?: Uuid;
+}
+
+export function chapterUpdate(args: UpdateChapterArgs): Promise<Chapter> {
+  return invoke<Chapter>("chapter_update", {
+    payload: {
+      id: args.id,
+      title: args.title ?? null,
+      bodyJson: args.bodyJson,
+      wordCount: args.wordCount,
+      status: args.status,
+      eraId: args.eraId ?? null,
+    },
+  });
+}
+
+export function chapterReorder(
+  order: { id: Uuid; sortOrder: number }[],
+): Promise<void> {
+  return invoke<void>("chapter_reorder", { order });
+}
+
+export function chapterDelete(id: Uuid): Promise<void> {
+  return invoke<void>("chapter_delete", { id });
 }
 
 // ---------------------------------------------------------------------------

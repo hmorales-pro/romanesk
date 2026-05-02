@@ -227,6 +227,12 @@ pub fn run() {
             commands::story::story_get,
             commands::story::story_update,
             commands::story::story_delete,
+            commands::chapter::chapter_create,
+            commands::chapter::chapter_list_for_story,
+            commands::chapter::chapter_get,
+            commands::chapter::chapter_update,
+            commands::chapter::chapter_reorder,
+            commands::chapter::chapter_delete,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

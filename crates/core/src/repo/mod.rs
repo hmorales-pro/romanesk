@@ -7,6 +7,7 @@
 //! le soit, ce qui est le cas).
 
 pub mod anchor;
+pub mod chapter;
 pub mod entity;
 pub mod era;
 pub mod error;
@@ -18,6 +19,7 @@ pub mod tag;
 pub mod universe;
 
 pub use anchor::AnchorRepo;
+pub use chapter::ChapterRepo;
 pub use entity::EntityRepo;
 pub use era::EraRepo;
 pub use error::{RepoError, RepoResult};
@@ -89,6 +91,11 @@ impl Repo {
     #[must_use]
     pub fn stories(&self) -> StoryRepo<'_> {
         StoryRepo::new(&self.db)
+    }
+
+    #[must_use]
+    pub fn chapters(&self) -> ChapterRepo<'_> {
+        ChapterRepo::new(&self.db)
     }
 
     /// Accès direct au [`Database`] sous-jacent. Utile pour les tests ou

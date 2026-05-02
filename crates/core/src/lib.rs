@@ -28,15 +28,16 @@ pub mod repo;
 // Re-exports stratégiques pour les consommateurs (apps/desktop notamment).
 pub use db::{Database, DbError};
 pub use domain::{
-    BriefSource, DivergenceAxis, DivergencePoint, Embedding, EmbeddingHit, Entity, EntityType,
-    Era, Event, NewDivergencePoint, NewEmbedding, NewEntity, NewEra, NewEvent, NewRealityAnchor,
-    NewRelation, NewSnapshot, NewStory, NewTag, NewUniverse, NewWorldBrief, RealityAnchor,
-    RealityMode, Relation, RelationType, Snapshot, SourceType, Story, StoryType, Tag,
-    UpdateEntity, UpdateEra, UpdateEvent, UpdateRealityAnchor, UpdateStory, Universe, WorldBrief,
+    BriefSource, Chapter, ChapterStatus, DivergenceAxis, DivergencePoint, Embedding, EmbeddingHit,
+    Entity, EntityType, Era, Event, NewChapter, NewDivergencePoint, NewEmbedding, NewEntity,
+    NewEra, NewEvent, NewRealityAnchor, NewRelation, NewSnapshot, NewStory, NewTag, NewUniverse,
+    NewWorldBrief, RealityAnchor, RealityMode, Relation, RelationType, Snapshot, SourceType,
+    Story, StoryType, Tag, UpdateChapter, UpdateEntity, UpdateEra, UpdateEvent,
+    UpdateRealityAnchor, UpdateStory, Universe, WorldBrief,
 };
 pub use rag::{EmbeddingRepo, SearchFilter};
 pub use repo::{Repo, RepoError, RepoResult};
 pub use repo::{
-    AnchorRepo, EntityRepo, EraRepo, EventRepo, RelationRepo, SnapshotRepo, StoryRepo, TagRepo,
-    UniverseRepo,
+    AnchorRepo, ChapterRepo, EntityRepo, EraRepo, EventRepo, RelationRepo, SnapshotRepo,
+    StoryRepo, TagRepo, UniverseRepo,
 };

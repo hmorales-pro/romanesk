@@ -470,3 +470,65 @@ export interface Story {
   created_at: Timestamp;
   updated_at: Timestamp;
 }
+
+// ---------------------------------------------------------------------------
+// Chapter (chapitre d'une story — Phase 4)
+// ---------------------------------------------------------------------------
+
+export type ChapterStatus = "draft" | "reviewed" | "final";
+
+export const CHAPTER_STATUSES: ChapterStatus[] = ["draft", "reviewed", "final"];
+
+export function chapterStatusLabel(s: ChapterStatus): string {
+  switch (s) {
+    case "draft":
+      return "Brouillon";
+    case "reviewed":
+      return "Relu";
+    case "final":
+      return "Final";
+  }
+}
+
+export interface Chapter {
+  id: Uuid;
+  story_id: Uuid;
+  sort_order: number;
+  title: string | null;
+  /** Doc Tiptap/ProseMirror. */
+  body_json: Record<string, unknown>;
+  word_count: number;
+  status: ChapterStatus;
+  era_id: Uuid | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+/**
+ * Compte les mots d'un doc Tiptap. Heuristique simple : on extrait tout
+ * le texte récursivement (champs `text` des nodes) puis on split sur les
+ * caractères de séparation. Suffisant pour un compteur d'écriture.
+ */
+export function countWordsInTiptap(doc: unknown): number {
+  if (!doc || typeof doc !== "object") return 0;
+  const text = collectText(doc);
+  if (!text.trim()) return 0;
+  return text
+    .split(/\s+/)
+    .filter((w) => w.length > 0).length;
+}
+
+function collectText(node: unknown): string {
+  if (!node || typeof node !== "object") return "";
+  const obj = node as Record<string, unknown>;
+  let out = "";
+  if (typeof obj.text === "string") {
+    out += obj.text;
+  }
+  if (Array.isArray(obj.content)) {
+    for (const child of obj.content) {
+      out += " " + collectText(child);
+    }
+  }
+  return out;
+}
