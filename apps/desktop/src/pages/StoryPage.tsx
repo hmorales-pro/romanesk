@@ -46,6 +46,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TiptapEditor, type TiptapDoc } from "@/components/TiptapEditor";
+import { AiContinuePanel } from "@/components/AiContinuePanel";
+import type { Story } from "@/lib/types";
 
 export default function StoryPage() {
   const { universeId, storyId } = useParams<{
@@ -274,10 +276,11 @@ export default function StoryPage() {
               Crée un chapitre pour commencer à écrire.
             </div>
           )}
-          {activeChapter && (
+          {activeChapter && storyQuery.data && (
             <ChapterEditor
               key={activeChapter.id}
               chapter={activeChapter}
+              story={storyQuery.data}
               onSave={(args) => updateMutation.mutateAsync(args)}
               onDelete={() => onDelete(activeChapter)}
               saving={updateMutation.isPending}
@@ -292,6 +295,7 @@ export default function StoryPage() {
 
 interface ChapterEditorProps {
   chapter: Chapter;
+  story: Story;
   onSave: (args: {
     id: string;
     title?: string;
@@ -306,6 +310,7 @@ interface ChapterEditorProps {
 
 function ChapterEditor({
   chapter,
+  story,
   onSave,
   onDelete,
   saving,
@@ -423,6 +428,30 @@ function ChapterEditor({
         {dirty && <span className="text-amber-600">• non enregistré</span>}
         <span className="ml-auto">Ctrl/Cmd-S pour sauver</span>
       </div>
+
+      <AiContinuePanel
+        story={story}
+        chapterTitle={chapter.title}
+        body={body}
+        onAccept={(paragraphs) => setBody(appendParagraphs(body, paragraphs))}
+      />
     </div>
   );
+}
+
+/**
+ * Renvoie un nouveau doc Tiptap = le doc actuel + les paragraphes donnés
+ * concaténés à la fin du `content`. Robuste aux docs vides ou mal formés.
+ */
+function appendParagraphs(doc: TiptapDoc, paragraphs: string[]): TiptapDoc {
+  const safe: TiptapDoc =
+    doc && typeof doc === "object" && doc.type === "doc"
+      ? doc
+      : { type: "doc", content: [] };
+  const existing = Array.isArray(safe.content) ? safe.content : [];
+  const newNodes = paragraphs.map((text) => ({
+    type: "paragraph",
+    content: [{ type: "text", text }],
+  }));
+  return { ...safe, type: "doc", content: [...existing, ...newNodes] };
 }
