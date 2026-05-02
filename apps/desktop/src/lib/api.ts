@@ -694,6 +694,24 @@ export function briefDelete(id: Uuid): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Settings (Phase 3.x)
+// ---------------------------------------------------------------------------
+
+export interface AppSettings {
+  ollamaBaseUrl: string;
+  chatModel: string;
+  embedModel: string;
+}
+
+export function settingsGet(): Promise<AppSettings> {
+  return invoke<AppSettings>("settings_get");
+}
+
+export function settingsSave(settings: AppSettings): Promise<AppSettings> {
+  return invoke<AppSettings>("settings_save", { settings });
+}
+
+// ---------------------------------------------------------------------------
 // Healthcheck
 // ---------------------------------------------------------------------------
 

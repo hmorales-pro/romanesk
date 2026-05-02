@@ -29,6 +29,7 @@ use tauri::Manager;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 use commands::ai::{AiEmbedder, AiProvider};
+use commands::settings::AppSettings;
 
 #[derive(Debug, Serialize)]
 pub struct PingResult {
@@ -124,16 +125,19 @@ pub fn run() {
 
             // Provider IA — Phase 3.1 : Ollama hardcoded sur localhost:11434
             // avec modèle gemma3:latest. Configuration dynamique en P3.2+.
-            let base_url = std::env::var("OLLAMA_BASE_URL")
-                .unwrap_or_else(|_| "http://localhost:11434".into());
-            let chat_model = std::env::var("OLLAMA_MODEL")
-                .unwrap_or_else(|_| "gemma4:e2b".into());
-            let embed_model = std::env::var("OLLAMA_EMBED_MODEL")
-                .unwrap_or_else(|_| "nomic-embed-text:latest".into());
+            // Settings IA chargées depuis app_data_dir/settings.json,
+            // env vars overridables. Priorité : env > settings.json > defaults.
+            let settings = AppSettings::load(&app_data_dir);
+            tracing::info!(
+                ollama = %settings.ollama_base_url,
+                chat = %settings.chat_model,
+                embed = %settings.embed_model,
+                "AI settings chargés"
+            );
 
             let chat_provider = OllamaProvider::new(OllamaConfig {
-                base_url: base_url.clone(),
-                default_model: chat_model,
+                base_url: settings.ollama_base_url.clone(),
+                default_model: settings.chat_model.clone(),
                 capabilities: romanesk_core::ai::Capabilities {
                     text: true,
                     vision: false,
@@ -143,8 +147,8 @@ pub fn run() {
                 },
             });
             let embed_provider = OllamaProvider::new(OllamaConfig {
-                base_url: base_url.clone(),
-                default_model: embed_model.clone(),
+                base_url: settings.ollama_base_url.clone(),
+                default_model: settings.embed_model.clone(),
                 capabilities: romanesk_core::ai::Capabilities {
                     text: false,
                     vision: false,
@@ -157,7 +161,7 @@ pub fn run() {
             app.manage(AiProvider(Arc::new(chat_provider)));
             app.manage(AiEmbedder {
                 provider: Arc::new(embed_provider),
-                model: embed_model,
+                model: settings.embed_model.clone(),
             });
             tracing::info!("Setup terminé, base prête, providers IA initialisés");
             Ok(())
@@ -216,6 +220,8 @@ pub fn run() {
             commands::anchor::brief_create,
             commands::anchor::brief_list,
             commands::anchor::brief_delete,
+            commands::settings::settings_get,
+            commands::settings::settings_save,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

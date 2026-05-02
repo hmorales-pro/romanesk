@@ -6,6 +6,7 @@ import EntityPage from "@/pages/EntityPage";
 import GraphPage from "@/pages/GraphPage";
 import TimelinePage from "@/pages/TimelinePage";
 import AnchorPage from "@/pages/AnchorPage";
+import SettingsPage from "@/pages/SettingsPage";
 
 /**
  * On utilise `createHashRouter` plutôt que `createBrowserRouter` car
@@ -24,6 +25,7 @@ export const router = createHashRouter([
       { path: "u/:universeId/graph", element: <GraphPage /> },
       { path: "u/:universeId/timeline", element: <TimelinePage /> },
       { path: "u/:universeId/anchor", element: <AnchorPage /> },
+      { path: "settings", element: <SettingsPage /> },
     ],
   },
 ]);

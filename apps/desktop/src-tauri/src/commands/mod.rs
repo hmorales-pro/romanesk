@@ -17,6 +17,7 @@ pub mod era;
 pub mod error;
 pub mod event;
 pub mod relation;
+pub mod settings;
 pub mod snapshot;
 pub mod tag;
 pub mod universe;
