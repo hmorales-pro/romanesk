@@ -124,6 +124,7 @@ pub fn run() {
             commands::universe::universe_create,
             commands::universe::universe_get,
             commands::universe::universe_delete,
+            commands::universe::universe_export_markdown,
             commands::entity::entity_list_in_universe,
             commands::entity::entity_create,
             commands::entity::entity_update,

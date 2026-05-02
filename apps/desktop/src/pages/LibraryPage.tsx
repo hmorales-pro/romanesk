@@ -3,7 +3,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { BookOpen, Library, Plus } from "lucide-react";
 
-import { universeCreate, universeDelete, universeList } from "@/lib/api";
+import {
+  universeCreate,
+  universeDelete,
+  universeExportMarkdown,
+  universeList,
+} from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -166,20 +171,40 @@ export default function LibraryPage() {
                     Créé le{" "}
                     {new Date(u.created_at).toLocaleDateString("fr-FR")}
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => {
-                      // Confirm natif suffit pour Phase 0 ; à remplacer par
-                      // un Dialog shadcn en Phase 1 (UX plus propre).
-                      if (window.confirm(`Supprimer "${u.name}" ?`)) {
-                        deleteMutation.mutate(u.id);
-                      }
-                    }}
-                  >
-                    Supprimer
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-foreground"
+                      onClick={async () => {
+                        try {
+                          const md = await universeExportMarkdown(u.id);
+                          await navigator.clipboard.writeText(md);
+                          window.alert(
+                            `Markdown de « ${u.name} » copié dans le presse-papier (${md.length} caractères).`,
+                          );
+                        } catch (err) {
+                          window.alert(`Échec de l'export : ${String(err)}`);
+                        }
+                      }}
+                    >
+                      Exporter MD
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => {
+                        // Confirm natif suffit pour Phase 0 ; à remplacer par
+                        // un Dialog shadcn en Phase 1 (UX plus propre).
+                        if (window.confirm(`Supprimer "${u.name}" ?`)) {
+                          deleteMutation.mutate(u.id);
+                        }
+                      }}
+                    >
+                      Supprimer
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}

@@ -5,6 +5,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
 ## [Unreleased]
 
 ### Added — Phase 1
+- **P1.6** : **Export Markdown** d'un univers complet.
+  - Module `crates/core/src/export/markdown.rs` : converter Tiptap JSON → Markdown (paragraphes, titres, listes puces/ordonnées, blockquote, code block, marks bold/italic/code/strike/link, hardBreak), tolérant aux entrées legacy string ou null.
+  - `render_universe_markdown(universe, entities, relations)` assemble entête + sections Personnages / Lieux / Autres + section Relations en un seul `.md` portable.
+  - Commande Tauri `universe_export_markdown` qui charge tout (entities + relations) et renvoie la string.
+  - Bouton « Exporter MD » sur chaque carte univers de LibraryPage : copie le résultat dans le presse-papier + alert de confirmation.
+  - 6 tests unitaires sur le converter Tiptap → MD.
 - **P1.2** : **Relations entre entités** (Aldric *mentor de* Lyra, Aldric *situé dans* Bren, etc.).
   - Domain Rust : `RelationType` enum (14 variants conformes à ADR 0003) avec `as_str()`, `parse()`, `is_symmetric()`. `Relation` et `NewRelation`.
   - `RelationRepo` (create / get / list_for_entity / list_in_universe / delete). `list_in_universe` JOIN bidirectionnel (source OR target) avec DISTINCT pour ne pas rater les arcs cross-univers.

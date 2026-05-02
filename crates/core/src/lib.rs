@@ -20,6 +20,7 @@
 pub mod ai;
 pub mod db;
 pub mod domain;
+pub mod export;
 pub mod rag;
 pub mod repo;
 // pub mod reality;  // Phase 3

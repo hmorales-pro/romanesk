@@ -46,6 +46,10 @@ export function universeDelete(id: Uuid): Promise<void> {
   return invoke<void>("universe_delete", { id });
 }
 
+export function universeExportMarkdown(id: Uuid): Promise<string> {
+  return invoke<string>("universe_export_markdown", { id });
+}
+
 // ---------------------------------------------------------------------------
 // Entity — bas niveau (générique sur EntityType)
 // ---------------------------------------------------------------------------
