@@ -168,13 +168,13 @@ romanesk/
 **Livrable J9** : 5 jobs CI offline-only en place. Validation visuelle au premier push.
 
 ### Jour 10 — Hardening & démo
-- [ ] Logging structuré (`tracing` côté Rust, `pino` ou équivalent côté TS)
-- [ ] Crash handler (panic → toast UI)
-- [ ] `CHANGELOG.md` initial
-- [ ] Capture vidéo de la démo Phase 0
-- [ ] Rétro : *qu'est-ce qui a coincé, qu'est-ce qu'on rectifie pour Phase 1*
+- [x] Logging structuré : `tracing` + `tracing-subscriber` côté Rust (env filter, format compact). Côté TS : `console.error` propre via handlers globaux + ErrorBoundary React.
+- [x] Crash handler : `std::panic::set_hook` côté Rust (logue via `tracing::error!` puis chaîne au hook par défaut), `<ErrorBoundary>` côté React avec écran de fallback + bouton Recharger.
+- [x] `CHANGELOG.md` : section `[0.0.1-phase0]` formelle avec date.
+- [x] Rétro : `docs/RETRO-PHASE-0.md` rédigée (livré / marché / coincé / reporté en Phase 1).
+- [ ] **À faire chez Hugo** : capture vidéo 5 min de la démo + push du tag annoté `v0.0.1-phase0`.
 
-**Livrable J10** : tag `v0.0.1-phase0`, repo public si licence + branding OK, sinon on garde privé.
+**Livrable J10** : tag `v0.0.1-phase0` posé localement (annoté), repo reste **privé** par décision tranchée en J1 (cf. `LICENSE-CHOICE.md`). Réévaluation de l'ouverture publique à la fin du Phase 1 selon l'état du code.
 
 ---
 

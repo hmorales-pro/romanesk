@@ -4,6 +4,16 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
 
 ## [Unreleased]
 
+_Rien pour l'instant — Phase 1 démarre au prochain commit._
+
+## [0.0.1-phase0] — 2026-05-02
+
+Tag de fin de Phase 0 (fondations). Walking skeleton complet : app
+Tauri qui démarre, écrit/lit en SQLite, expose un trait Provider IA
+avec impl Ollama réelle + MockProvider pour tests, indexe et cherche
+des vecteurs (cosine), affiche une vraie UI bibliothèque/univers/
+fiche avec Tiptap, et tout ça testé par CI offline-only sur 5 jobs.
+
 ### Added
 - `LICENSE` à la racine — texte intégral de l'**Elastic License 2.0**.
 - ADR `0002-editor.md` (Tiptap vs Lexical — décision Tiptap par défaut).
@@ -49,6 +59,14 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
   - pnpm version bumpée à 10 (matches le lockfile).
   - Suppression de `pnpm test` du CI (pas de tests Vitest en Phase 0 ; à ré-activer en Phase 1).
   - Badge CI ajouté en haut du README.
+- **Phase 0 — J10** : hardening + rétro + tag.
+  - `tracing` + `tracing-subscriber` côté Rust : logs structurés contrôlés par `RUST_LOG`, panic hook qui logue avant que le process meure.
+  - Côté React : `<ErrorBoundary>` qui catche les erreurs de rendu et affiche un fallback explicite avec bouton « Recharger ». Handlers globaux `window.error` et `unhandledrejection` qui logent dans la console.
+  - Versions bumpées 0.0.0 → 0.0.1 (workspace Cargo + crates/core + apps/desktop/src-tauri + tauri.conf.json + 2 package.json).
+  - `docs/RETRO-PHASE-0.md` : rétrospective complète (livré, marché, coincé, reporté).
+  - Tag annoté `v0.0.1-phase0`.
+
+[0.0.1-phase0]: https://github.com/hmorales-pro/romanesk/releases/tag/v0.0.1-phase0
 - **Phase 0 — J8** : édition de la fiche personnage avec Tiptap.
   - `crates/core` : `UpdateEntity` (champs modifiables : name, summary, content, cover_image, is_real) + `EntityRepo::update(id, UpdateEntity)`. Trigger SQL `trg_entities_updated` met à jour `updated_at` automatiquement. 3 nouveaux tests d'intégration (replace, blank name, NotFound).
   - `apps/desktop/src-tauri` : commande `entity_update` + `UpdateEntityPayload` (biography typée `Value` opaque pour roundtripper le doc Tiptap bit-pour-bit). Helper `is_empty_biography` récursif qui détecte un doc avec uniquement des nœuds vides.
@@ -75,5 +93,5 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
 - Note de décision sur la licence (`docs/LICENSE-CHOICE.md`).
 - Structure initiale du repo (README, CONTRIBUTING, CODE_OF_CONDUCT, .gitignore).
 
-[Unreleased]: https://github.com/hmorales-pro/romanesk/compare/v0.0.0...HEAD
+[Unreleased]: https://github.com/hmorales-pro/romanesk/compare/v0.0.1-phase0...HEAD
 [0.0.0]: https://github.com/hmorales-pro/romanesk/releases/tag/v0.0.0

@@ -1,10 +1,12 @@
 //! Romanesk desktop — entry point Tauri 2.
 //!
 //! Au démarrage :
-//! 1. Résout le répertoire de données par OS (`Manager::path().app_data_dir()`).
-//! 2. Crée le dossier si absent.
-//! 3. Ouvre la base SQLite (avec migrations) via `romanesk_core::Database::open`.
-//! 4. Stocke la `Database` en `tauri::State` partagée par toutes les commandes.
+//! 1. Initialise le subscriber `tracing` (verbosité contrôlée par `RUST_LOG`).
+//! 2. Pose un panic hook qui logue avant de laisser le process mourir.
+//! 3. Résout le répertoire de données par OS (`Manager::path().app_data_dir()`).
+//! 4. Crée le dossier si absent.
+//! 5. Ouvre la base SQLite (avec migrations) via `romanesk_core::Database::open`.
+//! 6. Stocke la `Database` en `tauri::State` partagée par toutes les commandes.
 //!
 //! Les commandes elles-mêmes vivent dans le module `commands::*` ; ce
 //! fichier les enregistre via `tauri::generate_handler!`.
@@ -21,6 +23,7 @@ use chrono::Utc;
 use romanesk_core::Database;
 use serde::Serialize;
 use tauri::Manager;
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 #[derive(Debug, Serialize)]
 pub struct PingResult {
@@ -37,8 +40,56 @@ fn ping() -> PingResult {
     }
 }
 
+/// Initialise le système de logging structuré.
+///
+/// La verbosité par défaut est `info` ; surchargeable via la variable
+/// `RUST_LOG` (ex. `RUST_LOG=debug` pour voir tout, `RUST_LOG=romanesk_core=trace`
+/// pour cibler un module). Format compact, lisible côté terminal de dev
+/// et côté logs Tauri en production.
+fn init_tracing() {
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("info,romanesk_core=info,romanesk_desktop_lib=info"));
+
+    tracing_subscriber::registry()
+        .with(env_filter)
+        .with(fmt::layer().with_target(true).compact())
+        .init();
+}
+
+/// Pose un panic hook qui logue le panic via `tracing::error` avant que
+/// le process meure. Préserve le hook par défaut pour garder le backtrace
+/// stderr habituel.
+fn install_panic_hook() {
+    let prev = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let location = info
+            .location()
+            .map(|l| format!("{}:{}:{}", l.file(), l.line(), l.column()));
+        tracing::error!(
+            location = location.as_deref().unwrap_or("<unknown>"),
+            payload = %panic_payload_message(info),
+            "Romanesk panicked"
+        );
+        prev(info);
+    }));
+}
+
+fn panic_payload_message(info: &std::panic::PanicHookInfo<'_>) -> String {
+    if let Some(s) = info.payload().downcast_ref::<&str>() {
+        (*s).to_string()
+    } else if let Some(s) = info.payload().downcast_ref::<String>() {
+        s.clone()
+    } else {
+        "(non-string panic payload)".to_string()
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    init_tracing();
+    install_panic_hook();
+    tracing::info!("Romanesk desktop démarre");
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
@@ -55,6 +106,7 @@ pub fn run() {
                 .expect("impossible de créer le répertoire de données Romanesk");
 
             let db_path = app_data_dir.join("romanesk.db");
+            tracing::info!(?db_path, "Ouverture de la base SQLite");
 
             // Ouverture synchrone : on bloque le setup jusqu'à ce que la DB
             // soit prête, sinon une commande pourrait s'exécuter avant que
@@ -63,6 +115,7 @@ pub fn run() {
                 .expect("impossible d'ouvrir la base SQLite Romanesk");
 
             app.manage(db);
+            tracing::info!("Setup terminé, base prête");
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

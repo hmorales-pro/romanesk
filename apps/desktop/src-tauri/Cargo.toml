@@ -1,6 +1,6 @@
 [package]
 name = "romanesk-desktop"
-version = "0.0.0"
+version = "0.0.1"
 description = "Romanesk desktop app (Tauri 2 + React)."
 edition = "2021"
 license.workspace = true
@@ -24,6 +24,8 @@ serde_json = "1"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["serde"] }
 thiserror = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 
 # Notre logique métier réutilisable (Phase 0 — J3+).
 romanesk-core = { path = "../../../crates/core" }
