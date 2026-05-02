@@ -22,6 +22,7 @@ import { TiptapEditor, type TiptapDoc } from "@/components/TiptapEditor";
 import { RelationsSection } from "@/components/RelationsSection";
 import { TagsSection } from "@/components/TagsSection";
 import { CoverImage } from "@/components/CoverImage";
+import { SnapshotsSection } from "@/components/SnapshotsSection";
 
 const LOCATION_KINDS: LocationKind[] = [
   "city",
@@ -258,6 +259,8 @@ export function LocationDetail({ entity, universeId }: Props) {
       <TagsSection entity={entity} />
 
       <RelationsSection entity={entity} />
+
+      <SnapshotsSection entity={entity} />
     </article>
   );
 }

@@ -270,3 +270,51 @@ export interface Tag {
   /** Couleur hex CSS (ex. "#94a3b8") ou null (couleur par défaut). */
   color: string | null;
 }
+
+// ---------------------------------------------------------------------------
+// Timeline (Era / Event / Snapshot)
+// ---------------------------------------------------------------------------
+
+export interface Era {
+  id: Uuid;
+  universe_id: Uuid;
+  name: string;
+  start_year: number | null;
+  end_year: number | null;
+  description: string | null;
+  color: string | null;
+  sort_order: number;
+  created_at: Timestamp;
+}
+
+export interface Event {
+  id: Uuid;
+  universe_id: Uuid;
+  era_id: Uuid | null;
+  name: string;
+  year: number | null;
+  description: string | null;
+  created_at: Timestamp;
+}
+
+export interface Snapshot {
+  id: Uuid;
+  entity_id: Uuid;
+  era_id: Uuid | null;
+  event_id: Uuid | null;
+  year_in_universe: number | null;
+  snapshot_json: Record<string, unknown>;
+  note: string | null;
+  created_at: Timestamp;
+}
+
+/** Format compact pour afficher la plage d'années d'une era. */
+export function eraYearsLabel(era: Era): string {
+  if (era.start_year == null && era.end_year == null) return "—";
+  const fmt = (y: number) => (y < 0 ? `${-y} av.` : `${y}`);
+  if (era.start_year != null && era.end_year != null) {
+    return `${fmt(era.start_year)} → ${fmt(era.end_year)}`;
+  }
+  if (era.start_year != null) return `dès ${fmt(era.start_year)}`;
+  return `jusqu'à ${fmt(era.end_year!)}`;
+}

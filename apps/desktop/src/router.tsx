@@ -4,6 +4,7 @@ import LibraryPage from "@/pages/LibraryPage";
 import UniversePage from "@/pages/UniversePage";
 import EntityPage from "@/pages/EntityPage";
 import GraphPage from "@/pages/GraphPage";
+import TimelinePage from "@/pages/TimelinePage";
 
 /**
  * On utilise `createHashRouter` plutôt que `createBrowserRouter` car
@@ -20,6 +21,7 @@ export const router = createHashRouter([
       { path: "u/:universeId", element: <UniversePage /> },
       { path: "u/:universeId/e/:entityId", element: <EntityPage /> },
       { path: "u/:universeId/graph", element: <GraphPage /> },
+      { path: "u/:universeId/timeline", element: <TimelinePage /> },
     ],
   },
 ]);

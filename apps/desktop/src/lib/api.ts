@@ -13,9 +13,12 @@ import { invoke } from "@tauri-apps/api/core";
 import type {
   Entity,
   EntityType,
+  Era,
+  Event as TimelineEvent,
   LocationKind,
   Relation,
   RelationType,
+  Snapshot,
   Tag,
   Universe,
   Uuid,
@@ -324,6 +327,168 @@ export function tagSetForEntity(entityId: Uuid, tagIds: Uuid[]): Promise<void> {
 
 export function tagDelete(id: Uuid): Promise<void> {
   return invoke<void>("tag_delete", { id });
+}
+
+// ---------------------------------------------------------------------------
+// Era (timeline)
+// ---------------------------------------------------------------------------
+
+export interface CreateEraArgs {
+  universeId: Uuid;
+  name: string;
+  startYear?: number;
+  endYear?: number;
+  description?: string;
+  color?: string;
+  sortOrder?: number;
+}
+
+export function eraCreate(args: CreateEraArgs): Promise<Era> {
+  return invoke<Era>("era_create", {
+    payload: {
+      universeId: args.universeId,
+      name: args.name,
+      startYear: args.startYear ?? null,
+      endYear: args.endYear ?? null,
+      description: args.description ?? null,
+      color: args.color ?? null,
+      sortOrder: args.sortOrder ?? null,
+    },
+  });
+}
+
+export function eraListInUniverse(universeId: Uuid): Promise<Era[]> {
+  return invoke<Era[]>("era_list_in_universe", { universeId });
+}
+
+export function eraGet(id: Uuid): Promise<Era | null> {
+  return invoke<Era | null>("era_get", { id });
+}
+
+export interface UpdateEraArgs {
+  id: Uuid;
+  name: string;
+  startYear?: number;
+  endYear?: number;
+  description?: string;
+  color?: string;
+  sortOrder?: number;
+}
+
+export function eraUpdate(args: UpdateEraArgs): Promise<Era> {
+  return invoke<Era>("era_update", {
+    payload: {
+      id: args.id,
+      name: args.name,
+      startYear: args.startYear ?? null,
+      endYear: args.endYear ?? null,
+      description: args.description ?? null,
+      color: args.color ?? null,
+      sortOrder: args.sortOrder ?? null,
+    },
+  });
+}
+
+export function eraDelete(id: Uuid): Promise<void> {
+  return invoke<void>("era_delete", { id });
+}
+
+// ---------------------------------------------------------------------------
+// Event (timeline)
+// ---------------------------------------------------------------------------
+
+export interface CreateEventArgs {
+  universeId: Uuid;
+  eraId?: Uuid;
+  name: string;
+  year?: number;
+  description?: string;
+}
+
+export function eventCreate(args: CreateEventArgs): Promise<TimelineEvent> {
+  return invoke<TimelineEvent>("event_create", {
+    payload: {
+      universeId: args.universeId,
+      eraId: args.eraId ?? null,
+      name: args.name,
+      year: args.year ?? null,
+      description: args.description ?? null,
+    },
+  });
+}
+
+export function eventListInUniverse(universeId: Uuid): Promise<TimelineEvent[]> {
+  return invoke<TimelineEvent[]>("event_list_in_universe", { universeId });
+}
+
+export function eventListInEra(eraId: Uuid): Promise<TimelineEvent[]> {
+  return invoke<TimelineEvent[]>("event_list_in_era", { eraId });
+}
+
+export function eventGet(id: Uuid): Promise<TimelineEvent | null> {
+  return invoke<TimelineEvent | null>("event_get", { id });
+}
+
+export interface UpdateEventArgs {
+  id: Uuid;
+  eraId?: Uuid;
+  name: string;
+  year?: number;
+  description?: string;
+}
+
+export function eventUpdate(args: UpdateEventArgs): Promise<TimelineEvent> {
+  return invoke<TimelineEvent>("event_update", {
+    payload: {
+      id: args.id,
+      eraId: args.eraId ?? null,
+      name: args.name,
+      year: args.year ?? null,
+      description: args.description ?? null,
+    },
+  });
+}
+
+export function eventDelete(id: Uuid): Promise<void> {
+  return invoke<void>("event_delete", { id });
+}
+
+// ---------------------------------------------------------------------------
+// Snapshot (overrides temporels d'une entité)
+// ---------------------------------------------------------------------------
+
+export interface CreateSnapshotArgs {
+  entityId: Uuid;
+  eraId?: Uuid;
+  eventId?: Uuid;
+  yearInUniverse?: number;
+  snapshotJson: Record<string, unknown>;
+  note?: string;
+}
+
+export function snapshotCreate(args: CreateSnapshotArgs): Promise<Snapshot> {
+  return invoke<Snapshot>("snapshot_create", {
+    payload: {
+      entityId: args.entityId,
+      eraId: args.eraId ?? null,
+      eventId: args.eventId ?? null,
+      yearInUniverse: args.yearInUniverse ?? null,
+      snapshotJson: args.snapshotJson,
+      note: args.note ?? null,
+    },
+  });
+}
+
+export function snapshotListForEntity(entityId: Uuid): Promise<Snapshot[]> {
+  return invoke<Snapshot[]>("snapshot_list_for_entity", { entityId });
+}
+
+export function snapshotGet(id: Uuid): Promise<Snapshot | null> {
+  return invoke<Snapshot | null>("snapshot_get", { id });
+}
+
+export function snapshotDelete(id: Uuid): Promise<void> {
+  return invoke<void>("snapshot_delete", { id });
 }
 
 // ---------------------------------------------------------------------------

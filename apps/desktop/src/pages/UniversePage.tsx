@@ -12,6 +12,7 @@ import {
   universeGet,
 } from "@/lib/api";
 import { TagChip } from "@/components/TagsSection";
+import { TimelineSection } from "@/components/TimelineSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -210,6 +211,8 @@ export default function UniversePage() {
           qc.invalidateQueries({ queryKey: ["entities", universeId, "Location"] })
         }
       />
+
+      <TimelineSection universeId={universeId} />
     </div>
   );
 }
