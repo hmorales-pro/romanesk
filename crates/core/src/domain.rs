@@ -660,6 +660,88 @@ pub struct NewWorldBrief {
     pub pinned: bool,
 }
 
+// ---------------------------------------------------------------------------
+// Story (récit : roman, novella, nouvelle, série)
+// ---------------------------------------------------------------------------
+
+/// Type narratif d'une histoire. Doit rester aligné avec la contrainte CHECK
+/// de la table `stories` (`db/migrations/0001_init.sql`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StoryType {
+    Novel,
+    Novella,
+    ShortStory,
+    Series,
+}
+
+impl StoryType {
+    /// Représentation textuelle stockée en DB (colonne `type`). Snake_case.
+    #[must_use]
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Novel => "novel",
+            Self::Novella => "novella",
+            Self::ShortStory => "short_story",
+            Self::Series => "series",
+        }
+    }
+
+    /// Parse une valeur lue en DB.
+    #[must_use]
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "novel" => Some(Self::Novel),
+            "novella" => Some(Self::Novella),
+            "short_story" => Some(Self::ShortStory),
+            "series" => Some(Self::Series),
+            _ => None,
+        }
+    }
+}
+
+/// Une histoire (récit) : roman, novella, nouvelle, série. Optionnellement
+/// rattachée à un univers (peut être orpheline pour l'écriture libre).
+///
+/// `status` est une chaîne libre (pas de CHECK en DB) pour permettre des
+/// statuts custom côté UI (drafting, writing, paused, done, archived…).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Story {
+    pub id: Uuid,
+    pub universe_id: Option<Uuid>,
+    pub title: String,
+    /// Sérialisé sous le nom JSON `type` (mot-clé Rust → renommé).
+    #[serde(rename = "type")]
+    pub kind: StoryType,
+    pub synopsis: Option<String>,
+    pub status: String,
+    pub target_word_count: Option<i64>,
+    pub pivot_era_id: Option<Uuid>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NewStory {
+    pub universe_id: Option<Uuid>,
+    pub title: String,
+    pub kind: StoryType,
+    pub synopsis: Option<String>,
+    pub status: Option<String>,
+    pub target_word_count: Option<i64>,
+    pub pivot_era_id: Option<Uuid>,
+}
+
+#[derive(Debug, Clone)]
+pub struct UpdateStory {
+    pub title: String,
+    pub kind: StoryType,
+    pub synopsis: Option<String>,
+    pub status: String,
+    pub target_word_count: Option<i64>,
+    pub pivot_era_id: Option<Uuid>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -690,5 +772,23 @@ mod tests {
         assert_eq!(u.name, "Aether");
         assert!(u.description.is_none());
         assert_eq!(u.settings, serde_json::json!({}));
+    }
+
+    #[test]
+    fn story_type_round_trip() {
+        for t in [
+            StoryType::Novel,
+            StoryType::Novella,
+            StoryType::ShortStory,
+            StoryType::Series,
+        ] {
+            assert_eq!(StoryType::parse(t.as_str()), Some(t));
+        }
+    }
+
+    #[test]
+    fn story_type_parse_unknown_returns_none() {
+        assert_eq!(StoryType::parse("essay"), None);
+        assert_eq!(StoryType::parse(""), None);
     }
 }

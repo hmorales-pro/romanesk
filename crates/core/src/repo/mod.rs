@@ -13,6 +13,7 @@ pub mod error;
 pub mod event;
 pub mod relation;
 pub mod snapshot;
+pub mod story;
 pub mod tag;
 pub mod universe;
 
@@ -23,6 +24,7 @@ pub use error::{RepoError, RepoResult};
 pub use event::EventRepo;
 pub use relation::RelationRepo;
 pub use snapshot::SnapshotRepo;
+pub use story::StoryRepo;
 pub use tag::TagRepo;
 pub use universe::UniverseRepo;
 
@@ -82,6 +84,11 @@ impl Repo {
     #[must_use]
     pub fn anchors(&self) -> AnchorRepo<'_> {
         AnchorRepo::new(&self.db)
+    }
+
+    #[must_use]
+    pub fn stories(&self) -> StoryRepo<'_> {
+        StoryRepo::new(&self.db)
     }
 
     /// Accès direct au [`Database`] sous-jacent. Utile pour les tests ou

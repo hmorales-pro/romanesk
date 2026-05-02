@@ -24,6 +24,8 @@ import type {
   Relation,
   RelationType,
   Snapshot,
+  Story,
+  StoryType,
   Tag,
   Universe,
   Uuid,
@@ -709,6 +711,71 @@ export function settingsGet(): Promise<AppSettings> {
 
 export function settingsSave(settings: AppSettings): Promise<AppSettings> {
   return invoke<AppSettings>("settings_save", { settings });
+}
+
+// ---------------------------------------------------------------------------
+// Story (Phase 4)
+// ---------------------------------------------------------------------------
+
+export interface CreateStoryArgs {
+  /** `null` = story orpheline (pas rattachée à un univers). */
+  universeId: Uuid | null;
+  title: string;
+  type: StoryType;
+  synopsis?: string;
+  status?: string;
+  targetWordCount?: number;
+  pivotEraId?: Uuid;
+}
+
+export function storyCreate(args: CreateStoryArgs): Promise<Story> {
+  return invoke<Story>("story_create", {
+    payload: {
+      universeId: args.universeId,
+      title: args.title,
+      type: args.type,
+      synopsis: args.synopsis ?? null,
+      status: args.status ?? null,
+      targetWordCount: args.targetWordCount ?? null,
+      pivotEraId: args.pivotEraId ?? null,
+    },
+  });
+}
+
+export function storyListInUniverse(universeId: Uuid): Promise<Story[]> {
+  return invoke<Story[]>("story_list_in_universe", { universeId });
+}
+
+export function storyGet(id: Uuid): Promise<Story | null> {
+  return invoke<Story | null>("story_get", { id });
+}
+
+export interface UpdateStoryArgs {
+  id: Uuid;
+  title: string;
+  type: StoryType;
+  synopsis?: string;
+  status: string;
+  targetWordCount?: number;
+  pivotEraId?: Uuid;
+}
+
+export function storyUpdate(args: UpdateStoryArgs): Promise<Story> {
+  return invoke<Story>("story_update", {
+    payload: {
+      id: args.id,
+      title: args.title,
+      type: args.type,
+      synopsis: args.synopsis ?? null,
+      status: args.status,
+      targetWordCount: args.targetWordCount ?? null,
+      pivotEraId: args.pivotEraId ?? null,
+    },
+  });
+}
+
+export function storyDelete(id: Uuid): Promise<void> {
+  return invoke<void>("story_delete", { id });
 }
 
 // ---------------------------------------------------------------------------

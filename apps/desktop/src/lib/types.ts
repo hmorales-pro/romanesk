@@ -399,3 +399,74 @@ export function eraYearsLabel(era: Era): string {
   if (era.start_year != null) return `dès ${fmt(era.start_year)}`;
   return `jusqu'à ${fmt(era.end_year!)}`;
 }
+
+// ---------------------------------------------------------------------------
+// Story (récit — Phase 4)
+// ---------------------------------------------------------------------------
+
+export type StoryType = "novel" | "novella" | "short_story" | "series";
+
+export const STORY_TYPES: StoryType[] = [
+  "novel",
+  "novella",
+  "short_story",
+  "series",
+];
+
+export function storyTypeLabel(t: StoryType): string {
+  switch (t) {
+    case "novel":
+      return "Roman";
+    case "novella":
+      return "Novella";
+    case "short_story":
+      return "Nouvelle";
+    case "series":
+      return "Série";
+  }
+}
+
+/**
+ * Statut côté UI. Le backend stocke une string libre — ces constantes sont
+ * juste les valeurs suggérées dans les selects.
+ */
+export const STORY_STATUSES = [
+  "drafting",
+  "writing",
+  "paused",
+  "done",
+  "archived",
+] as const;
+
+export type StoryStatus = (typeof STORY_STATUSES)[number];
+
+export function storyStatusLabel(s: string): string {
+  switch (s) {
+    case "drafting":
+      return "Brouillon";
+    case "writing":
+      return "En écriture";
+    case "paused":
+      return "En pause";
+    case "done":
+      return "Terminé";
+    case "archived":
+      return "Archivé";
+    default:
+      return s;
+  }
+}
+
+export interface Story {
+  id: Uuid;
+  universe_id: Uuid | null;
+  title: string;
+  /** Sérialisé sous le nom JSON `type` (mot-clé Rust → renommé). */
+  type: StoryType;
+  synopsis: string | null;
+  status: string;
+  target_word_count: number | null;
+  pivot_era_id: Uuid | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}

@@ -19,6 +19,7 @@ pub mod event;
 pub mod relation;
 pub mod settings;
 pub mod snapshot;
+pub mod story;
 pub mod tag;
 pub mod universe;
 

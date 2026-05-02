@@ -30,12 +30,13 @@ pub use db::{Database, DbError};
 pub use domain::{
     BriefSource, DivergenceAxis, DivergencePoint, Embedding, EmbeddingHit, Entity, EntityType,
     Era, Event, NewDivergencePoint, NewEmbedding, NewEntity, NewEra, NewEvent, NewRealityAnchor,
-    NewRelation, NewSnapshot, NewTag, NewUniverse, NewWorldBrief, RealityAnchor, RealityMode,
-    Relation, RelationType, Snapshot, SourceType, Tag, UpdateEntity, UpdateEra, UpdateEvent,
-    UpdateRealityAnchor, Universe, WorldBrief,
+    NewRelation, NewSnapshot, NewStory, NewTag, NewUniverse, NewWorldBrief, RealityAnchor,
+    RealityMode, Relation, RelationType, Snapshot, SourceType, Story, StoryType, Tag,
+    UpdateEntity, UpdateEra, UpdateEvent, UpdateRealityAnchor, UpdateStory, Universe, WorldBrief,
 };
 pub use rag::{EmbeddingRepo, SearchFilter};
 pub use repo::{Repo, RepoError, RepoResult};
 pub use repo::{
-    AnchorRepo, EntityRepo, EraRepo, EventRepo, RelationRepo, SnapshotRepo, TagRepo, UniverseRepo,
+    AnchorRepo, EntityRepo, EraRepo, EventRepo, RelationRepo, SnapshotRepo, StoryRepo, TagRepo,
+    UniverseRepo,
 };

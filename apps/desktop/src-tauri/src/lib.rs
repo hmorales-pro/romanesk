@@ -222,6 +222,11 @@ pub fn run() {
             commands::anchor::brief_delete,
             commands::settings::settings_get,
             commands::settings::settings_save,
+            commands::story::story_create,
+            commands::story::story_list_in_universe,
+            commands::story::story_get,
+            commands::story::story_update,
+            commands::story::story_delete,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
