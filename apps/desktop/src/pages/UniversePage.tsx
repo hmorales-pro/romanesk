@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, MapPin, Plus, Search, User } from "lucide-react";
+import { ArrowLeft, MapPin, Network, Plus, Search, User } from "lucide-react";
 
 import {
   characterCreate,
@@ -113,24 +113,33 @@ export default function UniversePage() {
         </Link>
       </nav>
 
-      <header>
-        {universeQuery.isPending && (
-          <p className="text-sm text-muted-foreground">Chargement…</p>
-        )}
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          {universeQuery.isPending && (
+            <p className="text-sm text-muted-foreground">Chargement…</p>
+          )}
+          {universeQuery.data && (
+            <>
+              <h1 className="text-2xl font-semibold">{universeQuery.data.name}</h1>
+              {universeQuery.data.description && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {universeQuery.data.description}
+                </p>
+              )}
+            </>
+          )}
+          {universeQuery.data === null && (
+            <p className="text-destructive" role="alert">
+              Cet univers n'existe pas (ou a été supprimé).
+            </p>
+          )}
+        </div>
         {universeQuery.data && (
-          <>
-            <h1 className="text-2xl font-semibold">{universeQuery.data.name}</h1>
-            {universeQuery.data.description && (
-              <p className="text-sm text-muted-foreground mt-1">
-                {universeQuery.data.description}
-              </p>
-            )}
-          </>
-        )}
-        {universeQuery.data === null && (
-          <p className="text-destructive" role="alert">
-            Cet univers n'existe pas (ou a été supprimé).
-          </p>
+          <Link to={`/u/${universeId}/graph`}>
+            <Button variant="outline" size="sm">
+              <Network className="size-4" aria-hidden /> Voir le graphe
+            </Button>
+          </Link>
         )}
       </header>
 

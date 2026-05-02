@@ -5,6 +5,14 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
 ## [Unreleased]
 
 ### Added — Phase 1
+- **P1.3** : **Vue graphe interactive** des relations d'un univers.
+  - Dep `@xyflow/react` v12 (anciennement react-flow), CSS importé.
+  - Nouvelle route `/u/:universeId/graph` + page `GraphPage`.
+  - Conversion entities → nodes (couleur par EntityType : Character indigo, Location emerald, Faction amber, Object violet, Concept cyan, RealEntity slate) + relations → edges (label = libellé actif, flèche directionnelle pour les asymétriques, sans flèche pour les symétriques).
+  - Layout circulaire initial déterministe (rayon proportionnel au nombre de nœuds), nodes draggables ensuite.
+  - Click sur un nœud → navigation vers la fiche.
+  - MiniMap + Background grille + Controls (zoom/fit) intégrés.
+  - Bouton « Voir le graphe » sur la page univers (header).
 - **P1.4** : **Tags + filtres + recherche**.
   - Domain `Tag` + `NewTag` + `TagRepo` (create_in_universe / find_or_create / list_in_universe / get_for_entity / set_for_entity / associations_in_universe / delete). 8 tests d'intégration.
   - 6 commandes Tauri (`tag_*`).
