@@ -1,5 +1,7 @@
 # Romanesk
 
+[![CI](https://github.com/hmorales-pro/romanesk/actions/workflows/ci.yml/badge.svg)](https://github.com/hmorales-pro/romanesk/actions/workflows/ci.yml)
+
 > Un environnement d'écriture local-first pour bâtir des univers fictionnels cohérents — et pour les habiter de récits.
 
 **Statut** : `pre-alpha` — Phase 0 (fondations). N'utilisez pas pour un projet d'écriture sérieux avant la version 1.0.

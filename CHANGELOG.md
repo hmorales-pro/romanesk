@@ -44,6 +44,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
   - `src/pages/{LibraryPage, UniversePage, EntityPage}.tsx` : Bibliothèque (liste univers + form inline), Univers (liste personnages + form), Fiche Personnage (read-only ; édition Tiptap arrive en J8).
   - `main.tsx` réécrit : `QueryClientProvider` + `RouterProvider` ; ancien `App.tsx` réduit à un re-export du Layout.
   - `pnpm typecheck` + `pnpm lint` verts.
+- **Phase 0 — J9** : CI GitHub Actions offline-only sur 5 jobs.
+  - `rust-fmt` (rustfmt --check), `rust-clippy` (clippy -D warnings avec deps Linux Tauri), `rust-test` (matrix Linux/Mac/Windows + feature offline-tests), `desktop-build` (build release Tauri Linux : pnpm build → cargo build), `front-checks` (pnpm typecheck + lint).
+  - pnpm version bumpée à 10 (matches le lockfile).
+  - Suppression de `pnpm test` du CI (pas de tests Vitest en Phase 0 ; à ré-activer en Phase 1).
+  - Badge CI ajouté en haut du README.
 - **Phase 0 — J8** : édition de la fiche personnage avec Tiptap.
   - `crates/core` : `UpdateEntity` (champs modifiables : name, summary, content, cover_image, is_real) + `EntityRepo::update(id, UpdateEntity)`. Trigger SQL `trg_entities_updated` met à jour `updated_at` automatiquement. 3 nouveaux tests d'intégration (replace, blank name, NotFound).
   - `apps/desktop/src-tauri` : commande `entity_update` + `UpdateEntityPayload` (biography typée `Value` opaque pour roundtripper le doc Tiptap bit-pour-bit). Helper `is_empty_biography` récursif qui détecte un doc avec uniquement des nœuds vides.

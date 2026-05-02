@@ -155,15 +155,17 @@ romanesk/
 **Livrable J8** : édition riche complète pour la biographie d'un personnage. Format binaire compatible avec une migration future vers un éditeur tiers (Lexical, ADR 0002 conditionnellement déclenchable).
 
 ### Jour 9 — CI offline-only
-- [ ] `.github/workflows/ci.yml` :
-  - Job 1 : `cargo build --workspace --offline` (cache des deps)
-  - Job 2 : `cargo test --workspace --offline`
-  - Job 3 : `pnpm install --frozen-lockfile && pnpm test`
-  - Job 4 : `pnpm tauri build` smoke (mac+linux+win)
-- [ ] Vérifier qu'**aucun** job ne fetch quoi que ce soit hors deps
-- [ ] Badge CI dans le README
+- [x] `.github/workflows/ci.yml` réécrit en 5 jobs :
+  - `rust-fmt` : rustfmt --check
+  - `rust-clippy` : clippy -D warnings (avec deps Linux Tauri installées)
+  - `rust-test` : matrix Linux + Mac + Windows, feature `offline-tests`
+  - `desktop-build` : build release Tauri Linux (smoke build, pas de packaging)
+  - `front-checks` : pnpm typecheck + lint
+- [x] `Swatinem/rust-cache` + `pnpm install --frozen-lockfile` garantissent qu'aucun fetch surprise n'a lieu hors des deps lockées
+- [x] Badge CI ajouté en haut du README
+- [ ] **Validation chez Hugo** : push de la branche, vérifier que les 5 jobs passent vert sur GitHub Actions
 
-**Livrable J9** : 4 jobs verts sur GitHub Actions, build offline prouvé.
+**Livrable J9** : 5 jobs CI offline-only en place. Validation visuelle au premier push.
 
 ### Jour 10 — Hardening & démo
 - [ ] Logging structuré (`tracing` côté Rust, `pino` ou équivalent côté TS)

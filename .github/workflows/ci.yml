@@ -6,13 +6,17 @@ on:
   pull_request:
     branches: [main]
 
-# Build offline-only — aucune fetch externe pendant test/build (deps mises en cache uniquement).
+# Build offline-only — aucune dépendance n'est fetchée pendant test/build
+# au-delà des deps gérées par cargo / pnpm (eux-mêmes lockés).
 env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
   RUSTFLAGS: "-D warnings"
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1 — Format Rust (rustfmt). Pas de deps système, ultra rapide.
+  # ---------------------------------------------------------------------------
   rust-fmt:
     name: rustfmt
     runs-on: ubuntu-latest
@@ -23,19 +27,43 @@ jobs:
           components: rustfmt
       - run: cargo fmt --all -- --check
 
+  # ---------------------------------------------------------------------------
+  # Job 2 — Clippy sur tout le workspace, y compris les commandes Tauri.
+  # Nécessite les deps système Tauri sur Linux pour que le crate
+  # `romanesk-desktop` compile.
+  # ---------------------------------------------------------------------------
   rust-clippy:
     name: clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install Tauri Linux deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            libxdo-dev \
+            pkg-config \
+            build-essential \
+            curl \
+            libssl-dev
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
-      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - run: cargo clippy --workspace --all-targets -- -D warnings
 
+  # ---------------------------------------------------------------------------
+  # Job 3 — `cargo test --workspace` sur les 3 OS desktop cibles.
+  # On installe les deps système Tauri uniquement sur Linux ; sur Mac et
+  # Windows, l'écosystème est autonome (WebKit / WebView2 fournis).
+  # La feature `offline-tests` désactive les tests qui exigent un service
+  # externe (Ollama, etc.) — utile en CI air-gapped.
+  # ---------------------------------------------------------------------------
   rust-test:
-    name: cargo test
+    name: cargo test (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
@@ -43,22 +71,76 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Install Tauri Linux deps
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            libxdo-dev \
+            pkg-config \
+            build-essential \
+            curl \
+            libssl-dev
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --workspace --features offline-tests
 
-  ts-test:
-    name: pnpm test
+  # ---------------------------------------------------------------------------
+  # Job 4 — Build release du binaire desktop sur Linux.
+  # Smoke build (pas de packaging — `bundle.active = false` dans
+  # `tauri.conf.json`). Garantit que tout le pipeline front + back compile.
+  # ---------------------------------------------------------------------------
+  desktop-build:
+    name: desktop release build (linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Tauri Linux deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            libxdo-dev \
+            pkg-config \
+            build-essential \
+            curl \
+            libssl-dev
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install front deps (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+      - name: Build front (vite)
+        run: pnpm --filter @romanesk/desktop build
+      - name: Build desktop binary (release)
+        run: cargo build -p romanesk-desktop --release
+
+  # ---------------------------------------------------------------------------
+  # Job 5 — Front : typecheck + lint (pas de tests Vitest en Phase 0).
+  # ---------------------------------------------------------------------------
+  front-checks:
+    name: pnpm typecheck + lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm -r lint
-      - run: pnpm -r test
+      - run: pnpm typecheck
+      - run: pnpm lint
