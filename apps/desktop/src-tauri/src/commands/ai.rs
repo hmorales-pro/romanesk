@@ -829,7 +829,6 @@ pub async fn ai_rag_query(
     };
 
     let res = provider
-        .0
         .complete(req)
         .await
         .map_err(|e| CommandError::Other(format!("chat completion: {e}")))?;

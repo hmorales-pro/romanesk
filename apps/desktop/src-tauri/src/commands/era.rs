@@ -5,7 +5,7 @@ use serde::Deserialize;
 use tauri::State;
 use uuid::Uuid;
 
-use super::{CommandError, CommandResult};
+use super::CommandResult;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]

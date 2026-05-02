@@ -31,6 +31,10 @@ thiserror = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 base64 = "0.22"
+# tokio::sync::RwLock pour les States hot-reloadable (P5.3 + P6.2). Tauri
+# tire déjà tokio comme runtime interne, on le déclare explicitement avec
+# la feature `sync` pour utiliser RwLock côté commands.
+tokio = { version = "1", features = ["sync"] }
 
 # Notre logique métier réutilisable (Phase 0 — J3+).
 romanesk-core = { path = "../../../crates/core" }
