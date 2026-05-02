@@ -371,6 +371,36 @@ function ChapterEditor({
     return () => window.removeEventListener("keydown", handler);
   }, [dirty, saving, body, title, status, save]);
 
+  // Auto-save debounced : 3s après la dernière touche.
+  // - Reset à chaque changement de body/title/status pendant que dirty
+  // - Pas d'auto-save tant qu'une mutation est en cours (évite les races
+  //   avec Ctrl/Cmd-S manuel).
+  // - Cleanup propre au unmount + au switch de chapitre (key prop).
+  const AUTOSAVE_DELAY_MS = 3000;
+  const autosaveTimerRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!dirty || saving) {
+      if (autosaveTimerRef.current != null) {
+        window.clearTimeout(autosaveTimerRef.current);
+        autosaveTimerRef.current = null;
+      }
+      return;
+    }
+    if (autosaveTimerRef.current != null) {
+      window.clearTimeout(autosaveTimerRef.current);
+    }
+    autosaveTimerRef.current = window.setTimeout(() => {
+      autosaveTimerRef.current = null;
+      void save();
+    }, AUTOSAVE_DELAY_MS);
+    return () => {
+      if (autosaveTimerRef.current != null) {
+        window.clearTimeout(autosaveTimerRef.current);
+        autosaveTimerRef.current = null;
+      }
+    };
+  }, [dirty, saving, body, title, status, save]);
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3 flex-wrap">
@@ -430,8 +460,16 @@ function ChapterEditor({
 
       <div className="text-xs text-muted-foreground flex items-center gap-3">
         <span>{wordCount.toLocaleString("fr-FR")} mots</span>
-        {dirty && <span className="text-amber-600">• non enregistré</span>}
-        <span className="ml-auto">Ctrl/Cmd-S pour sauver</span>
+        {saving && <span className="text-blue-600">• sauvegarde…</span>}
+        {!saving && dirty && (
+          <span className="text-amber-600">
+            • modifié — sauvegarde auto dans quelques secondes
+          </span>
+        )}
+        {!saving && !dirty && savedFlash && (
+          <span className="text-emerald-600">• ✓ enregistré</span>
+        )}
+        <span className="ml-auto">Auto-save 3s · Ctrl/Cmd-S pour sauver maintenant</span>
       </div>
 
       <AiContinuePanel
