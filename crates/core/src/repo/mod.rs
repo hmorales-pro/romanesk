@@ -7,14 +7,20 @@
 //! le soit, ce qui est le cas).
 
 pub mod entity;
+pub mod era;
 pub mod error;
+pub mod event;
 pub mod relation;
+pub mod snapshot;
 pub mod tag;
 pub mod universe;
 
 pub use entity::EntityRepo;
+pub use era::EraRepo;
 pub use error::{RepoError, RepoResult};
+pub use event::EventRepo;
 pub use relation::RelationRepo;
+pub use snapshot::SnapshotRepo;
 pub use tag::TagRepo;
 pub use universe::UniverseRepo;
 
@@ -49,6 +55,21 @@ impl Repo {
     #[must_use]
     pub fn tags(&self) -> TagRepo<'_> {
         TagRepo::new(&self.db)
+    }
+
+    #[must_use]
+    pub fn eras(&self) -> EraRepo<'_> {
+        EraRepo::new(&self.db)
+    }
+
+    #[must_use]
+    pub fn events(&self) -> EventRepo<'_> {
+        EventRepo::new(&self.db)
+    }
+
+    #[must_use]
+    pub fn snapshots(&self) -> SnapshotRepo<'_> {
+        SnapshotRepo::new(&self.db)
     }
 
     /// Accès direct au [`Database`] sous-jacent. Utile pour les tests ou

@@ -144,6 +144,21 @@ pub fn run() {
             commands::tag::tag_get_for_entity,
             commands::tag::tag_set_for_entity,
             commands::tag::tag_delete,
+            commands::era::era_create,
+            commands::era::era_list_in_universe,
+            commands::era::era_get,
+            commands::era::era_update,
+            commands::era::era_delete,
+            commands::event::event_create,
+            commands::event::event_list_in_universe,
+            commands::event::event_list_in_era,
+            commands::event::event_get,
+            commands::event::event_update,
+            commands::event::event_delete,
+            commands::snapshot::snapshot_create,
+            commands::snapshot::snapshot_list_for_entity,
+            commands::snapshot::snapshot_get,
+            commands::snapshot::snapshot_delete,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

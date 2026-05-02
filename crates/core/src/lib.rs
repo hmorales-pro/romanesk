@@ -28,9 +28,10 @@ pub mod repo;
 // Re-exports stratégiques pour les consommateurs (apps/desktop notamment).
 pub use db::{Database, DbError};
 pub use domain::{
-    Embedding, EmbeddingHit, Entity, EntityType, NewEmbedding, NewEntity, NewRelation,
-    NewTag, NewUniverse, Relation, RelationType, SourceType, Tag, UpdateEntity, Universe,
+    Embedding, EmbeddingHit, Entity, EntityType, Era, Event, NewEmbedding, NewEntity,
+    NewEra, NewEvent, NewRelation, NewSnapshot, NewTag, NewUniverse, Relation,
+    RelationType, Snapshot, SourceType, Tag, UpdateEntity, UpdateEra, UpdateEvent, Universe,
 };
 pub use rag::{EmbeddingRepo, SearchFilter};
 pub use repo::{Repo, RepoError, RepoResult};
-pub use repo::{EntityRepo, RelationRepo, TagRepo, UniverseRepo};
+pub use repo::{EntityRepo, EraRepo, EventRepo, RelationRepo, SnapshotRepo, TagRepo, UniverseRepo};

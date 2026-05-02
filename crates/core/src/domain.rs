@@ -372,6 +372,119 @@ pub struct NewTag {
     pub color: Option<String>,
 }
 
+// ---------------------------------------------------------------------------
+// Era (époque dans la timeline d'un univers)
+// ---------------------------------------------------------------------------
+
+/// Une période dans le temps narratif d'un univers (ex. « Âge des dragons »,
+/// « Ère post-apo », « Restauration de Bren »). Sert de référentiel pour
+/// dater les événements, les snapshots d'entités, et les relations.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Era {
+    pub id: Uuid,
+    pub universe_id: Uuid,
+    pub name: String,
+    /// Année de début dans le calendrier de l'univers (signé pour avant Z.0).
+    pub start_year: Option<i64>,
+    pub end_year: Option<i64>,
+    pub description: Option<String>,
+    /// Couleur hex CSS pour l'affichage (frise, badges).
+    pub color: Option<String>,
+    /// Position d'affichage explicite (avant tri par start_year).
+    pub sort_order: i64,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NewEra {
+    pub universe_id: Uuid,
+    pub name: String,
+    pub start_year: Option<i64>,
+    pub end_year: Option<i64>,
+    pub description: Option<String>,
+    pub color: Option<String>,
+    pub sort_order: i64,
+}
+
+#[derive(Debug, Clone)]
+pub struct UpdateEra {
+    pub name: String,
+    pub start_year: Option<i64>,
+    pub end_year: Option<i64>,
+    pub description: Option<String>,
+    pub color: Option<String>,
+    pub sort_order: i64,
+}
+
+// ---------------------------------------------------------------------------
+// Event (événement narratif daté)
+// ---------------------------------------------------------------------------
+
+/// Événement ponctuel dans le temps narratif. Peut être rattaché à une
+/// époque pour la classification. Le `year` est dans le calendrier de
+/// l'univers (cf. `Era::start_year`).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Event {
+    pub id: Uuid,
+    pub universe_id: Uuid,
+    pub era_id: Option<Uuid>,
+    pub name: String,
+    pub year: Option<i64>,
+    pub description: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NewEvent {
+    pub universe_id: Uuid,
+    pub era_id: Option<Uuid>,
+    pub name: String,
+    pub year: Option<i64>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct UpdateEvent {
+    pub era_id: Option<Uuid>,
+    pub name: String,
+    pub year: Option<i64>,
+    pub description: Option<String>,
+}
+
+// ---------------------------------------------------------------------------
+// TemporalSnapshot (override d'une entité à une époque ou événement donné)
+// ---------------------------------------------------------------------------
+
+/// Capture l'état d'une entité (Personnage, Lieu…) à un moment précis du
+/// temps narratif. Le `snapshot_json` contient les overrides : on lit la
+/// fiche canonique et on applique le delta du snapshot pour reconstruire
+/// l'état à cette époque.
+///
+/// Phase 2 minimaliste : `snapshot_json` est un dump complet du `content`
+/// au moment de la capture (snapshot = clone du contenu + name + summary).
+/// Phase 3+ : vrais deltas / patches pour réduire la taille.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Snapshot {
+    pub id: Uuid,
+    pub entity_id: Uuid,
+    pub era_id: Option<Uuid>,
+    pub event_id: Option<Uuid>,
+    pub year_in_universe: Option<i64>,
+    pub snapshot_json: serde_json::Value,
+    pub note: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NewSnapshot {
+    pub entity_id: Uuid,
+    pub era_id: Option<Uuid>,
+    pub event_id: Option<Uuid>,
+    pub year_in_universe: Option<i64>,
+    pub snapshot_json: serde_json::Value,
+    pub note: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

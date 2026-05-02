@@ -11,8 +11,11 @@
 #![allow(clippy::module_name_repetitions)]
 
 pub mod entity;
+pub mod era;
 pub mod error;
+pub mod event;
 pub mod relation;
+pub mod snapshot;
 pub mod tag;
 pub mod universe;
 
