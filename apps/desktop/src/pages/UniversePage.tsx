@@ -6,8 +6,11 @@ import { Anchor, ArrowLeft, MapPin, Network, Plus, Search, Sparkles, User } from
 import {
   aiGenerateEntityDraft,
   characterCreate,
+  conceptCreate,
   entityListInUniverse,
+  factionCreate,
   locationCreate,
+  objectCreate,
   tagAssociationsInUniverse,
   tagListInUniverse,
   universeGet,
@@ -16,6 +19,8 @@ import { TagChip } from "@/components/TagsSection";
 import { TimelineSection } from "@/components/TimelineSection";
 import { RagChatPanel } from "@/components/RagChatPanel";
 import { StoriesSection } from "@/components/StoriesSection";
+import { SimpleEntitySection } from "@/components/SimpleEntitySection";
+import { Package, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,9 +33,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  CONCEPT_KINDS,
+  type ConceptKind,
+  conceptContent,
+  conceptKindLabel,
   type Entity,
+  FACTION_KINDS,
+  type FactionKind,
+  factionContent,
+  factionKindLabel,
   type LocationKind,
   locationKindLabel,
+  OBJECT_KINDS,
+  type ObjectKind,
+  objectContent,
+  objectKindLabel,
 } from "@/lib/types";
 
 export default function UniversePage() {
@@ -52,6 +69,24 @@ export default function UniversePage() {
   const locationsQuery = useQuery({
     queryKey: ["entities", universeId, "Location"],
     queryFn: () => entityListInUniverse(universeId!, "Location"),
+    enabled: !!universeId,
+  });
+
+  const factionsQuery = useQuery({
+    queryKey: ["entities", universeId, "Faction"],
+    queryFn: () => entityListInUniverse(universeId!, "Faction"),
+    enabled: !!universeId,
+  });
+
+  const objectsQuery = useQuery({
+    queryKey: ["entities", universeId, "Object"],
+    queryFn: () => entityListInUniverse(universeId!, "Object"),
+    enabled: !!universeId,
+  });
+
+  const conceptsQuery = useQuery({
+    queryKey: ["entities", universeId, "Concept"],
+    queryFn: () => entityListInUniverse(universeId!, "Concept"),
     enabled: !!universeId,
   });
 
@@ -95,6 +130,9 @@ export default function UniversePage() {
 
   const filteredCharacters = (charactersQuery.data ?? []).filter(matchesFilters);
   const filteredLocations = (locationsQuery.data ?? []).filter(matchesFilters);
+  const filteredFactions = (factionsQuery.data ?? []).filter(matchesFilters);
+  const filteredObjects = (objectsQuery.data ?? []).filter(matchesFilters);
+  const filteredConcepts = (conceptsQuery.data ?? []).filter(matchesFilters);
 
   if (!universeId) {
     return (
@@ -220,6 +258,66 @@ export default function UniversePage() {
         onCreated={() =>
           qc.invalidateQueries({ queryKey: ["entities", universeId, "Location"] })
         }
+      />
+
+      <SimpleEntitySection<FactionKind>
+        title="Factions"
+        createLabel="Faction"
+        icon={<Users className="size-4" aria-hidden />}
+        universeId={universeId}
+        items={filteredFactions}
+        loading={factionsQuery.isPending}
+        error={factionsQuery.error}
+        kinds={FACTION_KINDS.map((k) => ({ value: k, label: factionKindLabel(k) }))}
+        defaultKind="other"
+        onCreate={({ name, kind }) =>
+          factionCreate({ universeId, name, kind })
+        }
+        onCreated={() =>
+          qc.invalidateQueries({ queryKey: ["entities", universeId, "Faction"] })
+        }
+        getKind={(e) => factionContent(e).kind}
+        kindLabel={factionKindLabel}
+      />
+
+      <SimpleEntitySection<ObjectKind>
+        title="Objets"
+        createLabel="Objet"
+        icon={<Package className="size-4" aria-hidden />}
+        universeId={universeId}
+        items={filteredObjects}
+        loading={objectsQuery.isPending}
+        error={objectsQuery.error}
+        kinds={OBJECT_KINDS.map((k) => ({ value: k, label: objectKindLabel(k) }))}
+        defaultKind="other"
+        onCreate={({ name, kind }) =>
+          objectCreate({ universeId, name, kind })
+        }
+        onCreated={() =>
+          qc.invalidateQueries({ queryKey: ["entities", universeId, "Object"] })
+        }
+        getKind={(e) => objectContent(e).kind}
+        kindLabel={objectKindLabel}
+      />
+
+      <SimpleEntitySection<ConceptKind>
+        title="Concepts"
+        createLabel="Concept"
+        icon={<Sparkles className="size-4" aria-hidden />}
+        universeId={universeId}
+        items={filteredConcepts}
+        loading={conceptsQuery.isPending}
+        error={conceptsQuery.error}
+        kinds={CONCEPT_KINDS.map((k) => ({ value: k, label: conceptKindLabel(k) }))}
+        defaultKind="other"
+        onCreate={({ name, kind }) =>
+          conceptCreate({ universeId, name, kind })
+        }
+        onCreated={() =>
+          qc.invalidateQueries({ queryKey: ["entities", universeId, "Concept"] })
+        }
+        getKind={(e) => conceptContent(e).kind}
+        kindLabel={conceptKindLabel}
       />
 
       <TimelineSection universeId={universeId} />

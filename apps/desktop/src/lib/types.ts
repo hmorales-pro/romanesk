@@ -135,6 +135,203 @@ export function entityTypeLabel(type: EntityType): string {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Faction (Phase 5)
+// ---------------------------------------------------------------------------
+
+export type FactionKind =
+  | "government"
+  | "guild"
+  | "sect"
+  | "clan"
+  | "company"
+  | "other";
+
+export const FACTION_KINDS: FactionKind[] = [
+  "government",
+  "guild",
+  "sect",
+  "clan",
+  "company",
+  "other",
+];
+
+export function factionKindLabel(k: FactionKind): string {
+  switch (k) {
+    case "government":
+      return "Gouvernement";
+    case "guild":
+      return "Guilde";
+    case "sect":
+      return "Secte / culte";
+    case "clan":
+      return "Clan / famille";
+    case "company":
+      return "Compagnie / entreprise";
+    case "other":
+      return "Autre";
+  }
+}
+
+export interface FactionContent {
+  kind: FactionKind;
+  ideology: string | null;
+  founded: string | null;
+  leader: string | null;
+  /** Doc Tiptap riche ou null. */
+  description: unknown;
+}
+
+const VALID_FACTION_KINDS: FactionKind[] = [...FACTION_KINDS];
+
+export function factionContent(entity: Entity): FactionContent {
+  const c = entity.content as Partial<FactionContent>;
+  const kind: FactionKind =
+    typeof c.kind === "string" &&
+    (VALID_FACTION_KINDS as string[]).includes(c.kind)
+      ? (c.kind as FactionKind)
+      : "other";
+  return {
+    kind,
+    ideology: typeof c.ideology === "string" ? c.ideology : null,
+    founded: typeof c.founded === "string" ? c.founded : null,
+    leader: typeof c.leader === "string" ? c.leader : null,
+    description: c.description ?? null,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Object (Phase 5)
+// ---------------------------------------------------------------------------
+
+export type ObjectKind =
+  | "artifact"
+  | "weapon"
+  | "armor"
+  | "book"
+  | "relic"
+  | "tool"
+  | "other";
+
+export const OBJECT_KINDS: ObjectKind[] = [
+  "artifact",
+  "weapon",
+  "armor",
+  "book",
+  "relic",
+  "tool",
+  "other",
+];
+
+export function objectKindLabel(k: ObjectKind): string {
+  switch (k) {
+    case "artifact":
+      return "Artefact";
+    case "weapon":
+      return "Arme";
+    case "armor":
+      return "Armure";
+    case "book":
+      return "Livre / écrit";
+    case "relic":
+      return "Relique";
+    case "tool":
+      return "Outil";
+    case "other":
+      return "Autre";
+  }
+}
+
+export interface ObjectContent {
+  kind: ObjectKind;
+  origin: string | null;
+  owner: string | null;
+  properties: string[];
+  /** Doc Tiptap riche ou null. */
+  description: unknown;
+}
+
+const VALID_OBJECT_KINDS: ObjectKind[] = [...OBJECT_KINDS];
+
+export function objectContent(entity: Entity): ObjectContent {
+  const c = entity.content as Partial<ObjectContent>;
+  const kind: ObjectKind =
+    typeof c.kind === "string" &&
+    (VALID_OBJECT_KINDS as string[]).includes(c.kind)
+      ? (c.kind as ObjectKind)
+      : "other";
+  return {
+    kind,
+    origin: typeof c.origin === "string" ? c.origin : null,
+    owner: typeof c.owner === "string" ? c.owner : null,
+    properties: Array.isArray(c.properties)
+      ? c.properties.filter((p): p is string => typeof p === "string")
+      : [],
+    description: c.description ?? null,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Concept (Phase 5)
+// ---------------------------------------------------------------------------
+
+export type ConceptKind =
+  | "magic"
+  | "religion"
+  | "technology"
+  | "philosophy"
+  | "language"
+  | "other";
+
+export const CONCEPT_KINDS: ConceptKind[] = [
+  "magic",
+  "religion",
+  "technology",
+  "philosophy",
+  "language",
+  "other",
+];
+
+export function conceptKindLabel(k: ConceptKind): string {
+  switch (k) {
+    case "magic":
+      return "Magie / système";
+    case "religion":
+      return "Religion / croyance";
+    case "technology":
+      return "Technologie";
+    case "philosophy":
+      return "Philosophie / courant";
+    case "language":
+      return "Langue / culture";
+    case "other":
+      return "Autre";
+  }
+}
+
+export interface ConceptContent {
+  kind: ConceptKind;
+  domain: string | null;
+  /** Doc Tiptap riche ou null. */
+  description: unknown;
+}
+
+const VALID_CONCEPT_KINDS: ConceptKind[] = [...CONCEPT_KINDS];
+
+export function conceptContent(entity: Entity): ConceptContent {
+  const c = entity.content as Partial<ConceptContent>;
+  const kind: ConceptKind =
+    typeof c.kind === "string" &&
+    (VALID_CONCEPT_KINDS as string[]).includes(c.kind)
+      ? (c.kind as ConceptKind)
+      : "other";
+  return {
+    kind,
+    domain: typeof c.domain === "string" ? c.domain : null,
+    description: c.description ?? null,
+  };
+}
+
 /** Libellé humain pour un sous-type de Lieu. */
 export function locationKindLabel(kind: LocationKind): string {
   switch (kind) {

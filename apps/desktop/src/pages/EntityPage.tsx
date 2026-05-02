@@ -5,6 +5,9 @@ import { ArrowLeft } from "lucide-react";
 import { entityGet, universeGet } from "@/lib/api";
 import { CharacterDetail } from "@/pages/details/CharacterDetail";
 import { LocationDetail } from "@/pages/details/LocationDetail";
+import { FactionDetail } from "@/pages/details/FactionDetail";
+import { ObjectDetail } from "@/pages/details/ObjectDetail";
+import { ConceptDetail } from "@/pages/details/ConceptDetail";
 
 /**
  * Dispatcher : charge l'entity, dispatch sur `entity.type` vers le bon
@@ -74,14 +77,24 @@ export default function EntityPage() {
         <LocationDetail entity={entityQuery.data} universeId={universeId} />
       )}
 
-      {entityQuery.data &&
-        entityQuery.data.type !== "Character" &&
-        entityQuery.data.type !== "Location" && (
-          <p className="text-sm text-muted-foreground italic">
-            Le type « {entityQuery.data.type} » n'est pas encore éditable
-            (Phase 1+).
-          </p>
-        )}
+      {entityQuery.data?.type === "Faction" && (
+        <FactionDetail entity={entityQuery.data} universeId={universeId} />
+      )}
+
+      {entityQuery.data?.type === "Object" && (
+        <ObjectDetail entity={entityQuery.data} universeId={universeId} />
+      )}
+
+      {entityQuery.data?.type === "Concept" && (
+        <ConceptDetail entity={entityQuery.data} universeId={universeId} />
+      )}
+
+      {entityQuery.data?.type === "RealEntity" && (
+        <p className="text-sm text-muted-foreground italic">
+          Les entités réelles (Anchor) ne sont pas encore éditables — elles
+          seront gérées via la page d'ancrage en Phase 5+.
+        </p>
+      )}
     </div>
   );
 }

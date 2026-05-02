@@ -14,13 +14,16 @@ import type {
   BriefSource,
   Chapter,
   ChapterStatus,
+  ConceptKind,
   DivergenceAxis,
   DivergencePoint,
   Entity,
   EntityType,
   Era,
   Event as TimelineEvent,
+  FactionKind,
   LocationKind,
+  ObjectKind,
   RealityAnchor,
   RealityMode,
   Relation,
@@ -246,6 +249,175 @@ export function locationUpdate(args: UpdateLocationArgs): Promise<Entity> {
       kind: args.kind ?? "other",
       climate: args.climate?.trim() ? args.climate : null,
       population: args.population?.trim() ? args.population : null,
+      description: args.description ?? null,
+    },
+    coverImage: null,
+    isReal: false,
+  });
+}
+
+// --- Faction (Phase 5) ------------------------------------------------------
+
+export interface CreateFactionArgs {
+  universeId: Uuid;
+  name: string;
+  summary?: string;
+  kind?: FactionKind;
+  ideology?: string;
+  founded?: string;
+  leader?: string;
+  description?: unknown;
+}
+
+export function factionCreate(args: CreateFactionArgs): Promise<Entity> {
+  return entityCreateRaw({
+    universeId: args.universeId,
+    kind: "Faction",
+    name: args.name,
+    summary: args.summary?.trim() ? args.summary : null,
+    content: {
+      kind: args.kind ?? "other",
+      ideology: args.ideology?.trim() ? args.ideology : null,
+      founded: args.founded?.trim() ? args.founded : null,
+      leader: args.leader?.trim() ? args.leader : null,
+      description: args.description ?? null,
+    },
+    coverImage: null,
+    isReal: false,
+  });
+}
+
+export interface UpdateFactionArgs {
+  id: Uuid;
+  name: string;
+  summary?: string;
+  kind?: FactionKind;
+  ideology?: string;
+  founded?: string;
+  leader?: string;
+  description?: unknown;
+}
+
+export function factionUpdate(args: UpdateFactionArgs): Promise<Entity> {
+  return entityUpdateRaw({
+    id: args.id,
+    name: args.name,
+    summary: args.summary?.trim() ? args.summary : null,
+    content: {
+      kind: args.kind ?? "other",
+      ideology: args.ideology?.trim() ? args.ideology : null,
+      founded: args.founded?.trim() ? args.founded : null,
+      leader: args.leader?.trim() ? args.leader : null,
+      description: args.description ?? null,
+    },
+    coverImage: null,
+    isReal: false,
+  });
+}
+
+// --- Object (Phase 5) -------------------------------------------------------
+
+export interface CreateObjectArgs {
+  universeId: Uuid;
+  name: string;
+  summary?: string;
+  kind?: ObjectKind;
+  origin?: string;
+  owner?: string;
+  properties?: string[];
+  description?: unknown;
+}
+
+export function objectCreate(args: CreateObjectArgs): Promise<Entity> {
+  return entityCreateRaw({
+    universeId: args.universeId,
+    kind: "Object",
+    name: args.name,
+    summary: args.summary?.trim() ? args.summary : null,
+    content: {
+      kind: args.kind ?? "other",
+      origin: args.origin?.trim() ? args.origin : null,
+      owner: args.owner?.trim() ? args.owner : null,
+      properties: (args.properties ?? []).map((p) => p.trim()).filter(Boolean),
+      description: args.description ?? null,
+    },
+    coverImage: null,
+    isReal: false,
+  });
+}
+
+export interface UpdateObjectArgs {
+  id: Uuid;
+  name: string;
+  summary?: string;
+  kind?: ObjectKind;
+  origin?: string;
+  owner?: string;
+  properties?: string[];
+  description?: unknown;
+}
+
+export function objectUpdate(args: UpdateObjectArgs): Promise<Entity> {
+  return entityUpdateRaw({
+    id: args.id,
+    name: args.name,
+    summary: args.summary?.trim() ? args.summary : null,
+    content: {
+      kind: args.kind ?? "other",
+      origin: args.origin?.trim() ? args.origin : null,
+      owner: args.owner?.trim() ? args.owner : null,
+      properties: (args.properties ?? []).map((p) => p.trim()).filter(Boolean),
+      description: args.description ?? null,
+    },
+    coverImage: null,
+    isReal: false,
+  });
+}
+
+// --- Concept (Phase 5) ------------------------------------------------------
+
+export interface CreateConceptArgs {
+  universeId: Uuid;
+  name: string;
+  summary?: string;
+  kind?: ConceptKind;
+  domain?: string;
+  description?: unknown;
+}
+
+export function conceptCreate(args: CreateConceptArgs): Promise<Entity> {
+  return entityCreateRaw({
+    universeId: args.universeId,
+    kind: "Concept",
+    name: args.name,
+    summary: args.summary?.trim() ? args.summary : null,
+    content: {
+      kind: args.kind ?? "other",
+      domain: args.domain?.trim() ? args.domain : null,
+      description: args.description ?? null,
+    },
+    coverImage: null,
+    isReal: false,
+  });
+}
+
+export interface UpdateConceptArgs {
+  id: Uuid;
+  name: string;
+  summary?: string;
+  kind?: ConceptKind;
+  domain?: string;
+  description?: unknown;
+}
+
+export function conceptUpdate(args: UpdateConceptArgs): Promise<Entity> {
+  return entityUpdateRaw({
+    id: args.id,
+    name: args.name,
+    summary: args.summary?.trim() ? args.summary : null,
+    content: {
+      kind: args.kind ?? "other",
+      domain: args.domain?.trim() ? args.domain : null,
       description: args.description ?? null,
     },
     coverImage: null,
