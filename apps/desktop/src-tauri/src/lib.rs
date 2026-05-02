@@ -128,7 +128,7 @@ pub fn run() {
                 base_url: std::env::var("OLLAMA_BASE_URL")
                     .unwrap_or_else(|_| "http://localhost:11434".into()),
                 default_model: std::env::var("OLLAMA_MODEL")
-                    .unwrap_or_else(|_| "gemma4:latest".into()),
+                    .unwrap_or_else(|_| "gemma4:e2b".into()),
                 capabilities: romanesk_core::ai::Capabilities {
                     text: true,
                     vision: false,
