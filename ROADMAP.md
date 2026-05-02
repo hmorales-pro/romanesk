@@ -33,18 +33,27 @@ Reflète le phasing du PRD (`PRD.md` §14). Mis à jour à chaque clôture de mi
 - ✅ Relations datables (era picker dans RelationsSection)
 - 📄 Rétro : [`docs/RETRO-PHASE-2.md`](./docs/RETRO-PHASE-2.md)
 
+### Phase 3 — IA + RAG + Ancrage réel · `v0.3.0` (2026-05-02)
+- ✅ Provider IA Ollama branché à l'app (badge statut, `ai_complete`, `ai_ping`)
+- ✅ Génération de fiche assistée (perso + lieu) via JSON forcé Ollama
+- ✅ Embeddings via `nomic-embed-text` + indexation + Q&A RAG complet (`<RagChatPanel>`)
+- ✅ RealityAnchor + DivergencePoints + WorldBrief généré par IA (`/u/:id/anchor`)
+- ✅ Édition d'époque et d'événement (P2.x oublié, fix en P3)
+- 📄 Rétro : [`docs/RETRO-PHASE-3.md`](./docs/RETRO-PHASE-3.md)
+
 ---
 
-## Now (Phase 3 — IA + RAG + Ancrage réel)
+## Now (Phase 4 — Histoires + chapitrage + IA en édition)
 
-**Sortie visée** : ~8-10 semaines après Phase 2 selon PRD §14.
+**Sortie visée** : ~6-8 semaines après Phase 3 selon PRD §14.
 
-- [ ] Couche provider IA réelle utilisée par l'app (au-delà du smoke test ping_ollama)
-- [ ] Indexation embeddings via `EmbeddingRepo` (déjà prêt depuis P0/J4)
-- [ ] Génération de fiche assistée par IA (à partir d'un nom + contexte)
-- [ ] Q&A RAG sur le lore d'un univers
-- [ ] `RealityAnchor` + `WorldBrief` + `DivergencePoint` (tables déjà dans 0001_init.sql)
-- [ ] Premier release `v0.3.0`
+- [ ] Module Histoires (table `stories`) avec type novel/novella/short_story/series
+- [ ] Module Chapitres (table `chapters`) avec body_json Tiptap
+- [ ] Surface d'écriture multi-chapitres (sidebar + éditeur central)
+- [ ] Continuation IA in-editor : preview gris non-validé
+- [ ] Réécriture, résumé, brainstorming via IA
+- [ ] Détection d'incohérences via RAG sur le lore
+- [ ] Premier release `v0.4.0`
 
 ---
 

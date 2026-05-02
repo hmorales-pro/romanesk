@@ -4,7 +4,56 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
 
 ## [Unreleased]
 
-_Rien pour l'instant — Phase 3 démarre au prochain commit._
+_Rien pour l'instant — Phase 4 démarre au prochain commit._
+
+## [0.3.0] — 2026-05-02
+
+Tag de fin de Phase 3 (IA + RAG + Ancrage réel). Romanesk passe de
+« base de données structurée » à **outil augmenté par IA** :
+génération de fiches assistée, Q&A naturelle sur le lore via RAG
+(embeddings + cosine + chat), ancrage à la réalité historique avec
+WorldBrief généré par IA.
+
+### Added — Phase 3
+- **P3.1** : Service AI (`OllamaProvider`) en `tauri::State`. Commandes
+  `ai_ping` / `ai_complete`. Composant `<AIStatusBadge>` qui ping
+  toutes les 30s et affiche reachable/hors ligne. Default model
+  `gemma4:e2b` (variante existante chez Hugo).
+- **P3.2** : Génération de fiche assistée par IA. Bouton « Générer avec IA »
+  sur les forms perso/lieu, prompts JSON-stricts, le résultat pré-remplit
+  les champs. Mode JSON forcé d'Ollama via `format: "json"` quand
+  `req.json_schema.is_some()`.
+- **P3.3** : `OllamaProvider::embed()` (était TODO depuis J5) implémenté
+  via `/api/embed` batch. `AiEmbedder` State séparée avec
+  `nomic-embed-text:latest` par défaut. Commande `ai_universe_reindex`
+  qui chunke 1 entité = 1 chunk + indexe via `EmbeddingRepo` (J4).
+  Commande `ai_rag_query` : embed question → search_topk cosine →
+  prompt avec contexte → réponse + sources cliquables.
+  `<RagChatPanel>` sur la page univers, historique en mémoire.
+- **P3.4** : RealityAnchor (mode none/historical/divergent), DivergencePoint
+  (axe tech/politics/culture/event/nature), WorldBrief (généré IA en JSON
+  {politics, tech, culture, daily_life, geopolitics}). Page `/u/:id/anchor`
+  avec UI complète. Lien depuis UniversePage header.
+- **Édition d'époque et d'événement** (P2.x oublié) : bouton crayon sur
+  chaque ligne de la TimelineSection.
+
+### Fixed — build
+- macOS deployment target : `MACOSX_DEPLOYMENT_TARGET = "13.0"` dans
+  `.cargo/config.toml` pour aligner les libs C précompilées (ring,
+  libsqlite3-sys) sur ARM64 macOS récent.
+- Désactive `CARGO_INCREMENTAL` : les artefacts incrémentaux divergeaient
+  entre rebuilds successifs sur rustc 1.95+.
+- Profile dev : `opt-level = 0` (était 1) pour éviter une monomorphisation
+  agressive qui interagissait mal avec le point précédent.
+- Default model `gemma:latest` → `gemma4:e2b` partout (la variante
+  effectivement disponible chez Hugo).
+
+### Versions
+- 0.2.0 → **0.3.0** sur Cargo.toml workspace + crates/core +
+  apps/desktop/src-tauri + tauri.conf.json + 2 package.json.
+- Rétro complète : voir [`docs/RETRO-PHASE-3.md`](./docs/RETRO-PHASE-3.md).
+
+[0.3.0]: https://github.com/hmorales-pro/romanesk/releases/tag/v0.3.0
 
 ## [0.2.0] — 2026-05-02
 
@@ -191,5 +240,5 @@ fiche avec Tiptap, et tout ça testé par CI offline-only sur 5 jobs.
 - Note de décision sur la licence (`docs/LICENSE-CHOICE.md`).
 - Structure initiale du repo (README, CONTRIBUTING, CODE_OF_CONDUCT, .gitignore).
 
-[Unreleased]: https://github.com/hmorales-pro/romanesk/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/hmorales-pro/romanesk/compare/v0.3.0...HEAD
 [0.0.0]: https://github.com/hmorales-pro/romanesk/releases/tag/v0.0.0
