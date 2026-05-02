@@ -1,0 +1,63 @@
+# Rust
+target/
+**/*.rs.bk
+Cargo.lock
+*.pdb
+
+# Node / pnpm
+node_modules/
+.pnpm-debug.log*
+.npm/
+dist/
+.vite/
+.turbo/
+
+# Tauri
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
+
+# SQLx offline cache (kept in repo for offline builds)
+# .sqlx/  ← do NOT ignore; checked-in for offline-first CI
+
+# Local data
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+data/
+local-data/
+~/Library/Application Support/Romanesk/
+
+# IDEs
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.recommended.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Build artifacts
+*.dmg
+*.pkg
+*.exe
+*.msi
+*.deb
+*.AppImage
+
+# Test artifacts
+coverage/
+*.lcov
+.nyc_output/

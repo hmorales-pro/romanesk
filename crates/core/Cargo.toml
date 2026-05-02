@@ -1,0 +1,35 @@
+[package]
+name = "romanesk-core"
+version = "0.0.0"
+edition = "2021"
+license = "AGPL-3.0-only"
+description = "Core domain logic for Romanesk: lore graph, RAG, AI provider abstraction."
+repository = "https://github.com/<org>/romanesk"
+
+[lib]
+name = "romanesk_core"
+path = "src/lib.rs"
+
+[dependencies]
+async-trait = "0.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+tracing = "0.1"
+uuid = { version = "1", features = ["v7", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "macros", "chrono", "json"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+bytes = "1"
+futures = "0.3"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "test-util"] }
+mockall = "0.12"
+pretty_assertions = "1"
+
+[features]
+default = []
+# Activé en CI offline ; désactive tout test qui nécessiterait Ollama
+offline-tests = []
