@@ -48,6 +48,7 @@ import { Label } from "@/components/ui/label";
 import { TiptapEditor, type TiptapDoc } from "@/components/TiptapEditor";
 import { AiContinuePanel } from "@/components/AiContinuePanel";
 import { AiActionsPanel } from "@/components/AiActionsPanel";
+import { AiConsistencyPanel } from "@/components/AiConsistencyPanel";
 import type { Story } from "@/lib/types";
 
 export default function StoryPage() {
@@ -280,6 +281,7 @@ export default function StoryPage() {
           {activeChapter && storyQuery.data && (
             <ChapterEditor
               key={activeChapter.id}
+              universeId={universeId}
               chapter={activeChapter}
               story={storyQuery.data}
               onSave={(args) => updateMutation.mutateAsync(args)}
@@ -295,6 +297,7 @@ export default function StoryPage() {
 }
 
 interface ChapterEditorProps {
+  universeId: string;
   chapter: Chapter;
   story: Story;
   onSave: (args: {
@@ -310,6 +313,7 @@ interface ChapterEditorProps {
 }
 
 function ChapterEditor({
+  universeId,
   chapter,
   story,
   onSave,
@@ -442,6 +446,13 @@ function ChapterEditor({
         chapterTitle={chapter.title}
         body={body}
         onReplaceBody={(paragraphs) => setBody(replaceWithParagraphs(paragraphs))}
+      />
+
+      <AiConsistencyPanel
+        universeId={universeId}
+        story={story}
+        chapterTitle={chapter.title}
+        body={body}
       />
     </div>
   );
