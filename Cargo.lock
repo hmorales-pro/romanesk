@@ -3218,6 +3218,7 @@ name = "romanesk-core"
 version = "0.5.0"
 dependencies = [
  "async-trait",
+ "base64 0.22.1",
  "bytes",
  "chrono",
  "futures",

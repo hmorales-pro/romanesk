@@ -801,6 +801,35 @@ export function aiRagQuery(args: {
   });
 }
 
+// --- Vision (P6.6) ----------------------------------------------------------
+
+export interface DescribeImageArgs {
+  imagePath: string;
+  prompt: string;
+  model: string;
+  baseUrl?: string;
+  temperature?: number;
+}
+
+export interface DescribeImageResult {
+  model: string;
+  content: string;
+}
+
+export function aiDescribeImage(
+  args: DescribeImageArgs,
+): Promise<DescribeImageResult> {
+  return invoke<DescribeImageResult>("ai_describe_image", {
+    payload: {
+      imagePath: args.imagePath,
+      prompt: args.prompt,
+      model: args.model,
+      baseUrl: args.baseUrl ?? null,
+      temperature: args.temperature ?? null,
+    },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // RealityAnchor / DivergencePoint / WorldBrief (Phase 3.4)
 // ---------------------------------------------------------------------------
@@ -900,6 +929,9 @@ export interface AppSettings {
   /** P6.2 : modèle préféré pour les actions littérales (réécriture,
    * résumé, cohérence). Si null/empty, retombe sur chatModel. */
   literalModel: string | null;
+  /** P6.6 : modèle vision Ollama (llava, qwen2.5vl, gemma3:4b…). Si
+   * null/empty, le mode image de l'atelier description est désactivé. */
+  visionModel: string | null;
 }
 
 export function settingsGet(): Promise<AppSettings> {

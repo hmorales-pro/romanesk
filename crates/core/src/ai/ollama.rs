@@ -200,12 +200,72 @@ impl Provider for OllamaProvider {
 
     async fn describe_image(
         &self,
-        _img: ImageInput,
-        _prompt: &str,
+        img: ImageInput,
+        prompt: &str,
     ) -> Result<String, ProviderError> {
-        // TODO Phase 3 : encoder l'image en base64 et l'attacher au champ `images`
-        // de la requête `/api/chat`. Ne fonctionne qu'avec un modèle vision-capable.
-        Err(ProviderError::CapabilityMissing("vision"))
+        // P6.6 : encode l'image en base64 et l'attache au champ `images` de
+        // la requête `/api/chat`. Ne fonctionne qu'avec un modèle
+        // vision-capable côté Ollama (llava, qwen2.5vl, gemma3:4b avec vision…).
+        // Le modèle utilisé = self.cfg.default_model — le caller passe
+        // `vision_model` via une instance OllamaProvider dédiée.
+        let bytes = match img {
+            ImageInput::Bytes { data, .. } => data,
+            ImageInput::Path(path) => std::fs::read(&path)
+                .map_err(|e| ProviderError::BadRequest(format!("read image {path:?}: {e}")))?,
+            ImageInput::Url(_) => {
+                return Err(ProviderError::BadRequest(
+                    "Ollama vision local : URL non supportée, fournis Path ou Bytes".into(),
+                ));
+            }
+        };
+        use base64::{engine::general_purpose, Engine as _};
+        let b64 = general_purpose::STANDARD.encode(&bytes);
+
+        let url = format!(
+            "{}/api/chat",
+            self.cfg.base_url.trim_end_matches('/')
+        );
+        let payload = serde_json::json!({
+            "model": &self.cfg.default_model,
+            "stream": false,
+            "messages": [{
+                "role": "user",
+                "content": prompt,
+                "images": [b64],
+            }],
+            "options": { "temperature": 0.7 }
+        });
+
+        let resp = self
+            .http
+            .post(&url)
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| ProviderError::Transport(e.to_string()))?;
+        if !resp.status().is_success() {
+            return Err(ProviderError::Unavailable(format!(
+                "Ollama HTTP {} : {}",
+                resp.status(),
+                resp.text().await.unwrap_or_default()
+            )));
+        }
+        let body: serde_json::Value = resp
+            .json()
+            .await
+            .map_err(|e| ProviderError::Transport(e.to_string()))?;
+        let content = body
+            .get("message")
+            .and_then(|m| m.get("content"))
+            .and_then(|c| c.as_str())
+            .ok_or_else(|| {
+                ProviderError::MalformedResponse(format!(
+                    "Ollama vision: réponse sans content : {body}"
+                ))
+            })?
+            .trim()
+            .to_string();
+        Ok(content)
     }
 
     async fn embed(&self, texts: Vec<String>) -> Result<Vec<Vec<f32>>, ProviderError> {

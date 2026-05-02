@@ -35,6 +35,7 @@ export default function SettingsPage() {
   const [embedModel, setEmbedModel] = useState("");
   const [creativeModel, setCreativeModel] = useState("");
   const [literalModel, setLiteralModel] = useState("");
+  const [visionModel, setVisionModel] = useState("");
   const [savedOnce, setSavedOnce] = useState(false);
 
   // Hydrate le form quand les settings sont chargés.
@@ -45,6 +46,7 @@ export default function SettingsPage() {
       setEmbedModel(settingsQuery.data.embedModel);
       setCreativeModel(settingsQuery.data.creativeModel ?? "");
       setLiteralModel(settingsQuery.data.literalModel ?? "");
+      setVisionModel(settingsQuery.data.visionModel ?? "");
     }
   }, [settingsQuery.data]);
 
@@ -55,6 +57,7 @@ export default function SettingsPage() {
       embedModel: embedModel.trim() || "nomic-embed-text:latest",
       creativeModel: creativeModel.trim() || null,
       literalModel: literalModel.trim() || null,
+      visionModel: visionModel.trim() || null,
     };
     saveMutation.mutate(next, { onSuccess: () => setSavedOnce(true) });
   };
@@ -186,6 +189,24 @@ export default function SettingsPage() {
                     instructions JSON (gemma3:12b, qwen2.5:14b…).
                   </p>
                 </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5 border-t pt-4">
+                <Label htmlFor="set-vision">
+                  Modèle vision (optionnel — atelier description en mode image)
+                </Label>
+                <Input
+                  id="set-vision"
+                  value={visionModel}
+                  onChange={(e) => setVisionModel(e.target.value)}
+                  placeholder="(vide → fonctionnalité désactivée)"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Active l'atelier description en mode image sur les fiches
+                  Personnage / Lieu / Objet. Doit être un modèle Ollama
+                  vision-capable. Suggestions : llava:latest,
+                  qwen2.5vl:7b, gemma3:4b (avec vision).
+                </p>
               </div>
 
               <div className="flex gap-2">

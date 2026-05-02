@@ -13,8 +13,10 @@
 
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import {
   ClipboardCopy,
+  Image as ImageIcon,
   Loader2,
   Plus,
   Replace,
@@ -22,7 +24,7 @@ import {
   X,
 } from "lucide-react";
 
-import { aiComplete } from "@/lib/api";
+import { aiComplete, aiDescribeImage } from "@/lib/api";
 import { useSettings } from "@/lib/use-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,7 +59,9 @@ export function AiDescriptionPanel({
 }: AiDescriptionPanelProps) {
   const [hint, setHint] = useState("");
   const [text, setText] = useState<string | null>(null);
-  const { pickModel } = useSettings();
+  const { pickModel, settings } = useSettings();
+  const visionModel =
+    settings?.visionModel?.trim() ? settings.visionModel : null;
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -74,6 +78,46 @@ export function AiDescriptionPanel({
         temperature: 0.85,
         maxTokens: 1200,
         model: pickModel("creative"),
+      });
+      return res.content.trim();
+    },
+    onSuccess: setText,
+  });
+
+  // P6.6 : décrire à partir d'une image (vision Ollama). Disponible
+  // seulement si visionModel est configuré dans Settings.
+  const visionMutation = useMutation({
+    mutationFn: async () => {
+      if (!visionModel) {
+        throw new Error(
+          "Configure d'abord un modèle vision dans Settings.",
+        );
+      }
+      const picked = await openDialog({
+        multiple: false,
+        directory: false,
+        filters: [
+          {
+            name: "Image",
+            extensions: ["png", "jpg", "jpeg", "webp", "gif"],
+          },
+        ],
+      });
+      if (!picked || typeof picked !== "string") {
+        throw new Error("Aucune image sélectionnée.");
+      }
+      const userPrompt = buildVisionPrompt({
+        targetKind,
+        name,
+        summary,
+        structuredFields,
+        hint: hint.trim() || null,
+      });
+      const res = await aiDescribeImage({
+        imagePath: picked,
+        prompt: userPrompt,
+        model: visionModel,
+        temperature: 0.7,
       });
       return res.content.trim();
     },
@@ -111,12 +155,12 @@ export function AiDescriptionPanel({
         </span>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+      <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
         <Input
           value={hint}
           onChange={(e) => setHint(e.target.value)}
           placeholder="Indication facultative (ton, ambiance, longueur, focus…)"
-          disabled={mutation.isPending}
+          disabled={mutation.isPending || visionMutation.isPending}
         />
         <Button
           size="sm"
@@ -124,7 +168,9 @@ export function AiDescriptionPanel({
             setText(null);
             mutation.mutate();
           }}
-          disabled={mutation.isPending || isEmpty}
+          disabled={
+            mutation.isPending || visionMutation.isPending || isEmpty
+          }
         >
           {mutation.isPending ? (
             <>
@@ -136,6 +182,27 @@ export function AiDescriptionPanel({
             "Décrire"
           )}
         </Button>
+        {visionModel && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setText(null);
+              visionMutation.mutate();
+            }}
+            disabled={
+              mutation.isPending || visionMutation.isPending || isEmpty
+            }
+            title={`Décrire à partir d'une image (vision via ${visionModel})`}
+          >
+            {visionMutation.isPending ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : (
+              <ImageIcon className="size-4" aria-hidden />
+            )}
+            Image
+          </Button>
+        )}
       </div>
 
       {isEmpty && (
@@ -147,6 +214,11 @@ export function AiDescriptionPanel({
       {mutation.isError && (
         <p className="text-sm text-destructive" role="alert">
           {String(mutation.error)}
+        </p>
+      )}
+      {visionMutation.isError && (
+        <p className="text-sm text-destructive" role="alert">
+          {String(visionMutation.error)}
         </p>
       )}
 
@@ -219,5 +291,36 @@ function buildPrompt(args: {
   lines.push(
     "Produis une description riche en 2 à 4 paragraphes (séparés par des doubles retours à la ligne).",
   );
+  return lines.join("\n");
+}
+
+/**
+ * Prompt vision : on demande au modèle d'observer l'image fournie en
+ * input et de produire une description riche qui s'inspire de la fiche
+ * structurée existante. Pas de contradiction avec les champs déjà
+ * remplis : le texte se cale dessus quand pertinent.
+ */
+function buildVisionPrompt(args: {
+  targetKind: DescriptionTargetKind;
+  name: string;
+  summary: string | null;
+  structuredFields: Record<string, string | null | undefined>;
+  hint: string | null;
+}): string {
+  const lines: string[] = [];
+  const targetWord = TARGET_LABELS[args.targetKind];
+  lines.push(
+    `Observe l'image attentivement et décris ${targetWord} en t'appuyant sur ce que tu vois ET sur la fiche structurée ci-dessous. Ne contredis pas les champs déjà renseignés. Produis 2 à 4 paragraphes (séparés par des doubles retours à la ligne), en français, sensoriel et atmosphérique. Pas de meta-commentaire, pas d'introduction.`,
+  );
+  lines.push("");
+  lines.push(`NOM : ${args.name}`);
+  if (args.summary) lines.push(`RÉSUMÉ : ${args.summary}`);
+  for (const [k, v] of Object.entries(args.structuredFields)) {
+    if (v && v.trim()) lines.push(`${k.toUpperCase()} : ${v}`);
+  }
+  if (args.hint) {
+    lines.push("");
+    lines.push(`INDICATION SPÉCIFIQUE : ${args.hint}`);
+  }
   return lines.join("\n");
 }

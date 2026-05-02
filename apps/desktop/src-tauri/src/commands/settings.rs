@@ -34,6 +34,10 @@ pub struct AppSettings {
     /// `chat_model`.
     #[serde(default)]
     pub literal_model: Option<String>,
+    /// P6.6 : modèle vision Ollama (llava, qwen2.5vl, gemma3:4b…). Si
+    /// `None`, l'atelier description en mode image est désactivé côté UI.
+    #[serde(default)]
+    pub vision_model: Option<String>,
 }
 
 impl Default for AppSettings {
@@ -44,6 +48,7 @@ impl Default for AppSettings {
             embed_model: "nomic-embed-text:latest".into(),
             creative_model: None,
             literal_model: None,
+            vision_model: None,
         }
     }
 }
@@ -72,6 +77,9 @@ impl AppSettings {
             literal_model: std::env::var("OLLAMA_LITERAL_MODEL")
                 .ok()
                 .or(from_disk.literal_model),
+            vision_model: std::env::var("OLLAMA_VISION_MODEL")
+                .ok()
+                .or(from_disk.vision_model),
         }
     }
 

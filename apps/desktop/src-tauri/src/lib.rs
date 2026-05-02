@@ -209,6 +209,7 @@ pub fn run() {
             commands::ai::ai_ping,
             commands::ai::ai_complete,
             commands::ai::ai_generate_entity_draft,
+            commands::ai::ai_describe_image,
             commands::ai::ai_universe_reindex,
             commands::ai::ai_rag_query,
             commands::anchor::anchor_get_for_universe,
