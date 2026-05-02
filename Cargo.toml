@@ -2,7 +2,7 @@
 resolver = "2"
 members = [
     "crates/core",
-    # "apps/desktop/src-tauri",  # ajouté à la J2 par `pnpm create tauri-app`
+    "apps/desktop/src-tauri",
 ]
 
 [workspace.package]

@@ -1,12 +1,14 @@
 # Rust
 target/
 **/*.rs.bk
-Cargo.lock
 *.pdb
+# Note : Cargo.lock est volontairement versionné — Romanesk produit un
+# binaire (`romanesk-desktop`) ; convention Rust standard.
 
 # Node / pnpm
 node_modules/
 .pnpm-debug.log*
+.pnpm-store/
 .npm/
 dist/
 .vite/

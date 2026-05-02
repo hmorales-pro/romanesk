@@ -8,6 +8,13 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
 - `LICENSE` à la racine — texte intégral de l'**Elastic License 2.0**.
 - ADR `0002-editor.md` (Tiptap vs Lexical — décision Tiptap par défaut).
 - ADR `0003-relations.md` (set figé en v1, extensible en Phase 1+).
+- **Phase 0 — J2** : scaffolding `apps/desktop` (Tauri 2 + React 18 + TypeScript + Vite 6).
+  - Structure monorepo : `package.json` racine, `apps/desktop/` (front + `src-tauri/`).
+  - Tailwind 4 + shadcn/ui (components.json, lib/utils.ts), tokens CSS dans `src/index.css`.
+  - Page d'accueil React minimale + commande Tauri `ping` qui renvoie `{ message: "pong", echoed_at: ISO8601 }`.
+  - ESLint 9 flat config + typescript-eslint.
+  - Workspace Cargo : ajout de `apps/desktop/src-tauri` en membre.
+  - `pnpm install`, `pnpm typecheck`, `pnpm lint` verts.
 
 ### Changed
 - **Pivot du modèle de distribution** : open-source AGPL → **propriétaire source-available, free-use** sous Elastic License 2.0.

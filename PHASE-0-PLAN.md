@@ -97,13 +97,13 @@ romanesk/
 **Livrable J1** : `docs/ADR/0001-stack.md`, `docs/ADR/0002-editor.md`, `docs/ADR/0003-relations.md`, `LICENSE` posé.
 
 ### Jour 2 — Scaffolding Tauri
-- [ ] `pnpm create tauri-app@latest` → choisir React + TS + Vite, dans `apps/desktop`
-- [ ] Restructurer en monorepo (workspace pnpm racine)
-- [ ] Ajouter Tailwind + shadcn/ui (init, theme par défaut)
-- [ ] Page d'accueil minimale : titre « Romanesk », un bouton qui appelle un command Tauri `ping` → renvoie « pong »
-- [ ] `pnpm tauri dev` doit lancer l'app sur les 3 OS
+- [x] ~~`pnpm create tauri-app@latest`~~ → scaffold hand-écrit (Tauri 2 + React 18 + TS + Vite 6) dans `apps/desktop` — équivalent au template officiel, adapté au monorepo
+- [x] Monorepo activé : `package.json` racine + `pnpm-workspace.yaml` (déjà présent) + `apps/desktop/src-tauri` ajouté au `[workspace] members` Cargo
+- [x] Tailwind 4 (CSS-first via `@tailwindcss/vite`) + base shadcn/ui (`components.json`, `lib/utils.ts`, tokens CSS HSL dans `src/index.css`)
+- [x] Page d'accueil minimale : titre « Romanesk », bouton « Pinger le runtime Rust » qui invoque la commande Tauri `ping` → renvoie `{ message: "pong", echoed_at: ISO8601 }` ; affichage de la réponse + horodatage
+- [ ] **Validation chez Hugo** : `pnpm tauri dev` doit lancer l'app sur les 3 OS — non vérifiable depuis le sandbox (pas de display, Rust absent)
 
-**Livrable J2** : app Tauri qui démarre, ping/pong commande Rust ↔ TS fonctionnel.
+**Livrable J2** : pnpm install, pnpm typecheck, pnpm lint verts dans le sandbox. `pnpm tauri dev` à valider en local sur Mac/Linux/Windows.
 
 ### Jour 3 — Couche données
 - [ ] Créer `crates/core` (workspace Cargo)

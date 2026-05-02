@@ -1,0 +1,32 @@
+[package]
+name = "romanesk-desktop"
+version = "0.0.0"
+description = "Romanesk desktop app (Tauri 2 + React)."
+edition = "2021"
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+# Tauri 2 sépare main.rs (binary) de lib.rs (mobile entry point).
+# Le binaire desktop est `romanesk-desktop`, la lib partagée est `romanesk_desktop_lib`.
+[lib]
+name = "romanesk_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+
+# Notre logique métier réutilisable (Phase 0 — J3+).
+romanesk-core = { path = "../../../crates/core" }
+
+[features]
+# Évite que Tauri ouvre une console Windows en release.
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

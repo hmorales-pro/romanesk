@@ -1,0 +1,24 @@
+{
+  "name": "romanesk",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Romanesk monorepo — local-first writing environment for fictional universes.",
+  "license": "LicenseRef-Elastic-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hmorales-pro/romanesk.git"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @romanesk/desktop dev",
+    "build": "pnpm --filter @romanesk/desktop build",
+    "tauri": "pnpm --filter @romanesk/desktop tauri",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm --filter @romanesk/desktop exec tsc --noEmit"
+  },
+  "packageManager": "pnpm@10.33.2"
+}
