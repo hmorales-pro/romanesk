@@ -1,6 +1,8 @@
 # Contribuer à Romanesk
 
-Merci de l'intérêt. Le projet est en `pre-alpha` (Phase 0). Les changements sont volatils et la stack peut bouger jusqu'à la sortie de Phase 1. Si vous voulez contribuer maintenant : focus sur les issues étiquetées `good-first-issue` ou venez parler dans une Discussion GitHub avant d'ouvrir une grosse PR.
+> **Statut** : le repository est **privé pendant la Phase 0**. Les contributions externes ne sont pas encore ouvertes. Ce document décrit les conventions et le workflow qui s'appliqueront à l'ouverture du repo (au plus tôt à la fin de la Phase 0).
+
+Merci de l'intérêt. Le projet est en `pre-alpha` (Phase 0). Les changements sont volatils et la stack peut bouger jusqu'à la sortie de Phase 1. Si vous voulez signaler un bug ou suggérer une feature en attendant l'ouverture du repo, contactez l'auteur directement.
 
 ---
 
@@ -14,7 +16,7 @@ Merci de l'intérêt. Le projet est en `pre-alpha` (Phase 0). Les changements so
 
 ### Cloner
 ```bash
-git clone https://github.com/<org>/romanesk.git
+git clone https://github.com/hmorales-pro/romanesk.git
 cd romanesk
 pnpm install
 ```
@@ -93,4 +95,12 @@ Le projet suit le [Contributor Covenant 2.1](./CODE_OF_CONDUCT.md). Soyez respec
 
 ## Licence des contributions
 
-En contribuant, vous acceptez que vos contributions soient distribuées sous la même licence que le projet (voir `LICENSE`). Pas de CLA en v1.
+Romanesk est distribué sous **Elastic License 2.0** (voir `LICENSE` et `docs/LICENSE-CHOICE.md`). C'est une licence **propriétaire et source-available**, pas une licence open-source au sens OSI.
+
+Conséquence importante pour les contributions :
+
+- **Toute PR externe acceptée à l'ouverture du repo nécessitera la signature d'un Contributor License Agreement (CLA)** qui assigne le copyright à Hugo Morales (l'auteur). Cette assignation est ce qui permet de continuer à pouvoir vendre des licences commerciales d'exception ou de relicencier le projet plus tard.
+- Le mécanisme exact (DCO simple ou CLA via CLA Assistant / EasyCLA) sera fixé *avant* la première PR externe acceptée.
+- Tant que le repo est privé, le sujet ne se pose pas — seul Hugo écrit du code.
+
+Si ce modèle ne vous convient pas, ne contribuez pas. C'est un choix conscient pour préserver la viabilité économique long terme du projet (qui restera gratuit pour ses utilisateurs finaux).

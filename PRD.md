@@ -1,9 +1,11 @@
-# Romanesk — Product Requirements Document (v0.3)
+# Romanesk — Product Requirements Document (v0.3.1)
 
 > Statut : **Approuvé pour Phase 0** — conception lancée.
-> Auteur : Hugo Morales · Date : 2026-05-02 · Cible : usage personnel d'abord, **distribution open-source** prévue.
+> Auteur : Hugo Morales · Date : 2026-05-02 · Cible : usage personnel d'abord, **distribution propriétaire source-available, free-use** prévue.
 
-> **Changelog v0.3** : positionnement open-source (section 16), assouplissement NG6, OQ8 enrichie sur la licence, retrait du « cible : single-user » exclusif (l'outil reste personnel mais ouvert à la communauté).
+> **Changelog v0.3.1 (2026-05-02)** : pivot du modèle de distribution → **Elastic License 2.0** (propriétaire source-available, free-use total) à la place de l'open-source AGPL. Section 15 réécrite ; OQ8b clôturée ; NG6 reformulée.
+>
+> **Changelog v0.3** : positionnement de distribution (section 15), assouplissement NG6, OQ8 enrichie sur la licence, retrait du « cible : single-user » exclusif (l'outil reste personnel mais ouvert à un public plus large).
 >
 > **Changelog v0.2** : ajout du concept `RealityAnchor` (modes `none` / `historical` / `divergent`), entités `DivergencePoint` et `WorldBrief`, Module 6 dédié, requirements R-P0-11/12/13 et R-P1-10/11/12, sous-section *Injection du World Context* dans la stratégie IA, OQ9-OQ12, intégration au phasing Phase 3 & 5.
 
@@ -29,7 +31,7 @@ L'écriture d'un univers fictionnel ambitieux — *a fortiori* multi-récits, mu
 - **Scrivener** : excellent pour structurer un manuscrit, faible pour le worldbuilding partagé entre œuvres.
 - **Notion / Obsidian** : flexibles mais sans modèle narratif natif. L'auteur réinvente la roue à chaque univers, et la cohérence reste manuelle.
 - **World Anvil / Campfire** : worldbuilding solide mais éditeurs de texte faibles, dépendance cloud, prix d'abonnement.
-- **Sudowrite / NovelCrafter** : IA d'écriture puissante, mais lore traité de façon plate et propriétaire.
+- **Sudowrite / NovelCrafter** : IA d'écriture puissante, mais lore traité de façon plate, enfermé dans des silos cloud sans export possible.
 
 **Aucun outil ne combine** : (1) un graphe de lore versionné dans le temps narratif, (2) un éditeur de manuscrit professionnel, (3) une IA pluggable cloud/local, (4) une garantie local-first/privée. C'est cette combinaison que Romanesk vise.
 
@@ -67,7 +69,7 @@ Romanesk se distingue par trois partis pris :
 | NG3 | Génération automatique d'un roman complet sur prompt | Romanesk est une *aide* à la rédaction, pas un automate. Pas de bouton « écris-moi un roman ». |
 | NG4 | Mobile natif (iOS/Android) | Stack desktop d'abord. Une *companion app* en lecture-seule pourra venir en v2. |
 | NG5 | Monétisation, billing, multi-tenant | Outil perso, on coupe toute la complexité SaaS. |
-| NG6 | Marketplace officielle de templates ou de lore tiers | Hors scope v1. Pourra émerger via la communauté open-source (templates partagés en repos tiers). |
+| NG6 | Marketplace officielle de templates ou de lore tiers | Hors scope v1. Pourra émerger informellement (échanges de fichiers `.romanesk` entre auteurs). |
 
 ---
 
@@ -634,7 +636,7 @@ Architecture pensée *pour permettre* la sync sans la livrer en v1.
 | OQ6 | Sécurité des clés API providers cloud : système keychain natif (macOS Keychain / Linux Secret Service) ou fichier chiffré ? | Avant intégration Anthropic / OpenAI |
 | OQ7 | Quel comportement si Ollama est down et qu'aucun fallback cloud configuré ? Mode dégradé en lecture seule sans IA ? | UX décision |
 | OQ8 | Nom de domaine / branding « Romanesk » vérifié libre (marque, .com, .fr) ? Compte GitHub / org / npm libre ? | Diligence avant tout investissement public |
-| OQ8b | Choix de licence open-source : MIT (max permissif), Apache 2.0 (permissif + brevets), AGPL-3.0 (copyleft fort, protège contre fork SaaS propriétaire) ? | Bloquant avant publication du repo. Voir `docs/LICENSE-CHOICE.md`. |
+| ~~OQ8b~~ | ~~Choix de licence~~ | ✅ **Tranché 2026-05-02** : Elastic License 2.0 (propriétaire source-available, free-use). Voir `docs/LICENSE-CHOICE.md`. |
 | OQ9 | Knowledge cutoff de Gemma 4 vs WorldBrief : faut-il *imposer* la génération du WorldBrief par un provider cloud à la création d'un univers ancré, ou autoriser un mode 100% local dégradé (où Gemma fait de son mieux) ? | UX & privacy decision avant Phase 3 |
 | OQ10 | Granularité des `DivergencePoint` : un seul niveau plat, ou hiérarchie (divergence-mère qui en implique d'autres : « pas de transistor » → « pas d'informatique moderne ») ? | Décision archi avant P0-13 |
 | OQ11 | Le `WorldBrief` est-il **par date** (un brief = un moment) ou **par période** (un brief couvre 1900-1950) ? La 2ᵉ option est plus économe mais moins précise. | Choisir lors du POC Phase 3 |
@@ -710,50 +712,56 @@ L'utilisateur a indiqué une approche **lore-first**. Le phasing suit cette prio
 
 ---
 
-## 15. Distribution & open-source
+## 15. Distribution & licence
 
 ### 15.1 Positionnement
 
-Romanesk sera distribué en **open-source**. Premier bénéficiaire : l'auteur lui-même. Premier cercle élargi : les écrivains qui partagent les mêmes contraintes (privacy, local-first, multi-univers, IA pluggable).
+Romanesk est distribué en **propriétaire source-available, free-use**, sous **[Elastic License 2.0](../LICENSE)**. Concrètement :
+
+- **Gratuit pour tout le monde**, particuliers comme entreprises, sans abonnement.
+- **Source-available** (à terme) : le code peut être consulté, audité, modifié pour usage interne.
+- **Mais pas open-source au sens OSI** : trois interdictions s'appliquent — pas de SaaS hébergé concurrent, pas de contournement d'un futur système de licence (pour un éventuel tier payant), pas d'altération des notices copyright.
+
+Premier bénéficiaire : l'auteur lui-même. Premier cercle élargi : les écrivains qui partagent les mêmes contraintes (privacy, local-first, multi-univers, IA pluggable). Le repository GitHub reste **privé pendant la Phase 0** ; ouverture publique en source-available évaluée à la fin de la Phase 0.
 
 Conséquences directes sur la conception :
 
 - **Aucune télémétrie cachée**. Pas d'envoi anonyme. Pas de stat « bienveillante ». Si une métrique est utile, l'utilisateur l'active explicitement et elle reste locale.
-- **Aucun lock-in propriétaire**. Pas de format de fichier exotique : tout exportable en Markdown / JSON. SQLite reste lisible avec un simple `sqlite3`.
+- **Aucun lock-in côté données**. Pas de format de fichier exotique : tout exportable en Markdown / JSON. SQLite reste lisible avec un simple `sqlite3`. Le code propriétaire ne s'applique qu'au logiciel, pas aux univers de l'utilisateur.
 - **Aucune clé API tierce intégrée**. L'utilisateur fournit ses propres clés providers cloud. Romanesk ne route rien via un serveur intermédiaire.
-- **Dépendances OSS-compatibles uniquement**. Toute dépendance à licence non compatible (commerciale, source-available restrictive) est exclue.
+- **Dépendances licence-compatibles uniquement**. MIT / Apache / BSD / ISC : OK. GPL / AGPL : exclus (incompatibles avec une distribution propriétaire). `cargo-deny` à configurer en Phase 0 — J5.
 
-### 15.2 Choix de licence (à trancher)
+### 15.2 Licence — décision tranchée
 
-Trois options crédibles, à arbitrer dans `docs/LICENSE-CHOICE.md` :
+**Elastic License 2.0** (ELv2). Voir `docs/LICENSE-CHOICE.md` pour le comparatif détaillé MIT / Apache / AGPL / FSL / ELv2 et le raisonnement derrière le choix.
 
-| Licence | Esprit | Pour | Contre |
-|---------|--------|------|--------|
-| **MIT** | Max permissif | Adoption maximale, simplicité, peut être intégré partout | Quelqu'un peut forker, fermer, vendre — sans rien rendre |
-| **Apache 2.0** | Permissif + clause brevets | Comme MIT mais protège contre les pièges brevets | Idem côté fork closed-source |
-| **AGPL-3.0** | Copyleft fort, étendu au réseau | Protège contre l'appropriation propriétaire (toute redistribution, y compris SaaS, doit ouvrir son code) | Frottement pour intégration en entreprise, certains contributeurs évitent |
-
-**Recommandation par défaut** : **AGPL-3.0** pour Romanesk. Aligné avec l'esprit local-first / privacy-first et préserve l'option de protéger l'écosystème contre les forks SaaS fermés. Si la priorité bascule vers l'adoption maximale (plugins tiers, intégrations dans des éditeurs commerciaux), reconsidérer **MIT**.
+Pourquoi pas open-source ? Parce que l'objectif d'Hugo est de :
+- Garder le contrôle commercial du projet (option d'un tier payant futur, exception SaaS payante, dual-license éventuelle).
+- Empêcher juridiquement un fork SaaS opaque, sans imposer le copyleft à un utilisateur normal.
+- Rester sur un texte de licence standard (ELv2 est utilisé par Elastic, MariaDB MaxScale, Redis Stack…) plutôt qu'un EULA custom.
 
 ### 15.3 Gouvernance v1
 
-- **BDFL informel** : Hugo décide tant que le projet est petit.
-- **Issues / PRs** : modèles GitHub fournis dès le repo public. PR → review → merge.
-- **Roadmap publique** : `ROADMAP.md` reflète le phasing du PRD, mis à jour à chaque clôture de milestone.
+- **Solo author** : Hugo décide tant que le projet est petit.
+- **Repo privé en Phase 0** ; pas de PR externes pour l'instant.
+- **À l'ouverture du repo** (au plus tôt fin Phase 0) :
+  - Issues GitHub pour bugs et feature requests.
+  - PRs externes acceptées sous **CLA** (assignation de copyright à l'auteur — indispensable pour préserver l'option dual-license commerciale).
+  - DCO (Developer Certificate of Origin) léger pour démarrer ; CLA Assistant ou EasyCLA si la base de contributeurs grossit.
 - **Code of Conduct** : Contributor Covenant 2.1, light touch.
-- **CLA** : *aucun* en v1. AGPL fait le travail. (Si v2 SaaS en option un jour, on rajoute un CLA pour donner à l'auteur la souplesse d'une dual-license.)
 
 ### 15.4 Stratégie de release
 
-- **0.x preview** : releases GitHub uniquement, builds non signés, audience = early testers ; pas de promesse de compat ascendante.
+- **0.x preview** : releases GitHub uniquement (privées tant que repo privé), builds non signés, audience = early testers ; pas de promesse de compat ascendante.
 - **1.0 quand** : Phase 4 close, un univers entier (lore + sync + chapitres + IA) testable bout-en-bout sur les 3 OS desktop.
-- **Distribution** : binaires sur GitHub Releases ; à terme, Homebrew, Flathub, peut-être Microsoft Store / Mac App Store si justifié.
+- **Distribution** : binaires sur GitHub Releases (téléchargement direct gratuit) ; à terme, Homebrew tap perso, Flathub, peut-être Microsoft Store / Mac App Store si justifié.
 - **Pas d'auto-update obligatoire** ; check d'update opt-in.
+- **Modèle économique futur (à étudier en Phase 5+)** : Romanesk reste gratuit en local. Un service Sync hébergé optionnel et payant pourrait être proposé. La licence ELv2 protège juridiquement ce business model contre un concurrent qui voudrait offrir le même service à partir du code Romanesk.
 
 ### 15.5 Communauté & contribution
 
-- `CONTRIBUTING.md` posé dès le repo initial : setup dev, conventions de code, workflow PR, guide de tests.
-- Issues étiquetées `good-first-issue` dès qu'il y en a.
+- `CONTRIBUTING.md` mis à jour *avant* la première PR externe (post-ouverture du repo).
+- Avant l'ouverture, les retours utilisateurs passent par les canaux directs (email, formulaire de bug report sur le futur site).
 - Discussions GitHub plutôt qu'un Discord en v1 (moins d'engagement à porter).
 - Documentation utilisateur (manuel de l'auteur) écrite **dans Romanesk** quand le module Histoires est livré — dogfooding.
 

@@ -20,7 +20,7 @@ Et trois engagements :
 
 - **Local-first.** Vos données vivent sur votre machine, en SQLite lisible par n'importe quel outil. Aucun cloud par défaut.
 - **IA pluggable.** Anthropic, OpenAI, Google, Mistral, **Ollama / Gemma 4 en local**. Vous choisissez votre provider, vous fournissez vos clés.
-- **Open-source.** Pas de télémétrie cachée, pas de format propriétaire, pas de lock-in.
+- **Free-use, formats ouverts.** Romanesk est gratuit pour tous (particuliers et entreprises), sans abonnement obligatoire. Pas de télémétrie cachée, pas de format de fichier exotique, pas de lock-in : tout exportable en Markdown/JSON.
 
 ---
 
@@ -28,7 +28,7 @@ Et trois engagements :
 
 - [`PRD.md`](./PRD.md) — Product Requirements Document complet (vision, modèle de données, architecture, phasing).
 - [`PHASE-0-PLAN.md`](./PHASE-0-PLAN.md) — Plan détaillé de la phase de fondations (2 semaines).
-- [`docs/LICENSE-CHOICE.md`](./docs/LICENSE-CHOICE.md) — Note de décision sur la licence open-source.
+- [`docs/LICENSE-CHOICE.md`](./docs/LICENSE-CHOICE.md) — Note de décision sur la licence (Elastic License 2.0).
 - [`docs/ADR/`](./docs/ADR/) — Architecture Decision Records.
 
 ---
@@ -58,7 +58,7 @@ Et trois engagements :
 
 ### Installer
 ```bash
-git clone https://github.com/<org>/romanesk.git
+git clone https://github.com/hmorales-pro/romanesk.git
 cd romanesk
 pnpm install
 ```
@@ -94,15 +94,15 @@ Le détail vit dans `PRD.md` (section 14).
 
 ## Contribuer
 
-Toute aide bienvenue à partir de la Phase 1. D'ici là, le projet est en stabilisation rapide et les changements sont volatils. Lire [`CONTRIBUTING.md`](./CONTRIBUTING.md) pour le setup, les conventions, et le workflow PR.
-
-Les issues étiquetées [`good-first-issue`](https://github.com/<org>/romanesk/issues?q=label%3Agood-first-issue) sont les meilleurs points d'entrée.
+Le repository est **privé pendant la Phase 0**. Les contributions externes seront ouvertes au plus tôt à la fin de la Phase 0, sous réserve d'un Contributor License Agreement. Lire [`CONTRIBUTING.md`](./CONTRIBUTING.md) pour le setup, les conventions, et le workflow PR.
 
 ---
 
 ## Licence
 
-À trancher en Phase 0 — voir [`docs/LICENSE-CHOICE.md`](./docs/LICENSE-CHOICE.md). Recommandation par défaut : **AGPL-3.0** (alignée avec l'esprit local-first et privacy-first).
+Romanesk est distribué sous **[Elastic License 2.0](./LICENSE)** — une licence propriétaire et source-available qui autorise l'usage gratuit, illimité, perso comme professionnel, mais interdit la redistribution sous forme d'un service hébergé concurrent. Détails dans [`docs/LICENSE-CHOICE.md`](./docs/LICENSE-CHOICE.md).
+
+Romanesk **n'est pas un projet open-source au sens OSI** : c'est un projet propriétaire, source-available (à terme), free-use.
 
 ---
 

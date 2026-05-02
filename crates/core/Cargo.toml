@@ -2,9 +2,9 @@
 name = "romanesk-core"
 version = "0.0.0"
 edition = "2021"
-license = "AGPL-3.0-only"
+license = "LicenseRef-Elastic-2.0"
 description = "Core domain logic for Romanesk: lore graph, RAG, AI provider abstraction."
-repository = "https://github.com/<org>/romanesk"
+repository = "https://github.com/hmorales-pro/romanesk"
 
 [lib]
 name = "romanesk_core"

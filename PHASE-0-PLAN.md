@@ -89,7 +89,7 @@ romanesk/
 
 ### Jour 1 — Décisions & branding
 - [ ] Trancher **OQ8** (vérifier `romanesk` libre : domaine, GitHub org, package npm/cargo)
-- [ ] Trancher **OQ8b** (licence : recommandation par défaut **AGPL-3.0**, voir `LICENSE-CHOICE.md`)
+- [x] ~~Trancher **OQ8b** (licence)~~ → ✅ **Elastic License 2.0** posée, voir `LICENSE` et `docs/LICENSE-CHOICE.md` (2026-05-02)
 - [ ] Trancher **OQ3** (Tiptap vs Lexical) — POC parallèle de 2 h chaque, garder le gagnant
 - [ ] Trancher **OQ5** (relations extensibles ou figées) — décision : **set figé en v1**, extensible en P1
 - [ ] Créer le repo GitHub `romanesk/romanesk` (privé jusqu'à fin Phase 0)

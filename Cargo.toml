@@ -8,8 +8,8 @@ members = [
 [workspace.package]
 version = "0.0.0"
 edition = "2021"
-license = "AGPL-3.0-only"
-repository = "https://github.com/<org>/romanesk"
+license = "LicenseRef-Elastic-2.0"
+repository = "https://github.com/hmorales-pro/romanesk"
 rust-version = "1.78"
 
 [workspace.lints.rust]

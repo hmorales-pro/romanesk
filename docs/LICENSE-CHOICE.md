@@ -1,121 +1,89 @@
 # Choix de licence — note de décision
 
-> Statut : **À trancher** par l'auteur avant publication du repo public.
-> Recommandation par défaut : **AGPL-3.0**.
+> **Statut** : ✅ tranché — **Elastic License 2.0** (ELv2).
+> **Date** : 2026-05-02.
+> **Décideur** : Hugo Morales.
 
 ---
 
-## Contexte
+## Décision
 
-Romanesk sera distribué en open-source / free-use. Trois familles de licences sont sur la table. Le choix engage le projet pour longtemps : changer de licence après que des contributeurs externes ont commencé à pousser du code est compliqué (il faudrait l'accord de chacun ou un CLA prévu en amont).
+Romanesk est distribué sous **Elastic License 2.0** (texte intégral dans `LICENSE` à la racine). Le projet est **propriétaire et source-available, en free-use** : son utilisation est gratuite et illimitée pour les particuliers comme pour les entreprises, mais la redistribution sous forme d'un service hébergé concurrent est interdite.
 
-Cette note compare les options pour aider à trancher.
-
----
-
-## Les options
-
-### Option A — MIT
-
-> **Esprit** : « Faites ce que vous voulez avec le code, mentionnez juste qui l'a écrit. »
-
-**Pour**
-- Maximum d'adoption — la plupart des entreprises acceptent MIT sans process légal.
-- Simplicité absolue, ~5 lignes.
-- Pas de friction pour les contributeurs.
-- Compatible avec quasiment tout le reste de l'écosystème.
-
-**Contre**
-- N'importe qui peut **forker, fermer le code, vendre Romanesk en SaaS** propriétaire sans rien rendre. C'est arrivé à Redis, ElasticSearch, MongoDB → ils ont *tous* changé de licence par la suite.
-- Aucune protection contre l'appropriation par un acteur plus gros.
-
-### Option B — Apache 2.0
-
-> **Esprit** : « Comme MIT, plus une protection brevets explicite. »
-
-**Pour**
-- Permissif comme MIT.
-- Clause brevets : un contributeur ne peut pas vous attaquer en brevet sur sa propre contribution.
-- Adoption industrielle large (préféré par certaines fondations).
-
-**Contre**
-- Mêmes contre que MIT côté fork closed-source.
-- Texte plus long (~150 lignes), légère friction de lecture.
-
-### Option C — AGPL-3.0
-
-> **Esprit** : « Vous pouvez faire ce que vous voulez, mais toute redistribution **— y compris en SaaS sur le réseau —** doit être accompagnée du code source modifié, sous la même licence. »
-
-**Pour**
-- **Protection forte** contre l'appropriation : un fork SaaS propriétaire est juridiquement impossible sans réécriture from scratch.
-- Aligné avec l'esprit local-first / privacy-first de Romanesk.
-- Communauté open-source mature, jurisprudence solide (Linux est en GPL, MongoDB est passé en SSPL voisine, Grafana est en AGPL).
-- N'empêche pas les particuliers ni les entreprises d'utiliser Romanesk pour eux-mêmes — seulement la *redistribution propriétaire*.
-
-**Contre**
-- **Friction d'intégration en entreprise** : certains services juridiques refusent par principe les copyleft fortes.
-- Certains contributeurs occasionnels préfèrent éviter (peur de « contaminer » leur code).
-- Compatibilité parfois délicate avec des dépendances permissives (cas rares mais à vérifier).
+Le repository GitHub `hmorales-pro/romanesk` reste **privé** pendant la Phase 0. Une éventuelle ouverture en source-available (repo public sous ELv2) sera décidée à la fin de la Phase 0 selon l'état du code.
 
 ---
 
-## Critères de décision propres à Romanesk
+## Pourquoi ELv2
 
-| Critère | Poids | MIT | Apache | AGPL |
-|---------|-------|-----|--------|------|
-| Aligner licence et valeurs (privacy, local-first, no lock-in) | 🔥🔥🔥 | 🟡 neutre | 🟡 neutre | 🟢 fort |
-| Maximiser adoption (plugins tiers, intégrations) | 🔥🔥 | 🟢 max | 🟢 max | 🟡 moyen |
-| Empêcher un fork SaaS commercial | 🔥🔥🔥 | 🔴 nul | 🔴 nul | 🟢 fort |
-| Garder l'option d'une dual-license (vendre des licences commerciales un jour) | 🔥 | 🔴 perdu | 🔴 perdu | 🟢 viable (avec CLA) |
-| Friction pour contributeurs occasionnels | 🔥 | 🟢 nulle | 🟢 nulle | 🟡 moyenne |
-| Compat avec dépendances OSS | 🔥🔥 | 🟢 max | 🟢 max | 🟡 à vérifier au cas par cas |
+L'objectif de Romanesk est d'être :
+- **Gratuit pour ses utilisateurs** (particuliers et entreprises) sans abonnement obligatoire ;
+- **Local-first et transparent** sur la gestion des données ;
+- **Protégé contre le rebranding et l'hébergement SaaS opaque** par un tiers.
 
----
+Quatre familles de licence ont été comparées :
 
-## Recommandation
+| Option | Free use perso/pro | Empêche fork SaaS | Conversion OSS | Reconnu | Verdict |
+|--------|--------------------|-------------------|----------------|---------|---------|
+| MIT / Apache 2.0 | ✅ | ❌ | n/a | ✅✅ | Trop permissif : un acteur peut héberger Romanesk en SaaS opaque demain. |
+| AGPL-3.0 | ✅ (sous copyleft fort) | 🟡 (oblige à publier le code, mais n'empêche pas l'hébergement) | n/a | ✅✅ | Aligné valeurs OSS, mais le projet n'est **pas** open-source. |
+| FSL-1.1 (Sentry) | ✅ | ✅ | ⏰ MIT/Apache après 2 ans | 🟡 | Bon équilibre mais Hugo veut rester propriétaire indéfiniment. |
+| **Elastic License 2.0** | **✅** | **✅** | **❌ (jamais)** | **✅** | **Choisi** : reste propriétaire, free use total, blocage SaaS clair. |
 
-**AGPL-3.0** — pour ces trois raisons combinées :
+L'ELv2 est utilisée par Elasticsearch / Kibana 7.11+, Redis Stack, MariaDB MaxScale, etc. Le texte est court (~80 lignes), connu des équipes juridiques d'entreprise, et ses trois interdictions sont sans ambiguïté :
 
-1. **Cohérence avec le positionnement.** Romanesk défend le local-first et la propriété des données. Une licence permissive permettrait à un acteur de prendre le code, l'héberger en SaaS opaque, et trahir cet esprit. AGPL le rend impossible.
-2. **Outil personnel d'abord.** L'auteur ne perd rien à la friction d'adoption « entreprise » : ce n'est pas le marché visé en v1.
-3. **Option future préservée.** Si un jour Romanesk évolue vers un modèle dual-license (open-source AGPL + license commerciale pour les exceptions), la base AGPL le permet *à condition d'avoir un CLA* — à mettre en place avant la première PR externe.
+1. **Pas de SaaS hébergé** : on ne peut pas fournir Romanesk « as a managed service » à des tiers.
+2. **Pas de contournement de système de licence** : si un jour Romanesk introduit une feature payante derrière une clé, on ne peut pas la débrider.
+3. **Pas d'altération des notices** : copyright et mentions licence doivent rester intacts.
 
----
-
-## Si on choisissait MIT à la place
-
-Acceptable **si et seulement si** :
-- L'objectif principal devient l'adoption massive et l'intégration dans d'autres outils (ex. Romanesk comme moteur de lore embarqué dans des éditeurs commerciaux).
-- L'auteur accepte le risque d'un fork SaaS qu'il ne contrôlerait pas.
-- L'écosystème de plugins prime sur la pureté du modèle.
-
-Ce n'est pas le cas aujourd'hui, donc MIT n'est pas recommandé.
+Tout le reste (use, copy, distribute, modify, derivative works, usage commercial interne) est explicitement autorisé.
 
 ---
 
-## Apache 2.0 comme compromis ?
+## Conséquences pratiques
 
-Apache 2.0 ressemble à MIT côté fork mais protège mieux côté brevets. Pertinent si :
-- Vous attendez beaucoup de contributions de gros acteurs avec des portefeuilles brevets.
-- Vous voulez la simplicité permissive sans angle mort patent.
+### Pour les utilisateurs
+- Téléchargent et utilisent Romanesk gratuitement, à vie.
+- Peuvent l'utiliser dans un cadre professionnel, dans une entreprise, sur autant de machines que voulu.
+- Ne peuvent pas le rebrand/republier ni le proposer en SaaS.
 
-Pour un outil personnel d'écrivain, le bénéfice est marginal. **Pas la recommandation principale**.
+### Pour les contributions externes
+- **Repo privé en Phase 0** → pas de PR externes possibles aujourd'hui.
+- Quand le repo s'ouvrira (au plus tôt à la fin de la Phase 0) :
+  - Toute PR devra être accompagnée d'un **CLA** (Contributor License Agreement) qui assigne le copyright à Hugo Morales. Indispensable pour pouvoir vendre des licences commerciales d'exception un jour, et pour pouvoir évoluer la licence si nécessaire.
+  - Démarrage probable avec un **DCO** (Developer Certificate of Origin) léger ; CLA Assistant ou EasyCLA si la base de contributeurs grossit.
+- Un fichier `CONTRIBUTING.md` et une note CLA seront posés *avant* la première PR externe — pas avant.
+
+### Pour Hugo (auteur)
+- Garde 100% du copyright tant qu'il est seul à coder, donc reste libre de :
+  - Vendre des **licences commerciales d'exception** (ex. à un acteur qui voudrait offrir Romanesk en SaaS) ;
+  - Proposer un **tier payant** (sync hébergée, modèles cloud premium, etc.) avec une fonctionnalité protégée par clé ;
+  - **Relicencier** plus tard (ex. basculer en OSS si la stratégie change) sans accord d'aucun contributeur.
+- Doit auditer chaque dépendance ajoutée :
+  - Crates Rust sous MIT / Apache / BSD / ISC : **OK**.
+  - Crates sous LGPL : **OK** côté lien dynamique, à valider au cas par cas.
+  - Crates sous **GPL / AGPL** : **interdit** (incompatibles avec une distribution propriétaire).
+  - Outil : `cargo-deny` configuré pour bloquer GPL/AGPL en CI.
 
 ---
 
-## Décisions associées si on part sur AGPL
+## Ce qui change par rapport à la version précédente de cette note
 
-- **CLA (Contributor License Agreement)** : *non* en v1. AGPL fait le travail. Si on veut garder la porte ouverte à une dual-license un jour, ajouter un CLA *avant* les premières contributions externes (DCO simple suffit pour commencer ; CLA Assistant ou Linux Foundation EasyCLA si ça grossit).
-- **Dépendances** : auditer chaque ajout. Crates Rust sous MIT/Apache = OK. Crates GPL = compat. Tout ce qui est `BUSL`, `SSPL`, `Elastic v2` ou non-OSI = exclu.
-- **Marquage** : header AGPL-3.0 dans chaque fichier source (ou au moins par crate). Outil : `cargo-license` pour audit régulier.
+La version initiale de cette note recommandait **AGPL-3.0** (modèle open-source copyleft). Décision révisée le 2026-05-02 :
+
+- Hugo souhaite **garder le contrôle commercial** de Romanesk (option dual-license, tier payant futur, exception SaaS payante) sans la contrainte de gérer un CLA dès le jour 1 d'une base AGPL.
+- Le positionnement « propriétaire mais free-use » est cohérent avec les outils de référence du marché (Obsidian, Linear, Notion côté desktop) et n'enlève rien à l'accessibilité pour l'utilisateur final.
+- L'ELv2 fournit un texte standard pré-établi qui colle exactement à ce besoin, sans avoir à rédiger un EULA custom (et sans avocat).
+
+Romanesk **n'est donc pas un projet open-source** au sens OSI. C'est un projet **propriétaire, source-available (à terme), free-use**.
 
 ---
 
-## À trancher maintenant
+## Actions de suivi
 
-- [ ] Confirmer **AGPL-3.0** comme licence par défaut, OU
-- [ ] Préférer **MIT** (adoption max, on accepte le risque), OU
-- [ ] Préférer **Apache 2.0** (compromis brevets), OU
-- [ ] Demander une analyse plus poussée d'une 4ᵉ option (BSL avec retour OSS après N ans, Polyform, etc.).
-
-Une fois choisie, poser le fichier `LICENSE` à la racine, ajouter le header dans chaque source, et mettre à jour `OQ8b` du PRD.
+- [x] Poser `LICENSE` à la racine (Elastic License 2.0).
+- [x] Bumper `Cargo.toml` (workspace) en `license = "LicenseRef-Elastic-2.0"` (SPDX standard pour licences non-OSI).
+- [x] Mettre à jour README, PRD, ROADMAP pour retirer toute mention « open-source » et la remplacer par « source-available, free-use ».
+- [ ] Ajouter `cargo-deny.toml` qui bloque les dépendances GPL/AGPL (Phase 0 — J5).
+- [ ] Décider en fin de Phase 0 si le repo passe public (source-available) ou reste privé (binaire seulement).
+- [ ] Si le repo s'ouvre : ajouter `CONTRIBUTING.md` mis à jour + DCO + note CLA *avant* la première PR externe.
