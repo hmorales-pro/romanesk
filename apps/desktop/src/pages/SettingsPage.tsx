@@ -158,16 +158,13 @@ export default function SettingsPage() {
               </div>
 
               {savedOnce && (
-                <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                <div className="rounded-md border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900">
                   ✓ Settings enregistrés dans{" "}
                   <span className="font-mono text-xs">
                     ~/Library/Application Support/app.romanesk.desktop/settings.json
                   </span>
-                  .
-                  <br />
-                  <strong>Redémarre Romanesk</strong> pour que les nouveaux
-                  modèles soient chargés (rechargement à chaud des providers
-                  IA en Phase 4+).
+                  . Les providers IA ont été rechargés à chaud — pas besoin
+                  de redémarrer.
                 </div>
               )}
 

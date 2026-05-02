@@ -3,15 +3,19 @@
 //! Stockage dans `<app_data_dir>/settings.json` (pas de table SQL,
 //! évite une migration et c'est trivial à inspecter / éditer à la main).
 //!
-//! Phase 3.x : sauvegarde déclenche un message demandant à l'utilisateur
-//! de redémarrer l'app — les `OllamaProvider` instanciés au setup ne
-//! sont pas rebuild à chaud. Rechargement à chaud = Phase 4+.
+//! Phase 5 (P5.3) : sauvegarde reconstruit les providers IA dans les
+//! States Tauri (`AiProvider`, `AiEmbedder`) sans redémarrer l'app.
+//! Les commandes IA snapshotent la valeur courante au début de leur
+//! exécution, donc le hot-swap est transparent côté call-site.
 
 use std::path::PathBuf;
+use std::sync::Arc;
 
+use romanesk_core::ai::{Capabilities, OllamaConfig, OllamaProvider};
 use serde::{Deserialize, Serialize};
-use tauri::Manager;
+use tauri::{Manager, State};
 
+use super::ai::{AiEmbedder, AiProvider};
 use super::{CommandError, CommandResult};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,6 +82,8 @@ pub async fn settings_get(app: tauri::AppHandle) -> CommandResult<AppSettings> {
 #[tauri::command]
 pub async fn settings_save(
     app: tauri::AppHandle,
+    chat_state: State<'_, AiProvider>,
+    embed_state: State<'_, AiEmbedder>,
     settings: AppSettings,
 ) -> CommandResult<AppSettings> {
     let dir = app
@@ -87,5 +93,45 @@ pub async fn settings_save(
     settings
         .save(&dir)
         .map_err(|e| CommandError::Other(format!("write settings.json: {e}")))?;
+
+    // Hot-reload des providers IA : on reconstruit les `OllamaProvider`
+    // avec les nouveaux URL + modèles, et on swap la valeur dans les
+    // States Tauri. Les commandes IA snapshot leur State au début de
+    // leur exécution, donc le swap est visible au prochain appel sans
+    // toucher au code des commandes.
+    let chat_provider = OllamaProvider::new(OllamaConfig {
+        base_url: settings.ollama_base_url.clone(),
+        default_model: settings.chat_model.clone(),
+        capabilities: Capabilities {
+            text: true,
+            vision: false,
+            embeddings: false,
+            tool_use: false,
+            long_context: true,
+        },
+    });
+    let embed_provider = OllamaProvider::new(OllamaConfig {
+        base_url: settings.ollama_base_url.clone(),
+        default_model: settings.embed_model.clone(),
+        capabilities: Capabilities {
+            text: false,
+            vision: false,
+            embeddings: true,
+            tool_use: false,
+            long_context: false,
+        },
+    });
+
+    chat_state.replace(Arc::new(chat_provider)).await;
+    embed_state
+        .replace(Arc::new(embed_provider), settings.embed_model.clone())
+        .await;
+    tracing::info!(
+        ollama = %settings.ollama_base_url,
+        chat = %settings.chat_model,
+        embed = %settings.embed_model,
+        "Providers IA hot-reloaded depuis settings_save"
+    );
+
     Ok(settings)
 }

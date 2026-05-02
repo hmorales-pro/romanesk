@@ -158,11 +158,11 @@ pub fn run() {
                 },
             });
 
-            app.manage(AiProvider(Arc::new(chat_provider)));
-            app.manage(AiEmbedder {
-                provider: Arc::new(embed_provider),
-                model: settings.embed_model.clone(),
-            });
+            app.manage(AiProvider::from_provider(Arc::new(chat_provider)));
+            app.manage(AiEmbedder::from_parts(
+                Arc::new(embed_provider),
+                settings.embed_model.clone(),
+            ));
             tracing::info!("Setup terminé, base prête, providers IA initialisés");
             Ok(())
         })

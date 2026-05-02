@@ -14,20 +14,64 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
 use tauri::State;
+use tokio::sync::RwLock;
 use uuid::Uuid;
 
 use super::{CommandError, CommandResult};
 
 /// Wrapper qui donne un nom typable à la State partagée.
+///
+/// Phase 5 (P5.3) : interior-mutable pour permettre le hot-reload des
+/// providers IA depuis Settings sans redémarrer l'app. Les commandes
+/// snapshotent la valeur courante en début d'exécution (`snapshot().await`)
+/// puis travaillent sur l'`Arc` cloné — la mutation est visible au
+/// prochain appel sans toucher au call-site.
 #[derive(Clone)]
-pub struct AiProvider(pub Arc<dyn Provider>);
+pub struct AiProvider(pub Arc<RwLock<Arc<dyn Provider>>>);
+
+impl AiProvider {
+    #[must_use]
+    pub fn from_provider(p: Arc<dyn Provider>) -> Self {
+        Self(Arc::new(RwLock::new(p)))
+    }
+
+    /// Clone l'`Arc` courant. Tient le read lock le temps minimal — l'`Arc`
+    /// retourné peut être utilisé sans bloquer d'autres lecteurs ni un
+    /// futur swap.
+    pub async fn snapshot(&self) -> Arc<dyn Provider> {
+        self.0.read().await.clone()
+    }
+
+    pub async fn replace(&self, p: Arc<dyn Provider>) {
+        *self.0.write().await = p;
+    }
+}
 
 /// Provider spécifique pour les embeddings (modèle distinct du chat).
 /// Phase 3.3 : Ollama avec `nomic-embed-text:latest` par défaut.
+/// Phase 5 (P5.3) : interior-mutable comme `AiProvider`.
 #[derive(Clone)]
-pub struct AiEmbedder {
+pub struct AiEmbedder(pub Arc<RwLock<AiEmbedderInner>>);
+
+#[derive(Clone)]
+pub struct AiEmbedderInner {
     pub provider: Arc<OllamaProvider>,
     pub model: String,
+}
+
+impl AiEmbedder {
+    #[must_use]
+    pub fn from_parts(provider: Arc<OllamaProvider>, model: String) -> Self {
+        Self(Arc::new(RwLock::new(AiEmbedderInner { provider, model })))
+    }
+
+    pub async fn snapshot(&self) -> AiEmbedderInner {
+        self.0.read().await.clone()
+    }
+
+    pub async fn replace(&self, provider: Arc<OllamaProvider>, model: String) {
+        *self.0.write().await = AiEmbedderInner { provider, model };
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -41,9 +85,10 @@ pub struct AiStatus {
 
 #[tauri::command]
 pub async fn ai_ping(provider: State<'_, AiProvider>) -> CommandResult<AiStatus> {
-    let provider_id = provider_id_label(&provider.0.id());
-    let default_model = default_model_label(&provider.0);
-    match provider.0.ping().await {
+    let provider = provider.snapshot().await;
+    let provider_id = provider_id_label(&provider.id());
+    let default_model = default_model_label(&provider);
+    match provider.ping().await {
         Ok(()) => Ok(AiStatus {
             provider_id,
             default_model,
@@ -109,8 +154,8 @@ pub async fn ai_complete(
         json_schema: None,
     };
 
+    let provider = provider.snapshot().await;
     let res: CompletionResponse = provider
-        .0
         .complete(req)
         .await
         .map_err(|e| CommandError::Other(e.to_string()))?;
@@ -216,8 +261,8 @@ pub async fn ai_generate_entity_draft(
         json_schema: Some(json!({ "type": "object" })),
     };
 
+    let provider = provider.snapshot().await;
     let res = provider
-        .0
         .complete(req)
         .await
         .map_err(|e| CommandError::Other(e.to_string()))?;
@@ -398,6 +443,7 @@ pub async fn ai_universe_reindex(
 ) -> CommandResult<ReindexResult> {
     let uid = Uuid::parse_str(&universe_id)?;
     let repo = Repo::new(db.inner().clone());
+    let embedder = embedder.snapshot().await;
 
     let entities = repo.entities().list_in_universe(uid, None).await?;
     if entities.is_empty() {
@@ -497,6 +543,8 @@ pub async fn ai_rag_query(
     }
 
     let repo = Repo::new(db.inner().clone());
+    let provider = provider.snapshot().await;
+    let embedder = embedder.snapshot().await;
     let universe = repo
         .universes()
         .get(uid)
