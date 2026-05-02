@@ -44,6 +44,13 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
   - `src/pages/{LibraryPage, UniversePage, EntityPage}.tsx` : Bibliothèque (liste univers + form inline), Univers (liste personnages + form), Fiche Personnage (read-only ; édition Tiptap arrive en J8).
   - `main.tsx` réécrit : `QueryClientProvider` + `RouterProvider` ; ancien `App.tsx` réduit à un re-export du Layout.
   - `pnpm typecheck` + `pnpm lint` verts.
+- **Phase 0 — J8** : édition de la fiche personnage avec Tiptap.
+  - `crates/core` : `UpdateEntity` (champs modifiables : name, summary, content, cover_image, is_real) + `EntityRepo::update(id, UpdateEntity)`. Trigger SQL `trg_entities_updated` met à jour `updated_at` automatiquement. 3 nouveaux tests d'intégration (replace, blank name, NotFound).
+  - `apps/desktop/src-tauri` : commande `entity_update` + `UpdateEntityPayload` (biography typée `Value` opaque pour roundtripper le doc Tiptap bit-pour-bit). Helper `is_empty_biography` récursif qui détecte un doc avec uniquement des nœuds vides.
+  - Front deps : `@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/extension-placeholder` (v2.10).
+  - `src/components/TiptapEditor.tsx` : composant React avec `useEditor`, accept `value: TiptapDoc | string | null` (legacy strings pré-J8 wrappées dans un paragraphe), placeholder configurable, prop `editable` pour le mode read-only.
+  - `src/pages/EntityPage.tsx` réécrite : mode View (rendu Tiptap read-only) + bouton « Modifier » qui bascule en mode Edit (form complet : nom, archétype, traits, TiptapEditor pour biographie). Hydratation du form uniquement à la transition `false→true` via `useRef` (évite l'écrasement de la saisie après invalidation de query).
+  - `src/index.css` : styles `.ProseMirror` minimaux pour Tiptap (paragraphes, titres, listes, blockquote, code, placeholder).
 
 ### Changed
 - **Pivot du modèle de distribution** : open-source AGPL → **propriétaire source-available, free-use** sous Elastic License 2.0.

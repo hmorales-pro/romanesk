@@ -147,11 +147,12 @@ romanesk/
 **Livrable J7** : démo « créer univers → fiche perso → fermer/rouvrir » assemblable. Compilation Rust/Tauri à valider en local.
 
 ### Jour 8 — Éditeur Tiptap intégré
-- [ ] Tiptap dans la fiche personnage (StarterKit + `@tiptap/extension-placeholder`)
-- [ ] Sauvegarde en JSON dans la colonne `content`
-- [ ] Restauration au reload
+- [x] Tiptap dans la fiche personnage (`@tiptap/starter-kit` + `@tiptap/extension-placeholder`)
+- [x] Sauvegarde en JSON dans `content_json.biography` via `entity_update` (Repo::entities().update + UpdateEntityPayload)
+- [x] Restauration au reload : doc ProseMirror roundtrippé bit-pour-bit, mode read-only utilise le même éditeur Tiptap (cohérence visuelle)
+- [ ] **Validation chez Hugo** : ouvrir une fiche, cliquer Modifier, écrire avec mise en forme, Enregistrer, fermer/rouvrir l'app, vérifier que tout est restauré
 
-**Livrable J8** : champ riche pour la biographie d'un personnage.
+**Livrable J8** : édition riche complète pour la biographie d'un personnage. Format binaire compatible avec une migration future vers un éditeur tiers (Lexical, ADR 0002 conditionnellement déclenchable).
 
 ### Jour 9 — CI offline-only
 - [ ] `.github/workflows/ci.yml` :

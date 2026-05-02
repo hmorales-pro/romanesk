@@ -66,6 +66,29 @@ export function entityCreate(args: CreateEntityArgs): Promise<Entity> {
   });
 }
 
+export interface UpdateEntityArgs {
+  id: Uuid;
+  name: string;
+  summary?: string;
+  archetype?: string;
+  traits?: string[];
+  /** ProseMirror doc (Tiptap), string (legacy) ou null. */
+  biography?: unknown;
+}
+
+export function entityUpdate(args: UpdateEntityArgs): Promise<Entity> {
+  return invoke<Entity>("entity_update", {
+    payload: {
+      id: args.id,
+      name: args.name,
+      summary: args.summary ?? null,
+      archetype: args.archetype ?? null,
+      traits: args.traits ?? [],
+      biography: args.biography ?? null,
+    },
+  });
+}
+
 export function entityGet(id: Uuid): Promise<Entity | null> {
   return invoke<Entity | null>("entity_get", { id });
 }

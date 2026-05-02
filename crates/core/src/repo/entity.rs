@@ -6,7 +6,7 @@ use sqlx::Row;
 use uuid::Uuid;
 
 use crate::db::Database;
-use crate::domain::{Entity, EntityType, NewEntity};
+use crate::domain::{Entity, EntityType, NewEntity, UpdateEntity};
 use crate::repo::error::{RepoError, RepoResult};
 
 pub struct EntityRepo<'a> {
@@ -121,6 +121,38 @@ impl<'a> EntityRepo<'a> {
             .await?
         };
         Ok(row.0)
+    }
+
+    /// Met à jour une entité existante. Tous les champs modifiables
+    /// (cf. [`UpdateEntity`]) sont remplacés en bloc — pas de patch
+    /// partiel. `id`, `universe_id`, `kind`, `created_at` restent inchangés.
+    /// Le trigger SQL `trg_entities_updated` met à jour `updated_at`.
+    pub async fn update(&self, id: Uuid, update: UpdateEntity) -> RepoResult<Entity> {
+        if update.name.trim().is_empty() {
+            return Err(RepoError::Invalid("name must not be empty".into()));
+        }
+
+        let content_str = serde_json::to_string(&update.content)?;
+
+        let res = sqlx::query(
+            "UPDATE lore_entities \
+             SET name = ?, summary = ?, content_json = ?, cover_image = ?, is_real = ? \
+             WHERE id = ? AND deleted_at IS NULL",
+        )
+        .bind(&update.name)
+        .bind(update.summary.as_deref())
+        .bind(&content_str)
+        .bind(update.cover_image.as_deref())
+        .bind(update.is_real)
+        .bind(id.to_string())
+        .execute(self.db.pool())
+        .await?;
+
+        if res.rows_affected() == 0 {
+            return Err(RepoError::NotFound);
+        }
+
+        self.get(id).await?.ok_or(RepoError::NotFound)
     }
 
     /// Suppression **hard**. Les relations / snapshots / refs sont

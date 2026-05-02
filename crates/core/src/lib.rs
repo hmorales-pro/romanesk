@@ -28,7 +28,7 @@ pub mod repo;
 pub use db::{Database, DbError};
 pub use domain::{
     Embedding, EmbeddingHit, Entity, EntityType, NewEmbedding, NewEntity, NewUniverse,
-    SourceType, Universe,
+    SourceType, UpdateEntity, Universe,
 };
 pub use rag::{EmbeddingRepo, SearchFilter};
 pub use repo::{Repo, RepoError, RepoResult};

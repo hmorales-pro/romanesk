@@ -140,6 +140,19 @@ impl NewEntity {
     }
 }
 
+/// Champs d'une entité modifiables après création. Le `kind` et l'`universe_id`
+/// ne sont pas modifiables (un personnage ne devient pas un lieu, et il ne
+/// déménage pas d'univers — sa duplication est une opération distincte).
+#[derive(Debug, Clone)]
+pub struct UpdateEntity {
+    pub name: String,
+    pub summary: Option<String>,
+    /// Contenu typé (archétype, traits, biographie Tiptap…) sérialisé en JSON.
+    pub content: serde_json::Value,
+    pub cover_image: Option<String>,
+    pub is_real: bool,
+}
+
 // ---------------------------------------------------------------------------
 // Embedding (RAG)
 // ---------------------------------------------------------------------------

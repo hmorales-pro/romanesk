@@ -8,7 +8,7 @@
 //! - PRAGMA foreign_keys=ON propagé.
 //! - Round-trip JSON pour `settings_json` / `content_json`.
 
-use romanesk_core::domain::{EntityType, NewEntity, NewUniverse};
+use romanesk_core::domain::{EntityType, NewEntity, NewUniverse, UpdateEntity};
 use romanesk_core::{Database, Repo, RepoError};
 use serde_json::json;
 
@@ -219,6 +219,128 @@ async fn rejects_empty_entity_name() {
         .await
         .expect_err("should reject empty name");
     assert!(matches!(err, RepoError::Invalid(_)));
+}
+
+#[tokio::test]
+async fn update_entity_replaces_modifiable_fields() {
+    let repo = fresh_repo().await;
+    let u = repo.universes().create(NewUniverse::named("Aether")).await.unwrap();
+
+    let original = repo
+        .entities()
+        .create(NewEntity::character(u.id, "Aldric"))
+        .await
+        .unwrap();
+
+    // Doc ProseMirror nested (typique Tiptap) à round-tripper.
+    let bio_doc = json!({
+        "type": "doc",
+        "content": [
+            {
+                "type": "paragraph",
+                "content": [
+                    { "type": "text", "text": "Mage exilé du conseil de Bren." }
+                ]
+            },
+            {
+                "type": "bulletList",
+                "content": [
+                    {
+                        "type": "listItem",
+                        "content": [{
+                            "type": "paragraph",
+                            "content": [{ "type": "text", "text": "Maîtrise des sorts de feu" }]
+                        }]
+                    }
+                ]
+            }
+        ]
+    });
+
+    let new_content = json!({
+        "archetype": "mentor",
+        "traits": ["calme", "rancunier"],
+        "biography": bio_doc.clone(),
+    });
+
+    let updated = repo
+        .entities()
+        .update(
+            original.id,
+            UpdateEntity {
+                name: "Aldric le Sombre".into(),
+                summary: Some("Mage exilé.".into()),
+                content: new_content.clone(),
+                cover_image: None,
+                is_real: false,
+            },
+        )
+        .await
+        .unwrap();
+
+    // Champs modifiés
+    assert_eq!(updated.name, "Aldric le Sombre");
+    assert_eq!(updated.summary.as_deref(), Some("Mage exilé."));
+    assert_eq!(updated.content, new_content);
+    // Champs préservés
+    assert_eq!(updated.id, original.id);
+    assert_eq!(updated.universe_id, original.universe_id);
+    assert_eq!(updated.kind, EntityType::Character);
+    assert_eq!(updated.created_at, original.created_at);
+
+    // Re-fetch pour confirmer la persistance
+    let refetched = repo.entities().get(original.id).await.unwrap().unwrap();
+    assert_eq!(refetched, updated);
+    // Le doc Tiptap nested doit ressortir bit-pour-bit.
+    assert_eq!(refetched.content["biography"], bio_doc);
+}
+
+#[tokio::test]
+async fn update_entity_rejects_empty_name() {
+    let repo = fresh_repo().await;
+    let u = repo.universes().create(NewUniverse::named("Aether")).await.unwrap();
+    let e = repo
+        .entities()
+        .create(NewEntity::character(u.id, "Aldric"))
+        .await
+        .unwrap();
+
+    let err = repo
+        .entities()
+        .update(
+            e.id,
+            UpdateEntity {
+                name: "   ".into(),
+                summary: None,
+                content: json!({}),
+                cover_image: None,
+                is_real: false,
+            },
+        )
+        .await
+        .expect_err("blank name should be rejected");
+    assert!(matches!(err, RepoError::Invalid(_)));
+}
+
+#[tokio::test]
+async fn update_unknown_entity_returns_not_found() {
+    let repo = fresh_repo().await;
+    let bogus = uuid::Uuid::now_v7();
+    let err = repo
+        .entities()
+        .update(
+            bogus,
+            UpdateEntity {
+                name: "x".into(),
+                summary: None,
+                content: json!({}),
+                cover_image: None,
+                is_real: false,
+            },
+        )
+        .await
+        .expect_err("non-existent id should fail");
+    assert!(matches!(err, RepoError::NotFound));
 }
 
 #[tokio::test]

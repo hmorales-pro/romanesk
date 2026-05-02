@@ -30,11 +30,18 @@ export interface Universe {
 /**
  * Contenu typé attendu pour un Personnage.
  * Stocké dans `lore_entities.content_json` côté DB.
+ *
+ * `biography` est typé `unknown` parce qu'il peut être :
+ * - `null` : pas de biographie
+ * - une **string** (fiches legacy pré-J8, pré-Tiptap)
+ * - un **doc ProseMirror** `{ type: "doc", content: [...] }` (J8+).
+ *
+ * Le composant `<TiptapEditor>` accepte les trois formats en input.
  */
 export interface CharacterContent {
   archetype: string | null;
   traits: string[];
-  biography: string | null;
+  biography: unknown;
 }
 
 export interface Entity {
@@ -60,7 +67,9 @@ export function characterContent(entity: Entity): CharacterContent {
   const c = entity.content as Partial<CharacterContent>;
   return {
     archetype: typeof c.archetype === "string" ? c.archetype : null,
-    traits: Array.isArray(c.traits) ? c.traits.filter((t): t is string => typeof t === "string") : [],
-    biography: typeof c.biography === "string" ? c.biography : null,
+    traits: Array.isArray(c.traits)
+      ? c.traits.filter((t): t is string => typeof t === "string")
+      : [],
+    biography: c.biography ?? null,
   };
 }

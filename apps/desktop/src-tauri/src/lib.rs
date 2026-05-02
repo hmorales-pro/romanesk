@@ -73,6 +73,7 @@ pub fn run() {
             commands::universe::universe_delete,
             commands::entity::entity_list_in_universe,
             commands::entity::entity_create,
+            commands::entity::entity_update,
             commands::entity::entity_get,
             commands::entity::entity_delete,
         ])
