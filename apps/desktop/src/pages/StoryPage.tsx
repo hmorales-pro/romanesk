@@ -20,6 +20,7 @@ import {
   ArrowLeft,
   ArrowUp,
   BookOpen,
+  Download,
   GripVertical,
   Plus,
   Save,
@@ -32,6 +33,7 @@ import {
   chapterListForStory,
   chapterReorder,
   chapterUpdate,
+  storyExportMarkdown,
   storyGet,
   universeGet,
 } from "@/lib/api";
@@ -225,7 +227,7 @@ export default function StoryPage() {
         <div className="rounded-full bg-secondary p-3 text-secondary-foreground">
           <BookOpen className="size-5" aria-hidden />
         </div>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-semibold">
             {storyQuery.data?.title ?? "Chargement…"}
           </h1>
@@ -240,6 +242,24 @@ export default function StoryPage() {
             </p>
           )}
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={async () => {
+            try {
+              const md = await storyExportMarkdown(storyId);
+              await navigator.clipboard.writeText(md);
+              window.alert(
+                `Markdown de l'histoire copié dans le presse-papier (${md.length} caractères).`,
+              );
+            } catch (err) {
+              window.alert(`Échec de l'export : ${String(err)}`);
+            }
+          }}
+          title="Exporter cette histoire en Markdown (presse-papier)"
+        >
+          <Download className="size-3.5" aria-hidden /> Exporter MD
+        </Button>
       </header>
 
       <div className="grid gap-4 md:grid-cols-[260px_1fr]">

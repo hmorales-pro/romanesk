@@ -9,4 +9,4 @@
 
 pub mod markdown;
 
-pub use markdown::{render_universe_markdown, render_tiptap_doc};
+pub use markdown::{render_story_markdown, render_tiptap_doc, render_universe_markdown};

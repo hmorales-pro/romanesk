@@ -6,7 +6,7 @@
 
 use serde_json::Value;
 
-use crate::domain::{Entity, EntityType, Relation, RelationType, Universe};
+use crate::domain::{Chapter, Entity, EntityType, Relation, RelationType, Story, Universe};
 
 /// Rend un univers entier en Markdown : entête + sections par type d'entité
 /// + section relations.
@@ -86,6 +86,59 @@ pub fn render_universe_markdown(
             out.push('\n');
         }
         out.push('\n');
+    }
+
+    out
+}
+
+/// Rend une story (récit) entière en Markdown : entête + synopsis + chaque
+/// chapitre en H2 (titre + body Tiptap converti).
+///
+/// Les chapitres doivent déjà être triés par `sort_order` (la commande Tauri
+/// le fait via `chapter_list_for_story`). Pas de table des matières
+/// auto-générée — Markdown laisse les outils consommateurs (Obsidian,
+/// Pandoc) la construire à la volée.
+#[must_use]
+pub fn render_story_markdown(story: &Story, chapters: &[Chapter]) -> String {
+    let mut out = String::new();
+
+    // Entête story
+    out.push_str(&format!("# {}\n\n", story.title));
+    if let Some(syn) = &story.synopsis {
+        out.push_str(syn);
+        out.push_str("\n\n");
+    }
+    let total_words: i64 = chapters.iter().map(|c| c.word_count).sum();
+    out.push_str(&format!(
+        "*Exporté depuis Romanesk · type {} · {} chapitre(s) · {} mots écrits.*\n\n",
+        story.kind.as_str(),
+        chapters.len(),
+        total_words,
+    ));
+    out.push_str("---\n\n");
+
+    if chapters.is_empty() {
+        out.push_str("_Aucun chapitre pour l'instant._\n");
+        return out;
+    }
+
+    for (i, ch) in chapters.iter().enumerate() {
+        let title = ch
+            .title
+            .as_deref()
+            .filter(|s| !s.trim().is_empty())
+            .map_or_else(|| format!("Chapitre {}", i + 1), str::to_string);
+        out.push_str(&format!("## {title}\n\n"));
+        let body = render_tiptap_doc(&ch.body_json);
+        if body.trim().is_empty() {
+            out.push_str("_(chapitre vide)_\n\n");
+        } else {
+            out.push_str(&body);
+            if !body.ends_with('\n') {
+                out.push('\n');
+            }
+            out.push('\n');
+        }
     }
 
     out

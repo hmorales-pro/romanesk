@@ -968,6 +968,11 @@ export function storyDelete(id: Uuid): Promise<void> {
   return invoke<void>("story_delete", { id });
 }
 
+/** P6.5 : exporte une story complète (titre + chapitres) en Markdown. */
+export function storyExportMarkdown(id: Uuid): Promise<string> {
+  return invoke<string>("story_export_markdown", { id });
+}
+
 // ---------------------------------------------------------------------------
 // Chapter (Phase 4)
 // ---------------------------------------------------------------------------

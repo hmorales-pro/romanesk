@@ -3,6 +3,7 @@
 //! Une story est rattachée à un univers (cas standard) ou orpheline (brouillon
 //! libre). Elle sert de racine au module chapitres / écriture assistée IA.
 
+use romanesk_core::export::render_story_markdown;
 use romanesk_core::{Database, NewStory, Repo, Story, StoryType, UpdateStory};
 use serde::Deserialize;
 use tauri::State;
@@ -141,4 +142,23 @@ pub async fn story_delete(db: State<'_, Database>, id: String) -> CommandResult<
     let id = Uuid::parse_str(&id)?;
     Repo::new(db.inner().clone()).stories().delete(id).await?;
     Ok(())
+}
+
+/// Exporte une story complète (titre + synopsis + chapitres) en Markdown.
+/// Le rendu inclut les chapitres dans l'ordre `sort_order` et convertit le
+/// `body_json` Tiptap via `render_tiptap_doc`. Phase 6 (P6.5).
+#[tauri::command]
+pub async fn story_export_markdown(
+    db: State<'_, Database>,
+    id: String,
+) -> CommandResult<String> {
+    let story_id = Uuid::parse_str(&id)?;
+    let repo = Repo::new(db.inner().clone());
+    let story = repo
+        .stories()
+        .get(story_id)
+        .await?
+        .ok_or_else(|| CommandError::Other(format!("story {story_id} not found")))?;
+    let chapters = repo.chapters().list_for_story(story_id).await?;
+    Ok(render_story_markdown(&story, &chapters))
 }
