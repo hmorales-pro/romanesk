@@ -13,7 +13,7 @@ export default function Layout() {
             <Sparkles className="size-5" aria-hidden />
             <span className="text-lg font-semibold tracking-tight">Romanesk</span>
           </Link>
-          <span className="text-xs text-muted-foreground">v0.3.0 · pre-alpha</span>
+          <span className="text-xs text-muted-foreground">v0.4.0 · pre-alpha</span>
           <Link
             to="/settings"
             className="ml-auto text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"

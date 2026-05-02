@@ -4,7 +4,69 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
 
 ## [Unreleased]
 
-_Rien pour l'instant — Phase 4 démarre au prochain commit._
+_Rien pour l'instant — Phase 5 démarre au prochain commit._
+
+## [0.4.0] — 2026-05-02
+
+Tag de fin de Phase 4 (Histoires + chapitrage + IA en édition). Romanesk
+passe de « gestionnaire de lore + Q&A » à **logiciel d'écriture local-first
+avec IA en sparring partner**.
+
+### Added — Phase 4
+- **P3.x (post-3.0)** : page Settings (`/settings`) pour configurer le
+  provider IA (URL Ollama + modèles chat/embed) sans toucher aux env vars.
+  Stockage `~/Library/Application Support/.../settings.json`. Bouton
+  Tester Ollama qui appelle `ai_ping`. Redémarrage de l'app requis pour
+  appliquer (les providers IA sont construits une seule fois au boot —
+  hot-reload réservé à Phase 5+).
+- **P4.1** : Module Histoires. Domain `Story` + `StoryType`
+  (Novel / Novella / ShortStory / Series), `StoryRepo` (CRUD + soft-delete).
+  Section « Histoires » dans UniversePage avec form de création + cards
+  éditables inline (type, statut libre, target word count, synopsis).
+  6 tests unitaires.
+- **P4.2** : Module Chapitres. Domain `Chapter` + `ChapterStatus`
+  (Draft / Reviewed / Final), `ChapterRepo` (CRUD + reorder transactionnel
+  + auto sort_order = MAX+1). 7 tests unitaires.
+- **P4.3** : Surface d'écriture multi-chapitres (`/u/:universeId/s/:storyId`).
+  Layout 2 colonnes : sidebar liste chapitres (▲/▼ pour réordonner) +
+  centre éditeur Tiptap pleine largeur. Titre éditable, select status,
+  word count live, Ctrl/Cmd-S pour sauver, indicateurs visuels
+  « non enregistré » (amber) / « enregistré ✓ » (emerald).
+- **P4.4** : Continuation IA in-editor. Composant `<AiContinuePanel>` :
+  bouton « Continuer avec l'IA » qui prend les ~600 derniers mots du
+  chapitre + synopsis + titre, prompt cadré (1-3 paragraphes, pas de
+  meta-commentaire, ne pas répéter la dernière phrase), affiche la
+  suggestion en gris/italique, boutons Accepter / Rejeter / Régénérer.
+  L'IA n'écrit jamais directement en DB — l'utilisateur garde la main
+  via Save.
+- **P4.5** : Actions IA sur chapitre. Composant `<AiActionsPanel>` avec
+  3 actions : **Résumer** (3-5 phrases), **Réécrire** (avec instruction
+  libre → bouton Remplacer le chapitre disponible), **Brainstormer**
+  (3 directions narratives, température 0.9). Toutes non-destructives,
+  affichées en encart grisé italique, bouton Copier dans le presse-papier.
+- **P4.6** : Détection d'incohérences via RAG sur le lore. Composant
+  `<AiConsistencyPanel>` qui réutilise `ai_rag_query` (déjà branché à
+  l'index embeddings en P3.3). Verdict heuristique côté front
+  (Cohérent / À vérifier) + sources cliquables (Link vers la fiche
+  entité). Pas de nouveau backend.
+
+### Architecture — Phase 4
+- 3 nouvelles tables activées : `stories`, `chapters`, `chapter_entity_refs`
+  (cette dernière réservée à P5).
+- 11 nouvelles commandes Tauri : 5 stories + 6 chapters.
+- 3 panels IA distincts (Continue / Actions / Consistency), tous autonomes.
+  Le helper `collectText` est dupliqué 3 fois — règle de 3 atteinte au pire
+  endroit, à factoriser en P4.x si une 4e occurrence apparaît.
+- Toutes les fonctions IA reposent sur `ai_complete` ou `ai_rag_query`,
+  posés en P3.1 / P3.3. Pas de nouveau type de provider.
+
+### Versions
+- 0.3.0 → **0.4.0** sur Cargo.toml workspace + crates/core +
+  apps/desktop/src-tauri + tauri.conf.json + apps/desktop/package.json
+  + Layout.tsx (badge version).
+- Rétro complète : voir [`docs/RETRO-PHASE-4.md`](./docs/RETRO-PHASE-4.md).
+
+[0.4.0]: https://github.com/hmorales-pro/romanesk/releases/tag/v0.4.0
 
 ## [0.3.0] — 2026-05-02
 

@@ -39,21 +39,31 @@ Reflète le phasing du PRD (`PRD.md` §14). Mis à jour à chaque clôture de mi
 - ✅ Embeddings via `nomic-embed-text` + indexation + Q&A RAG complet (`<RagChatPanel>`)
 - ✅ RealityAnchor + DivergencePoints + WorldBrief généré par IA (`/u/:id/anchor`)
 - ✅ Édition d'époque et d'événement (P2.x oublié, fix en P3)
+- ✅ Page Settings (P3.x) pour configurer URL Ollama + modèles chat/embed
 - 📄 Rétro : [`docs/RETRO-PHASE-3.md`](./docs/RETRO-PHASE-3.md)
+
+### Phase 4 — Histoires + chapitrage + IA en édition · `v0.4.0` (2026-05-02)
+- ✅ Module Histoires (`stories`) — Novel / Novella / ShortStory / Series
+- ✅ Module Chapitres (`chapters`) avec body_json Tiptap + reorder
+- ✅ Surface d'écriture multi-chapitres (`/u/:universeId/s/:storyId`)
+- ✅ Continuation IA in-editor (`<AiContinuePanel>`)
+- ✅ Réécriture / résumé / brainstorm IA (`<AiActionsPanel>`)
+- ✅ Détection d'incohérences via RAG sur le lore (`<AiConsistencyPanel>`)
+- 📄 Rétro : [`docs/RETRO-PHASE-4.md`](./docs/RETRO-PHASE-4.md)
 
 ---
 
-## Now (Phase 4 — Histoires + chapitrage + IA en édition)
+## Now (Phase 5 — Atelier description + multi-modèles + fiches étendues)
 
-**Sortie visée** : ~6-8 semaines après Phase 3 selon PRD §14.
+**Sortie visée** : ~4-6 semaines après Phase 4 selon PRD §14.
 
-- [ ] Module Histoires (table `stories`) avec type novel/novella/short_story/series
-- [ ] Module Chapitres (table `chapters`) avec body_json Tiptap
-- [ ] Surface d'écriture multi-chapitres (sidebar + éditeur central)
-- [ ] Continuation IA in-editor : preview gris non-validé
-- [ ] Réécriture, résumé, brainstorming via IA
-- [ ] Détection d'incohérences via RAG sur le lore
-- [ ] Premier release `v0.4.0`
+- [ ] Atelier de description en mode image (vision Ollama si dispo)
+- [ ] Brainstorm panel transversal (idées de scènes, dilemmes, twists)
+- [ ] Fiches Faction / Object / Concept (archi `EntityType` polymorphe déjà prête)
+- [ ] Détection d'anachronismes (extension de la cohérence avec axes Reality Anchor)
+- [ ] Auto-save sur chapitres (debounced)
+- [ ] Hot-reload des providers IA après changement Settings
+- [ ] Premier release `v0.5.0`
 
 ---
 
