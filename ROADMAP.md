@@ -25,18 +25,26 @@ Reflète le phasing du PRD (`PRD.md` §14). Mis à jour à chaque clôture de mi
 - ✅ Export Markdown d'un univers (Tiptap → MD complet)
 - 📄 Rétro : [`docs/RETRO-PHASE-1.md`](./docs/RETRO-PHASE-1.md)
 
+### Phase 2 — Temporalité · `v0.2.0` (2026-05-02)
+- ✅ Époques (`timeline_eras`) avec couleur, dates, sort_order
+- ✅ Événements (`events`) datables, rattachables à une époque
+- ✅ Snapshots temporels (`temporal_snapshots`) : capture d'état d'entité
+- ✅ Frise visuelle SVG (`/u/:universeId/timeline`)
+- ✅ Relations datables (era picker dans RelationsSection)
+- 📄 Rétro : [`docs/RETRO-PHASE-2.md`](./docs/RETRO-PHASE-2.md)
+
 ---
 
-## Now (Phase 2 — Temporalité)
+## Now (Phase 3 — IA + RAG + Ancrage réel)
 
-**Sortie visée** : ~6-8 semaines après Phase 1 selon PRD §14.
+**Sortie visée** : ~8-10 semaines après Phase 2 selon PRD §14.
 
-- [ ] Époques (`timeline_eras`)
-- [ ] Événements (`events`) datables, attachés à une époque
-- [ ] Snapshots temporels (`temporal_snapshots`) : versions d'une entité par époque
-- [ ] Frise visuelle (timeline)
-- [ ] Relations datables (utilisation du champ `relations.era_id` déjà prévu)
-- [ ] Premier release `v0.2.0`
+- [ ] Couche provider IA réelle utilisée par l'app (au-delà du smoke test ping_ollama)
+- [ ] Indexation embeddings via `EmbeddingRepo` (déjà prêt depuis P0/J4)
+- [ ] Génération de fiche assistée par IA (à partir d'un nom + contexte)
+- [ ] Q&A RAG sur le lore d'un univers
+- [ ] `RealityAnchor` + `WorldBrief` + `DivergencePoint` (tables déjà dans 0001_init.sql)
+- [ ] Premier release `v0.3.0`
 
 ---
 

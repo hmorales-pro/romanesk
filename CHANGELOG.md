@@ -4,7 +4,39 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
 
 ## [Unreleased]
 
-_Rien pour l'instant — Phase 2 démarre au prochain commit._
+_Rien pour l'instant — Phase 3 démarre au prochain commit._
+
+## [0.2.0] — 2026-05-02
+
+Tag de fin de Phase 2 (Temporalité). Romanesk acquiert une **couche
+temporelle native** : un univers se découpe en époques colorées,
+hébergeant des événements datés ; les fiches peuvent capturer leur
+état à différents moments narratifs ; les relations sont datables ;
+une frise visuelle SVG synthétise tout ça.
+
+### Added — Phase 2
+- **Backend timeline** : `Era`, `Event`, `Snapshot` domain types + 3 Repos
+  (`EraRepo`, `EventRepo`, `SnapshotRepo`) avec validation, tri chronologique
+  stable, FK CASCADE pour snapshots et SET NULL pour les références aux eras.
+  15 nouvelles commandes Tauri (era_*, event_*, snapshot_*).
+- 9 tests d'intégration `tests/timeline_integration.rs` (CRUD, dates inversées
+  rejetées, FK cascade/set null, tri NULLS LAST, era_id sur Relation).
+- **UI Eras + Events** : `<TimelineSection>` intégrée en bas de UniversePage.
+  Color picker, era picker pour les événements, tri chronologique.
+- **Relations datables** : `<RelationsSection>` accepte un select Era au form
+  de création. Affichage d'un badge era coloré dans la liste.
+- **Snapshots** : `<SnapshotsSection>` sur Character/LocationDetail. Capture
+  l'état complet (name + summary + content + cover_image) à une époque/year.
+- **Frise visuelle** : page `/u/:universeId/timeline` (`<TimelinePage>`).
+  SVG hand-coded : bandes colorées par era, marqueurs pour événements,
+  axe X gradué, légende. Lien depuis `<TimelineSection>`.
+
+### Versions
+- 0.1.0 → **0.2.0** sur Cargo.toml workspace + crates/core +
+  apps/desktop/src-tauri + tauri.conf.json + 2 package.json.
+- Rétro complète : voir [`docs/RETRO-PHASE-2.md`](./docs/RETRO-PHASE-2.md).
+
+[0.2.0]: https://github.com/hmorales-pro/romanesk/releases/tag/v0.2.0
 
 ## [0.1.0] — 2026-05-02
 
@@ -159,5 +191,5 @@ fiche avec Tiptap, et tout ça testé par CI offline-only sur 5 jobs.
 - Note de décision sur la licence (`docs/LICENSE-CHOICE.md`).
 - Structure initiale du repo (README, CONTRIBUTING, CODE_OF_CONDUCT, .gitignore).
 
-[Unreleased]: https://github.com/hmorales-pro/romanesk/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/hmorales-pro/romanesk/compare/v0.2.0...HEAD
 [0.0.0]: https://github.com/hmorales-pro/romanesk/releases/tag/v0.0.0
