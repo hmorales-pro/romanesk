@@ -16,13 +16,15 @@ export default defineConfig(async () => ({
   // Vite recommande clearScreen=false avec Tauri pour conserver les logs Rust.
   clearScreen: false,
   server: {
-    port: 1420,
+    // Port décalé du défaut Tauri (1420) pour ne pas conflicter avec un
+    // autre projet Tauri qui tournerait déjà localement chez Hugo.
+    port: 1430,
     strictPort: true,
     host: true,
     hmr: {
       protocol: "ws",
       host: "localhost",
-      port: 1421,
+      port: 1431,
     },
     watch: {
       // src-tauri ne doit pas déclencher de reload Vite — Tauri a son propre watcher.
