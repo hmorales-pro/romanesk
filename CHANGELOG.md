@@ -28,6 +28,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
   - Filtre obligatoire par `dim` côté SQL avant le calcul cosine — vecteurs incompatibles automatiquement exclus.
   - 5 tests unitaires (encode/decode bit-exact, cosine identique/orthogonal/opposite/zero) + 10 tests d'intégration (smoke top-k, filtres dim/model/source, delete_for, validation inputs).
   - ADR `0005-vector-search.md` : report explicite de `sqlite-vec` à Phase 1, format BLOB choisi pour migration future à coût constant (compatibilité binaire avec `sqlite-vec`).
+- **Phase 0 — J5** : `MockProvider` + example binary `ping_ollama`.
+  - `crates/core/src/ai/mock.rs` : impl `Provider` avec staging de réponses (texte, embeddings, descriptions d'image, ping), compteurs d'appels par méthode, capabilities et id surchargeables. 8 tests unitaires.
+  - `crates/core/examples/ping_ollama.rs` : binaire qui ping Ollama local et demande « Bonjour » à Gemma. Codes de sortie distincts pour healthcheck KO (1) et complétion KO (2). Surchargeable via `OLLAMA_MODEL` et `OLLAMA_BASE_URL`.
+  - `ai/mod.rs` : re-exporte `MockProvider`, `OllamaConfig`, `OllamaProvider`, `TokenUsage`.
 
 ### Changed
 - **Pivot du modèle de distribution** : open-source AGPL → **propriétaire source-available, free-use** sous Elastic License 2.0.

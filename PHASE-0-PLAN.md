@@ -124,13 +124,14 @@ romanesk/
 **Livrable J4** : code écrit + relu par un agent indépendant + 5 warnings clippy fixés. Tests à valider en local.
 
 ### Jour 5 — Trait Provider IA + Ollama stub
-- [ ] Définir le trait `Provider` (cf. PRD §10.1)
-- [ ] Implémenter `OllamaProvider` (HTTP local sur `localhost:11434`, support `/api/chat` et `/api/embeddings`)
-- [ ] Définir `Capabilities` (text, vision, embeddings, tool_use)
-- [ ] Smoke test (manuel d'abord) : `cargo run --example ping_ollama` → demande à Gemma « Bonjour » → renvoie réponse
-- [ ] Mocking : `MockProvider` pour les tests
+- [x] Trait `Provider` défini (déjà fait au bootstrap)
+- [x] `OllamaProvider` implémenté pour `/api/chat` (déjà fait au bootstrap) ; `/api/embeddings` reste TODO Phase 3
+- [x] `Capabilities` (text, vision, embeddings, tool_use, long_context) (déjà fait au bootstrap)
+- [x] Smoke test : `cargo run -p romanesk-core --example ping_ollama` → ping puis demande « Bonjour » à Gemma local
+- [x] `MockProvider` avec staging de réponses + compteurs d'appels — 8 tests unitaires
+- [ ] **Validation chez Hugo** : `cargo run -p romanesk-core --example ping_ollama` (avec Ollama démarré + un modèle Gemma chargé)
 
-**Livrable J5** : un example binary qui prouve l'aller-retour avec Gemma 4 local.
+**Livrable J5** : MockProvider prêt pour les tests CI offline + binaire d'aller-retour avec Gemma local.
 
 ---
 
