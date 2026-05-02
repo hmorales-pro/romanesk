@@ -11,17 +11,23 @@
 
 import { invoke } from "@tauri-apps/api/core";
 import type {
+  BriefSource,
+  DivergenceAxis,
+  DivergencePoint,
   Entity,
   EntityType,
   Era,
   Event as TimelineEvent,
   LocationKind,
+  RealityAnchor,
+  RealityMode,
   Relation,
   RelationType,
   Snapshot,
   Tag,
   Universe,
   Uuid,
+  WorldBrief,
 } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -601,6 +607,90 @@ export function aiRagQuery(args: {
       topK: args.topK ?? null,
     },
   });
+}
+
+// ---------------------------------------------------------------------------
+// RealityAnchor / DivergencePoint / WorldBrief (Phase 3.4)
+// ---------------------------------------------------------------------------
+
+export function anchorGetForUniverse(
+  universeId: Uuid,
+): Promise<RealityAnchor | null> {
+  return invoke<RealityAnchor | null>("anchor_get_for_universe", { universeId });
+}
+
+export function anchorUpsert(args: {
+  universeId: Uuid;
+  mode: RealityMode;
+  pivotDate?: string;
+  baseWorld?: string;
+  notes?: string;
+}): Promise<RealityAnchor> {
+  return invoke<RealityAnchor>("anchor_upsert", {
+    payload: {
+      universeId: args.universeId,
+      mode: args.mode,
+      pivotDate: args.pivotDate ?? null,
+      baseWorld: args.baseWorld ?? null,
+      notes: args.notes ?? null,
+    },
+  });
+}
+
+export function anchorDelete(id: Uuid): Promise<void> {
+  return invoke<void>("anchor_delete", { id });
+}
+
+export function divergenceCreate(args: {
+  anchorId: Uuid;
+  whenIso: string;
+  axis: DivergenceAxis;
+  title: string;
+  description?: string;
+}): Promise<DivergencePoint> {
+  return invoke<DivergencePoint>("divergence_create", {
+    payload: {
+      anchorId: args.anchorId,
+      whenIso: args.whenIso,
+      axis: args.axis,
+      title: args.title,
+      description: args.description ?? null,
+    },
+  });
+}
+
+export function divergenceList(anchorId: Uuid): Promise<DivergencePoint[]> {
+  return invoke<DivergencePoint[]>("divergence_list", { anchorId });
+}
+
+export function divergenceDelete(id: Uuid): Promise<void> {
+  return invoke<void>("divergence_delete", { id });
+}
+
+export function briefCreate(args: {
+  anchorId: Uuid;
+  snapshotDate: string;
+  contentJson: Record<string, unknown>;
+  source?: BriefSource;
+  pinned?: boolean;
+}): Promise<WorldBrief> {
+  return invoke<WorldBrief>("brief_create", {
+    payload: {
+      anchorId: args.anchorId,
+      snapshotDate: args.snapshotDate,
+      contentJson: args.contentJson,
+      source: args.source ?? "manual",
+      pinned: args.pinned ?? true,
+    },
+  });
+}
+
+export function briefList(anchorId: Uuid): Promise<WorldBrief[]> {
+  return invoke<WorldBrief[]>("brief_list", { anchorId });
+}
+
+export function briefDelete(id: Uuid): Promise<void> {
+  return invoke<void>("brief_delete", { id });
 }
 
 // ---------------------------------------------------------------------------

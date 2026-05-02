@@ -6,6 +6,7 @@
 //! pool sqlx, donc `Repo: Send + Sync + Clone` (à condition que `Database`
 //! le soit, ce qui est le cas).
 
+pub mod anchor;
 pub mod entity;
 pub mod era;
 pub mod error;
@@ -15,6 +16,7 @@ pub mod snapshot;
 pub mod tag;
 pub mod universe;
 
+pub use anchor::AnchorRepo;
 pub use entity::EntityRepo;
 pub use era::EraRepo;
 pub use error::{RepoError, RepoResult};
@@ -75,6 +77,11 @@ impl Repo {
     #[must_use]
     pub fn embeddings(&self) -> crate::rag::EmbeddingRepo<'_> {
         crate::rag::EmbeddingRepo::new(&self.db)
+    }
+
+    #[must_use]
+    pub fn anchors(&self) -> AnchorRepo<'_> {
+        AnchorRepo::new(&self.db)
     }
 
     /// Accès direct au [`Database`] sous-jacent. Utile pour les tests ou

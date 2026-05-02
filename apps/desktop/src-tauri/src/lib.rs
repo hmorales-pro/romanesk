@@ -207,6 +207,15 @@ pub fn run() {
             commands::ai::ai_generate_entity_draft,
             commands::ai::ai_universe_reindex,
             commands::ai::ai_rag_query,
+            commands::anchor::anchor_get_for_universe,
+            commands::anchor::anchor_upsert,
+            commands::anchor::anchor_delete,
+            commands::anchor::divergence_create,
+            commands::anchor::divergence_list,
+            commands::anchor::divergence_delete,
+            commands::anchor::brief_create,
+            commands::anchor::brief_list,
+            commands::anchor::brief_delete,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

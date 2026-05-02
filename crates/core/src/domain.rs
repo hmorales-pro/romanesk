@@ -485,6 +485,181 @@ pub struct NewSnapshot {
     pub note: Option<String>,
 }
 
+// ---------------------------------------------------------------------------
+// Reality anchor — ancrage d'un univers à la réalité historique
+// ---------------------------------------------------------------------------
+
+/// Mode d'ancrage à la réalité (cf. PRD §6).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RealityMode {
+    /// Univers de fiction pur, aucun ancrage.
+    None,
+    /// Récit historique respectant le réel (ex. France 1850).
+    Historical,
+    /// Uchronie : la réalité diverge à un point précis (ex. Fallout, post-apo).
+    Divergent,
+}
+
+impl RealityMode {
+    #[must_use]
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::None => "none",
+            Self::Historical => "historical",
+            Self::Divergent => "divergent",
+        }
+    }
+
+    #[must_use]
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "none" => Some(Self::None),
+            "historical" => Some(Self::Historical),
+            "divergent" => Some(Self::Divergent),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RealityAnchor {
+    pub id: Uuid,
+    pub universe_id: Uuid,
+    pub mode: RealityMode,
+    /// Date pivot dans le calendrier réel (ISO YYYY-MM-DD). Pertinent pour
+    /// `historical` et `divergent`. `None` si mode = `none`.
+    pub pivot_date: Option<String>,
+    pub base_world: String,
+    pub notes: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NewRealityAnchor {
+    pub universe_id: Uuid,
+    pub mode: RealityMode,
+    pub pivot_date: Option<String>,
+    pub base_world: String,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct UpdateRealityAnchor {
+    pub mode: RealityMode,
+    pub pivot_date: Option<String>,
+    pub base_world: String,
+    pub notes: Option<String>,
+}
+
+/// Axe d'une divergence : sur quelle dimension de la réalité s'écarte-t-on ?
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DivergenceAxis {
+    Tech,
+    Politics,
+    Culture,
+    Event,
+    Nature,
+}
+
+impl DivergenceAxis {
+    #[must_use]
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Tech => "tech",
+            Self::Politics => "politics",
+            Self::Culture => "culture",
+            Self::Event => "event",
+            Self::Nature => "nature",
+        }
+    }
+
+    #[must_use]
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "tech" => Some(Self::Tech),
+            "politics" => Some(Self::Politics),
+            "culture" => Some(Self::Culture),
+            "event" => Some(Self::Event),
+            "nature" => Some(Self::Nature),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct DivergencePoint {
+    pub id: Uuid,
+    pub anchor_id: Uuid,
+    pub when_iso: String,
+    pub axis: DivergenceAxis,
+    pub title: String,
+    pub description: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NewDivergencePoint {
+    pub anchor_id: Uuid,
+    pub when_iso: String,
+    pub axis: DivergenceAxis,
+    pub title: String,
+    pub description: Option<String>,
+}
+
+/// Source d'un WorldBrief : généré par IA, manuel, ou édité (ai puis manuel).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum BriefSource {
+    AiGenerated,
+    Manual,
+    Merged,
+}
+
+impl BriefSource {
+    #[must_use]
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::AiGenerated => "ai_generated",
+            Self::Manual => "manual",
+            Self::Merged => "merged",
+        }
+    }
+
+    #[must_use]
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "ai_generated" => Some(Self::AiGenerated),
+            "manual" => Some(Self::Manual),
+            "merged" => Some(Self::Merged),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct WorldBrief {
+    pub id: Uuid,
+    pub anchor_id: Uuid,
+    pub snapshot_date: String,
+    pub content_json: serde_json::Value,
+    pub source: BriefSource,
+    pub pinned: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NewWorldBrief {
+    pub anchor_id: Uuid,
+    pub snapshot_date: String,
+    pub content_json: serde_json::Value,
+    pub source: BriefSource,
+    pub pinned: bool,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

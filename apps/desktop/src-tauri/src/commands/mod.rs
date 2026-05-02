@@ -11,6 +11,7 @@
 #![allow(clippy::module_name_repetitions)]
 
 pub mod ai;
+pub mod anchor;
 pub mod entity;
 pub mod era;
 pub mod error;

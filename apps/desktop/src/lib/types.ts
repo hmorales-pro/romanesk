@@ -308,6 +308,87 @@ export interface Snapshot {
   created_at: Timestamp;
 }
 
+// ---------------------------------------------------------------------------
+// Reality Anchor (Phase 3.4)
+// ---------------------------------------------------------------------------
+
+export type RealityMode = "none" | "historical" | "divergent";
+
+export type DivergenceAxis =
+  | "tech"
+  | "politics"
+  | "culture"
+  | "event"
+  | "nature";
+
+export type BriefSource = "ai_generated" | "manual" | "merged";
+
+export interface RealityAnchor {
+  id: Uuid;
+  universe_id: Uuid;
+  mode: RealityMode;
+  pivot_date: string | null;
+  base_world: string;
+  notes: string | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface DivergencePoint {
+  id: Uuid;
+  anchor_id: Uuid;
+  when_iso: string;
+  axis: DivergenceAxis;
+  title: string;
+  description: string | null;
+  created_at: Timestamp;
+}
+
+export interface WorldBrief {
+  id: Uuid;
+  anchor_id: Uuid;
+  snapshot_date: string;
+  content_json: Record<string, unknown>;
+  source: BriefSource;
+  pinned: boolean;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export const DIVERGENCE_AXES: DivergenceAxis[] = [
+  "tech",
+  "politics",
+  "culture",
+  "event",
+  "nature",
+];
+
+export function realityModeLabel(m: RealityMode): string {
+  switch (m) {
+    case "none":
+      return "Aucun (univers fictionnel pur)";
+    case "historical":
+      return "Historique (respecte le réel)";
+    case "divergent":
+      return "Divergent (uchronie / post-apo)";
+  }
+}
+
+export function divergenceAxisLabel(a: DivergenceAxis): string {
+  switch (a) {
+    case "tech":
+      return "Technologie";
+    case "politics":
+      return "Politique";
+    case "culture":
+      return "Culture";
+    case "event":
+      return "Événement";
+    case "nature":
+      return "Nature";
+  }
+}
+
 /** Format compact pour afficher la plage d'années d'une era. */
 export function eraYearsLabel(era: Era): string {
   if (era.start_year == null && era.end_year == null) return "—";

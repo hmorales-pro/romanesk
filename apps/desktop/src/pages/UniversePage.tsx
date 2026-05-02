@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, MapPin, Network, Plus, Search, Sparkles, User } from "lucide-react";
+import { Anchor, ArrowLeft, MapPin, Network, Plus, Search, Sparkles, User } from "lucide-react";
 
 import {
   aiGenerateEntityDraft,
@@ -138,11 +138,18 @@ export default function UniversePage() {
           )}
         </div>
         {universeQuery.data && (
-          <Link to={`/u/${universeId}/graph`}>
-            <Button variant="outline" size="sm">
-              <Network className="size-4" aria-hidden /> Voir le graphe
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link to={`/u/${universeId}/anchor`}>
+              <Button variant="outline" size="sm">
+                <Anchor className="size-4" aria-hidden /> Ancrage
+              </Button>
+            </Link>
+            <Link to={`/u/${universeId}/graph`}>
+              <Button variant="outline" size="sm">
+                <Network className="size-4" aria-hidden /> Voir le graphe
+              </Button>
+            </Link>
+          </div>
         )}
       </header>
 
