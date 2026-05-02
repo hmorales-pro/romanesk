@@ -37,11 +37,12 @@ fn default_empty_object() -> Value {
     Value::Object(serde_json::Map::new())
 }
 
+/// Liste les entités d'un univers. Si `kind` est `None` (envoyé `null`
+/// côté JS), tous les types sont renvoyés. Sinon, filtre sur le type donné.
 #[tauri::command]
 pub async fn entity_list_in_universe(
     db: State<'_, Database>,
     universe_id: String,
-    /// Filtre optionnel par type. `None` ou `null` côté JS = tous types.
     kind: Option<EntityType>,
 ) -> CommandResult<Vec<Entity>> {
     let uid = Uuid::parse_str(&universe_id)?;
