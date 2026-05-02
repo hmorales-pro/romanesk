@@ -5,6 +5,13 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
 ## [Unreleased]
 
 ### Added — Phase 1
+- **P1.4** : **Tags + filtres + recherche**.
+  - Domain `Tag` + `NewTag` + `TagRepo` (create_in_universe / find_or_create / list_in_universe / get_for_entity / set_for_entity / associations_in_universe / delete). 8 tests d'intégration.
+  - 6 commandes Tauri (`tag_*`).
+  - Composant `<TagsSection>` sur Character/LocationDetail : chips actuels (avec couleur custom optionnelle), input « ajouter un tag » avec auto-création si le nom n'existe pas, suggestions au fur et à mesure de la frappe (filter incrémental sur les tags existants de l'univers), Backspace sur input vide retire le dernier tag.
+  - `set_for_entity` atomique en transaction (DELETE + INSERT en bulk).
+  - UniversePage : barre de recherche par nom (filtre client live) + chips tags cliquables pour filtrer (intersection : entité doit avoir tous les tags actifs), bouton « effacer ».
+  - Composant `<TagChip>` réutilisable (chip + close button optionnel + état actif/cliquable).
 - **P1.6** : **Export Markdown** d'un univers complet.
   - Module `crates/core/src/export/markdown.rs` : converter Tiptap JSON → Markdown (paragraphes, titres, listes puces/ordonnées, blockquote, code block, marks bold/italic/code/strike/link, hardBreak), tolérant aux entrées legacy string ou null.
   - `render_universe_markdown(universe, entities, relations)` assemble entête + sections Personnages / Lieux / Autres + section Relations en un seul `.md` portable.

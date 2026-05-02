@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { TiptapEditor, type TiptapDoc } from "@/components/TiptapEditor";
 import { RelationsSection } from "@/components/RelationsSection";
+import { TagsSection } from "@/components/TagsSection";
 
 interface Props {
   entity: Entity;
@@ -228,6 +229,8 @@ export function CharacterDetail({ entity, universeId }: Props) {
           )}
         </CardContent>
       </Card>
+
+      <TagsSection entity={entity} />
 
       <RelationsSection entity={entity} />
     </article>

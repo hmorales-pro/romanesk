@@ -134,6 +134,12 @@ pub fn run() {
             commands::relation::relation_list_for_entity,
             commands::relation::relation_list_in_universe,
             commands::relation::relation_delete,
+            commands::tag::tag_create_in_universe,
+            commands::tag::tag_list_in_universe,
+            commands::tag::tag_associations_in_universe,
+            commands::tag::tag_get_for_entity,
+            commands::tag::tag_set_for_entity,
+            commands::tag::tag_delete,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

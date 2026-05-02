@@ -9,11 +9,13 @@
 pub mod entity;
 pub mod error;
 pub mod relation;
+pub mod tag;
 pub mod universe;
 
 pub use entity::EntityRepo;
 pub use error::{RepoError, RepoResult};
 pub use relation::RelationRepo;
+pub use tag::TagRepo;
 pub use universe::UniverseRepo;
 
 use crate::db::Database;
@@ -42,6 +44,11 @@ impl Repo {
     #[must_use]
     pub fn relations(&self) -> RelationRepo<'_> {
         RelationRepo::new(&self.db)
+    }
+
+    #[must_use]
+    pub fn tags(&self) -> TagRepo<'_> {
+        TagRepo::new(&self.db)
     }
 
     /// Accès direct au [`Database`] sous-jacent. Utile pour les tests ou

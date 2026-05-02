@@ -16,6 +16,7 @@ import type {
   LocationKind,
   Relation,
   RelationType,
+  Tag,
   Universe,
   Uuid,
 } from "./types";
@@ -250,6 +251,55 @@ export function relationListInUniverse(universeId: Uuid): Promise<Relation[]> {
 
 export function relationDelete(id: Uuid): Promise<void> {
   return invoke<void>("relation_delete", { id });
+}
+
+// ---------------------------------------------------------------------------
+// Tag
+// ---------------------------------------------------------------------------
+
+export function tagCreateInUniverse(args: {
+  universeId: Uuid;
+  name: string;
+  color?: string;
+}): Promise<Tag> {
+  return invoke<Tag>("tag_create_in_universe", {
+    payload: {
+      universeId: args.universeId,
+      name: args.name,
+      color: args.color ?? null,
+    },
+  });
+}
+
+export function tagListInUniverse(universeId: Uuid): Promise<Tag[]> {
+  return invoke<Tag[]>("tag_list_in_universe", { universeId });
+}
+
+export interface EntityTagAssociation {
+  entityId: Uuid;
+  tagId: Uuid;
+}
+
+export function tagAssociationsInUniverse(
+  universeId: Uuid,
+): Promise<EntityTagAssociation[]> {
+  return invoke<EntityTagAssociation[]>("tag_associations_in_universe", {
+    universeId,
+  });
+}
+
+export function tagGetForEntity(entityId: Uuid): Promise<Tag[]> {
+  return invoke<Tag[]>("tag_get_for_entity", { entityId });
+}
+
+export function tagSetForEntity(entityId: Uuid, tagIds: Uuid[]): Promise<void> {
+  return invoke<void>("tag_set_for_entity", {
+    payload: { entityId, tagIds },
+  });
+}
+
+export function tagDelete(id: Uuid): Promise<void> {
+  return invoke<void>("tag_delete", { id });
 }
 
 // ---------------------------------------------------------------------------

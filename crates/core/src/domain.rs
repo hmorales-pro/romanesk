@@ -352,6 +352,26 @@ pub struct NewRelation {
     pub description: Option<String>,
 }
 
+// ---------------------------------------------------------------------------
+// Tag (transversal, par univers)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Tag {
+    pub id: Uuid,
+    pub universe_id: Uuid,
+    pub name: String,
+    /// Couleur hex CSS (ex. `"#94a3b8"`) ou `None` (couleur par défaut).
+    pub color: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NewTag {
+    pub universe_id: Uuid,
+    pub name: String,
+    pub color: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

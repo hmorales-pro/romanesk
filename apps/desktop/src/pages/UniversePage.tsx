@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, MapPin, Plus, User } from "lucide-react";
+import { ArrowLeft, MapPin, Plus, Search, User } from "lucide-react";
 
 import {
   characterCreate,
   entityListInUniverse,
   locationCreate,
+  tagAssociationsInUniverse,
+  tagListInUniverse,
   universeGet,
 } from "@/lib/api";
+import { TagChip } from "@/components/TagsSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,6 +50,47 @@ export default function UniversePage() {
     queryFn: () => entityListInUniverse(universeId!, "Location"),
     enabled: !!universeId,
   });
+
+  const tagsQuery = useQuery({
+    queryKey: ["universe-tags", universeId],
+    queryFn: () => tagListInUniverse(universeId!),
+    enabled: !!universeId,
+  });
+
+  const associationsQuery = useQuery({
+    queryKey: ["tag-associations", universeId],
+    queryFn: () => tagAssociationsInUniverse(universeId!),
+    enabled: !!universeId,
+  });
+
+  // Filtres : recherche par nom + tags actifs (intersection : entité doit avoir TOUS les tags sélectionnés).
+  const [search, setSearch] = useState("");
+  const [activeTagIds, setActiveTagIds] = useState<Set<string>>(new Set());
+
+  const tagsByEntity = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    (associationsQuery.data ?? []).forEach((a) => {
+      if (!m.has(a.entityId)) m.set(a.entityId, new Set());
+      m.get(a.entityId)!.add(a.tagId);
+    });
+    return m;
+  }, [associationsQuery.data]);
+
+  const matchesFilters = (e: { id: string; name: string }) => {
+    if (search.trim()) {
+      if (!e.name.toLowerCase().includes(search.toLowerCase().trim())) return false;
+    }
+    if (activeTagIds.size > 0) {
+      const tags = tagsByEntity.get(e.id) ?? new Set();
+      for (const tid of activeTagIds) {
+        if (!tags.has(tid)) return false;
+      }
+    }
+    return true;
+  };
+
+  const filteredCharacters = (charactersQuery.data ?? []).filter(matchesFilters);
+  const filteredLocations = (locationsQuery.data ?? []).filter(matchesFilters);
 
   if (!universeId) {
     return (
@@ -90,9 +134,57 @@ export default function UniversePage() {
         )}
       </header>
 
+      {/* Barre de filtres : recherche par nom + multi-select de tags */}
+      <Card>
+        <CardContent className="pt-6 flex flex-col gap-3">
+          <div className="relative">
+            <Search
+              className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Filtrer par nom…"
+              className="pl-9"
+            />
+          </div>
+          {(tagsQuery.data ?? []).length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs text-muted-foreground mr-1">Filtrer par tag :</span>
+              {(tagsQuery.data ?? []).map((t) => {
+                const active = activeTagIds.has(t.id);
+                return (
+                  <TagChip
+                    key={t.id}
+                    tag={t}
+                    active={active}
+                    onClick={() => {
+                      const next = new Set(activeTagIds);
+                      if (active) next.delete(t.id);
+                      else next.add(t.id);
+                      setActiveTagIds(next);
+                    }}
+                  />
+                );
+              })}
+              {activeTagIds.size > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTagIds(new Set())}
+                  className="text-xs text-muted-foreground hover:text-foreground underline ml-2"
+                >
+                  effacer
+                </button>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <CharacterSection
         universeId={universeId}
-        items={charactersQuery.data ?? []}
+        items={filteredCharacters}
         loading={charactersQuery.isPending}
         error={charactersQuery.error}
         onCreated={() =>
@@ -102,7 +194,7 @@ export default function UniversePage() {
 
       <LocationSection
         universeId={universeId}
-        items={locationsQuery.data ?? []}
+        items={filteredLocations}
         loading={locationsQuery.isPending}
         error={locationsQuery.error}
         onCreated={() =>

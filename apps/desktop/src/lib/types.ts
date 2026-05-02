@@ -258,3 +258,15 @@ export interface Relation {
   description: string | null;
   created_at: Timestamp;
 }
+
+// ---------------------------------------------------------------------------
+// Tag (transversal, par univers)
+// ---------------------------------------------------------------------------
+
+export interface Tag {
+  id: Uuid;
+  universe_id: Uuid;
+  name: string;
+  /** Couleur hex CSS (ex. "#94a3b8") ou null (couleur par défaut). */
+  color: string | null;
+}
