@@ -24,12 +24,17 @@
  */
 
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { CheckCircle2, Loader2, ShieldAlert, X } from "lucide-react";
+import { CheckCircle2, Clock, Loader2, ShieldAlert, X } from "lucide-react";
 
-import { aiRagQuery, type RagSource } from "@/lib/api";
-import { type Story, entityTypeLabel } from "@/lib/types";
+import { aiRagQuery, anchorGetForUniverse, type RagSource } from "@/lib/api";
+import {
+  type RealityAnchor,
+  type Story,
+  entityTypeLabel,
+  realityModeLabel,
+} from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import type { TiptapDoc } from "@/components/TiptapEditor";
 
@@ -54,6 +59,17 @@ export function AiConsistencyPanel({
     sources: RagSource[];
   } | null>(null);
 
+  // P5.5 : si l'univers a un RealityAnchor (historical / divergent),
+  // on étend la question RAG pour demander aussi les anachronismes.
+  // L'anchor est partagé avec la page /u/:id/anchor via la même queryKey.
+  const anchorQuery = useQuery({
+    queryKey: ["anchor", universeId],
+    queryFn: () => anchorGetForUniverse(universeId),
+  });
+  const anchor = anchorQuery.data ?? null;
+  const anachronismMode =
+    !!anchor && anchor.mode !== "none" && !!anchor.pivot_date;
+
   const mutation = useMutation({
     mutationFn: () => {
       const text = collectText(body).trim();
@@ -62,6 +78,7 @@ export function AiConsistencyPanel({
         storyTitle: story.title,
         chapterTitle,
         chapterTail: tail,
+        anchor: anachronismMode ? anchor : null,
       });
       return aiRagQuery({ universeId, question, topK: TOP_K });
     },
@@ -82,6 +99,13 @@ export function AiConsistencyPanel({
       <div className="flex items-center gap-2 flex-wrap">
         <ShieldAlert className="size-4 text-blue-600" aria-hidden />
         <span className="text-sm font-medium">Cohérence avec le lore</span>
+        {anachronismMode && anchor && (
+          <span className="inline-flex items-center gap-1 text-xs rounded-full bg-blue-100 px-2 py-0.5 text-blue-800">
+            <Clock className="size-3" aria-hidden />
+            + anachronismes ({realityModeLabel(anchor.mode)},{" "}
+            {anchor.pivot_date})
+          </span>
+        )}
         <Button
           size="sm"
           variant="outline"
@@ -195,16 +219,37 @@ function buildQuestion(args: {
   storyTitle: string;
   chapterTitle: string | null;
   chapterTail: string;
+  anchor: RealityAnchor | null;
 }): string {
-  return [
+  const lines: string[] = [];
+  lines.push(
     `Vérifie la cohérence du passage suivant avec les fiches de lore de l'univers (histoire « ${args.storyTitle} », chapitre « ${args.chapterTitle ?? "(sans titre)"} »).`,
-    "",
+  );
+  lines.push("");
+  lines.push(
     "Liste les éventuelles incohérences (âges, lieux, relations, événements, traits, dates). Cite la fiche concernée pour chaque point.",
+  );
+  if (args.anchor) {
+    const modeLabel =
+      args.anchor.mode === "historical"
+        ? "respect strict de la réalité historique"
+        : "uchronie / divergence assumée";
+    lines.push("");
+    lines.push(
+      `L'univers est ancré au monde réel à la date pivot ${args.anchor.pivot_date} (${modeLabel}, base : ${args.anchor.base_world}).`,
+    );
+    lines.push(
+      "En plus des incohérences avec le lore, signale tout anachronisme : objets, technologies, expressions, références culturelles ou concepts qui ne pourraient pas exister à cette date dans ce contexte. Cite la chose concernée et explique pourquoi elle pose problème.",
+    );
+  }
+  lines.push("");
+  lines.push(
     "Si tout est cohérent, écris clairement : « Aucune incohérence détectée. »",
-    "",
-    "PASSAGE :",
-    args.chapterTail,
-  ].join("\n");
+  );
+  lines.push("");
+  lines.push("PASSAGE :");
+  lines.push(args.chapterTail);
+  return lines.join("\n");
 }
 
 function classifyVerdict(answer: string): "ok" | "warn" {
