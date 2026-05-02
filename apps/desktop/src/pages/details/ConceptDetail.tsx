@@ -31,6 +31,9 @@ import { RelationsSection } from "@/components/RelationsSection";
 import { TagsSection } from "@/components/TagsSection";
 import { CoverImage } from "@/components/CoverImage";
 import { SnapshotsSection } from "@/components/SnapshotsSection";
+import { AiDescriptionPanel } from "@/components/AiDescriptionPanel";
+import { AiDraftPanel } from "@/components/AiDraftPanel";
+import { paragraphsToDoc, appendParagraphsToDoc } from "@/lib/tiptap-utils";
 
 interface Props {
   entity: Entity;
@@ -157,6 +160,51 @@ export function ConceptDetail({ entity, universeId }: Props) {
             placeholder="Règles, dogmes, principes, exemples…"
           />
         </div>
+
+        <AiDescriptionPanel
+          targetKind="object"
+          name={name}
+          summary={summary || null}
+          structuredFields={{
+            "Type de concept": kind,
+            Domaine: domain,
+          }}
+          onReplace={(paragraphs) => setDescription(paragraphsToDoc(paragraphs))}
+          onAppend={(paragraphs) =>
+            setDescription(
+              appendParagraphsToDoc(
+                description as TiptapDoc | null | undefined,
+                paragraphs,
+              ),
+            )
+          }
+        />
+
+        <AiDraftPanel
+          universeId={universeId}
+          kind="Concept"
+          name={name}
+          kindLabel="ce concept"
+          onApply={(draft) => {
+            if (draft.summary) setSummary(draft.summary);
+            if (
+              draft.conceptKind &&
+              CONCEPT_KINDS.includes(draft.conceptKind as ConceptKind)
+            ) {
+              setKind(draft.conceptKind as ConceptKind);
+            }
+            if (draft.domain) setDomain(draft.domain);
+            if (draft.descriptionText) {
+              const paragraphs = draft.descriptionText
+                .split(/\n{2,}/)
+                .map((p) => p.trim())
+                .filter(Boolean);
+              if (paragraphs.length > 0) {
+                setDescription(paragraphsToDoc(paragraphs));
+              }
+            }
+          }}
+        />
 
         {updateMutation.isError && (
           <p className="text-sm text-destructive" role="alert">

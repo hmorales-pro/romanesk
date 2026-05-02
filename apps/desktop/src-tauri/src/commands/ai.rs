@@ -175,8 +175,12 @@ pub async fn ai_complete(
 
 /// Brouillon retourné par `ai_generate_entity_draft`.
 /// Tous les champs sont optionnels : le front utilise ceux qui s'appliquent
-/// au type demandé (Character ou Location). Le modèle est encouragé à
-/// produire un objet JSON conforme au schéma fourni dans le prompt.
+/// au type demandé. Le modèle est encouragé à produire un objet JSON
+/// conforme au schéma fourni dans le prompt.
+///
+/// Phase 6 (P6.1) : étendu aux types Faction / Object / Concept (l'enum
+/// `EntityType` a 6 variants depuis P1, on couvre maintenant tout sauf
+/// `RealEntity` qui reste géré via la page d'ancrage).
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EntityDraft {
@@ -190,6 +194,20 @@ pub struct EntityDraft {
     pub location_kind: Option<String>,
     pub climate: Option<String>,
     pub population: Option<String>,
+    // Faction
+    pub faction_kind: Option<String>,
+    pub ideology: Option<String>,
+    pub founded: Option<String>,
+    pub leader: Option<String>,
+    // Object
+    pub object_kind: Option<String>,
+    pub origin: Option<String>,
+    pub owner: Option<String>,
+    pub properties: Option<Vec<String>>,
+    // Concept
+    pub concept_kind: Option<String>,
+    pub domain: Option<String>,
+    // Description riche partagée (Location / Faction / Object / Concept)
     pub description_text: Option<String>,
     // Métadonnées de débogage
     pub raw_response: String,
@@ -320,6 +338,52 @@ Réponds STRICTEMENT en JSON valide avec ces clés exactes :
 
 Aucun texte autour du JSON. Pas d'explication. Juste l'objet JSON."#
         }
+        EntityType::Faction => {
+            r#"Tu génères une **fiche de faction** (groupe organisé) pour un univers fictionnel.
+Réponds STRICTEMENT en JSON valide avec ces clés exactes :
+
+{
+  "name": "<nom de la faction>",
+  "summary": "<une phrase de 10-20 mots qui capture la nature et le rôle de la faction>",
+  "factionKind": "<un seul de: government, guild, sect, clan, company, other>",
+  "ideology": "<en quelques mots : ordre, liberté, savoir, vengeance…>",
+  "founded": "<en quelques mots : an 312, ère pré-glaciaire, fondée après la Chute…>",
+  "leader": "<nom ou titre du dirigeant actuel : Reine Lyra, Conseil des Sept, Anonyme…>",
+  "descriptionText": "<3 à 6 paragraphes : histoire, structure, alliances, ennemis, signes distinctifs. Texte simple, sauts de ligne. Pas de markdown.>"
+}
+
+Aucun texte autour du JSON. Pas d'explication. Juste l'objet JSON."#
+        }
+        EntityType::Object => {
+            r#"Tu génères une **fiche d'objet** (artefact, arme, livre, relique…) pour un univers fictionnel.
+Réponds STRICTEMENT en JSON valide avec ces clés exactes :
+
+{
+  "name": "<nom de l'objet>",
+  "summary": "<une phrase de 10-20 mots qui capture sa nature et son importance>",
+  "objectKind": "<un seul de: artifact, weapon, armor, book, relic, tool, other>",
+  "origin": "<en quelques mots : forgé par les Nains, ramené d'Aëlis, écrit en l'an 412…>",
+  "owner": "<nom du propriétaire actuel ou \"perdu\", \"inconnu\"…>",
+  "properties": ["<3 à 6 propriétés courtes : incassable, brûle au contact des morts, vibre près de la Faille…>"],
+  "descriptionText": "<3 à 6 paragraphes : apparence, matière, marques d'usure, légendes, effet sur ceux qui le manipulent. Texte simple, sauts de ligne. Pas de markdown.>"
+}
+
+Aucun texte autour du JSON. Pas d'explication. Juste l'objet JSON."#
+        }
+        EntityType::Concept => {
+            r#"Tu génères une **fiche de concept** (système de magie, religion, technologie, philosophie, langue…) pour un univers fictionnel.
+Réponds STRICTEMENT en JSON valide avec ces clés exactes :
+
+{
+  "name": "<nom du concept>",
+  "summary": "<une phrase de 10-20 mots qui capture son essence>",
+  "conceptKind": "<un seul de: magic, religion, technology, philosophy, language, other>",
+  "domain": "<en quelques mots : élémentaire, pan-galactique, monastique, populaire…>",
+  "descriptionText": "<4 à 8 paragraphes : règles, dogmes, principes, exemples concrets, qui le pratique, ses limites. Texte simple, sauts de ligne. Pas de markdown.>"
+}
+
+Aucun texte autour du JSON. Pas d'explication. Juste l'objet JSON."#
+        }
         _ => {
             r#"Réponds en JSON avec les clés "name" et "summary"."#
         }
@@ -361,6 +425,16 @@ fn parse_draft(raw: &str, kind: EntityType) -> EntityDraft {
         location_kind: None,
         climate: None,
         population: None,
+        faction_kind: None,
+        ideology: None,
+        founded: None,
+        leader: None,
+        object_kind: None,
+        origin: None,
+        owner: None,
+        properties: None,
+        concept_kind: None,
+        domain: None,
         description_text: None,
         raw_response: raw.to_string(),
         parse_warning: None,
@@ -400,7 +474,26 @@ fn parse_draft(raw: &str, kind: EntityType) -> EntityDraft {
             draft.population = s("population");
             draft.description_text = s("descriptionText");
         }
-        _ => {}
+        EntityType::Faction => {
+            draft.faction_kind = s("factionKind");
+            draft.ideology = s("ideology");
+            draft.founded = s("founded");
+            draft.leader = s("leader");
+            draft.description_text = s("descriptionText");
+        }
+        EntityType::Object => {
+            draft.object_kind = s("objectKind");
+            draft.origin = s("origin");
+            draft.owner = s("owner");
+            draft.properties = arr_s("properties");
+            draft.description_text = s("descriptionText");
+        }
+        EntityType::Concept => {
+            draft.concept_kind = s("conceptKind");
+            draft.domain = s("domain");
+            draft.description_text = s("descriptionText");
+        }
+        EntityType::RealEntity => {}
     }
 
     draft

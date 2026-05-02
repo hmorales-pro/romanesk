@@ -33,6 +33,7 @@ import { TagsSection } from "@/components/TagsSection";
 import { CoverImage } from "@/components/CoverImage";
 import { SnapshotsSection } from "@/components/SnapshotsSection";
 import { AiDescriptionPanel } from "@/components/AiDescriptionPanel";
+import { AiDraftPanel } from "@/components/AiDraftPanel";
 import { paragraphsToDoc, appendParagraphsToDoc } from "@/lib/tiptap-utils";
 
 interface Props {
@@ -213,6 +214,36 @@ export function ObjectDetail({ entity, universeId }: Props) {
               ),
             )
           }
+        />
+
+        <AiDraftPanel
+          universeId={universeId}
+          kind="Object"
+          name={name}
+          kindLabel="cet objet"
+          onApply={(draft) => {
+            if (draft.summary) setSummary(draft.summary);
+            if (
+              draft.objectKind &&
+              OBJECT_KINDS.includes(draft.objectKind as ObjectKind)
+            ) {
+              setKind(draft.objectKind as ObjectKind);
+            }
+            if (draft.origin) setOrigin(draft.origin);
+            if (draft.owner) setOwner(draft.owner);
+            if (draft.properties && draft.properties.length > 0) {
+              setPropertiesRaw(draft.properties.join(", "));
+            }
+            if (draft.descriptionText) {
+              const paragraphs = draft.descriptionText
+                .split(/\n{2,}/)
+                .map((p) => p.trim())
+                .filter(Boolean);
+              if (paragraphs.length > 0) {
+                setDescription(paragraphsToDoc(paragraphs));
+              }
+            }
+          }}
         />
 
         {updateMutation.isError && (

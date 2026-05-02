@@ -719,12 +719,28 @@ export function aiComplete(args: AiCompleteArgs): Promise<AiCompleteResult> {
 export interface EntityDraft {
   name: string | null;
   summary: string | null;
+  // Character
   archetype: string | null;
   traits: string[] | null;
   biographyText: string | null;
+  // Location
   locationKind: string | null;
   climate: string | null;
   population: string | null;
+  // Faction (P6.1)
+  factionKind: string | null;
+  ideology: string | null;
+  founded: string | null;
+  leader: string | null;
+  // Object (P6.1)
+  objectKind: string | null;
+  origin: string | null;
+  owner: string | null;
+  properties: string[] | null;
+  // Concept (P6.1)
+  conceptKind: string | null;
+  domain: string | null;
+  // Description riche partagée
   descriptionText: string | null;
   rawResponse: string;
   parseWarning: string | null;

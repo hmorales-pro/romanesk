@@ -15,6 +15,8 @@ import {
   factionContent,
   factionKindLabel,
 } from "@/lib/types";
+import { AiDraftPanel } from "@/components/AiDraftPanel";
+import { paragraphsToDoc } from "@/lib/tiptap-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -181,6 +183,34 @@ export function FactionDetail({ entity, universeId }: Props) {
             placeholder="Histoire, structure, alliances, ennemis…"
           />
         </div>
+
+        <AiDraftPanel
+          universeId={universeId}
+          kind="Faction"
+          name={name}
+          kindLabel="cette faction"
+          onApply={(draft) => {
+            if (draft.summary) setSummary(draft.summary);
+            if (
+              draft.factionKind &&
+              FACTION_KINDS.includes(draft.factionKind as FactionKind)
+            ) {
+              setKind(draft.factionKind as FactionKind);
+            }
+            if (draft.ideology) setIdeology(draft.ideology);
+            if (draft.founded) setFounded(draft.founded);
+            if (draft.leader) setLeader(draft.leader);
+            if (draft.descriptionText) {
+              const paragraphs = draft.descriptionText
+                .split(/\n{2,}/)
+                .map((p) => p.trim())
+                .filter(Boolean);
+              if (paragraphs.length > 0) {
+                setDescription(paragraphsToDoc(paragraphs));
+              }
+            }
+          }}
+        />
 
         {updateMutation.isError && (
           <p className="text-sm text-destructive" role="alert">
