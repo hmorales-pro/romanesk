@@ -22,6 +22,8 @@ tauri-plugin-shell = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["serde"] }
+thiserror = "1"
 
 # Notre logique métier réutilisable (Phase 0 — J3+).
 romanesk-core = { path = "../../../crates/core" }

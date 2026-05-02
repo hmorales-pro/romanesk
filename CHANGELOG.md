@@ -32,6 +32,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
   - `crates/core/src/ai/mock.rs` : impl `Provider` avec staging de réponses (texte, embeddings, descriptions d'image, ping), compteurs d'appels par méthode, capabilities et id surchargeables. 8 tests unitaires.
   - `crates/core/examples/ping_ollama.rs` : binaire qui ping Ollama local et demande « Bonjour » à Gemma. Codes de sortie distincts pour healthcheck KO (1) et complétion KO (2). Surchargeable via `OLLAMA_MODEL` et `OLLAMA_BASE_URL`.
   - `ai/mod.rs` : re-exporte `MockProvider`, `OllamaConfig`, `OllamaProvider`, `TokenUsage`.
+- **Phase 0 — J6** : commandes Tauri pour universe + entity, init DB au démarrage.
+  - `apps/desktop/src-tauri/src/lib.rs` : setup callback qui ouvre la base SQLite dans `<app_data_dir>/romanesk.db` (par OS) et la `manage()` en `tauri::State`.
+  - `apps/desktop/src-tauri/src/commands/`: 8 commandes (`universe_list/create/get/delete`, `entity_list_in_universe/create/get/delete`) + `CommandError` sérialisable + `CreateEntityPayload` typé pour les fiches Personnage.
 
 ### Changed
 - **Pivot du modèle de distribution** : open-source AGPL → **propriétaire source-available, free-use** sous Elastic License 2.0.
