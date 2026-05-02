@@ -92,6 +92,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             // Résolution du répertoire de données par OS :
             // - macOS  : ~/Library/Application Support/app.romanesk.desktop/
@@ -130,6 +131,9 @@ pub fn run() {
             commands::entity::entity_update,
             commands::entity::entity_get,
             commands::entity::entity_delete,
+            commands::entity::entity_set_cover_image,
+            commands::entity::entity_get_cover_image_data,
+            commands::entity::entity_clear_cover_image,
             commands::relation::relation_create,
             commands::relation::relation_list_for_entity,
             commands::relation::relation_list_in_universe,

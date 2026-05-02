@@ -21,6 +21,7 @@ import {
 import { TiptapEditor, type TiptapDoc } from "@/components/TiptapEditor";
 import { RelationsSection } from "@/components/RelationsSection";
 import { TagsSection } from "@/components/TagsSection";
+import { CoverImage } from "@/components/CoverImage";
 
 const LOCATION_KINDS: LocationKind[] = [
   "city",
@@ -202,6 +203,8 @@ export function LocationDetail({ entity, universeId }: Props) {
       </header>
 
       {entity.summary && <p className="text-base text-foreground/90">{entity.summary}</p>}
+
+      <CoverImage entity={entity} />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>

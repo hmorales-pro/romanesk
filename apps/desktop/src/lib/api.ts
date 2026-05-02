@@ -104,6 +104,30 @@ export function entityDelete(id: Uuid): Promise<void> {
   return invoke<void>("entity_delete", { id });
 }
 
+// --- Cover image ------------------------------------------------------------
+
+export interface CoverImageData {
+  mime: string;
+  dataBase64: string;
+}
+
+export function entitySetCoverImage(
+  entityId: Uuid,
+  sourcePath: string,
+): Promise<string> {
+  return invoke<string>("entity_set_cover_image", { entityId, sourcePath });
+}
+
+export function entityGetCoverImageData(
+  entityId: Uuid,
+): Promise<CoverImageData | null> {
+  return invoke<CoverImageData | null>("entity_get_cover_image_data", { entityId });
+}
+
+export function entityClearCoverImage(entityId: Uuid): Promise<void> {
+  return invoke<void>("entity_clear_cover_image", { entityId });
+}
+
 // ---------------------------------------------------------------------------
 // Builders typés par EntityType
 // ---------------------------------------------------------------------------

@@ -155,6 +155,29 @@ impl<'a> EntityRepo<'a> {
         self.get(id).await?.ok_or(RepoError::NotFound)
     }
 
+    /// Met à jour uniquement la colonne `cover_image` d'une entité.
+    /// Plus économique qu'un `update()` complet quand on change juste
+    /// l'image (et évite d'avoir à reconstruire le `UpdateEntity`).
+    pub async fn set_cover_image(
+        &self,
+        id: Uuid,
+        cover_image: Option<&str>,
+    ) -> RepoResult<()> {
+        let res = sqlx::query(
+            "UPDATE lore_entities SET cover_image = ? \
+             WHERE id = ? AND deleted_at IS NULL",
+        )
+        .bind(cover_image)
+        .bind(id.to_string())
+        .execute(self.db.pool())
+        .await?;
+
+        if res.rows_affected() == 0 {
+            return Err(RepoError::NotFound);
+        }
+        Ok(())
+    }
+
     /// Suppression **hard**. Les relations / snapshots / refs sont
     /// supprimés en cascade.
     pub async fn hard_delete(&self, id: Uuid) -> RepoResult<()> {

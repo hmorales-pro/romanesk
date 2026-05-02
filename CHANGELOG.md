@@ -5,6 +5,15 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
 ## [Unreleased]
 
 ### Added — Phase 1
+- **P1.5** : **Images de couverture** sur les fiches Personnage et Lieu.
+  - Plugin Tauri `tauri-plugin-dialog` v2 (Cargo + npm) + capability `dialog:default`. Plugin enregistré dans `lib.rs::run()`.
+  - `EntityRepo::set_cover_image(id, Option<&str>)` : UPDATE chirurgical sur la seule colonne `cover_image`. 2 nouveaux tests d'intégration (round-trip set/clear, NotFound sur id inconnu).
+  - 3 commandes Tauri :
+    - `entity_set_cover_image(entityId, sourcePath)` : copie le fichier source dans `<app_data_dir>/media/<universeId>/<entityId>/cover_<timestamp>.<ext>`, supprime l'ancienne image si existe, met à jour la DB. Validation : extensions jpg/jpeg/png/gif/webp uniquement.
+    - `entity_get_cover_image_data(entityId) → { mime, dataBase64 } | null` : lit le fichier et le renvoie en base64 (auto-clean DB si fichier physique disparu).
+    - `entity_clear_cover_image(entityId)` : supprime DB + fichier physique.
+  - `<CoverImage>` composant front : aspect 16/9, prévisualisation via data URL, bouton « Ajouter/Changer » qui ouvre le picker système Tauri (filtré sur les extensions image), bouton « Retirer ». Intégré dans `CharacterDetail` et `LocationDetail` au-dessus des cartes archétype/climat.
+  - Stockage sous le répertoire de données par OS (`~/Library/Application Support/app.romanesk.desktop/media/...` sur Mac) → portable, sauvegardable, exportable.
 - **P1.3** : **Vue graphe interactive** des relations d'un univers.
   - Dep `@xyflow/react` v12 (anciennement react-flow), CSS importé.
   - Nouvelle route `/u/:universeId/graph` + page `GraphPage`.

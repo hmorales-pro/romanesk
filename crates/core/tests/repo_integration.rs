@@ -323,6 +323,40 @@ async fn update_entity_rejects_empty_name() {
 }
 
 #[tokio::test]
+async fn set_cover_image_round_trip() {
+    let repo = fresh_repo().await;
+    let u = repo.universes().create(NewUniverse::named("Aether")).await.unwrap();
+    let e = repo.entities().create(NewEntity::character(u.id, "Aldric")).await.unwrap();
+    assert!(e.cover_image.is_none());
+
+    repo.entities()
+        .set_cover_image(e.id, Some("media/aether/aldric/cover.png"))
+        .await
+        .unwrap();
+    let refetched = repo.entities().get(e.id).await.unwrap().unwrap();
+    assert_eq!(
+        refetched.cover_image.as_deref(),
+        Some("media/aether/aldric/cover.png"),
+    );
+
+    repo.entities().set_cover_image(e.id, None).await.unwrap();
+    let refetched = repo.entities().get(e.id).await.unwrap().unwrap();
+    assert!(refetched.cover_image.is_none());
+}
+
+#[tokio::test]
+async fn set_cover_image_unknown_id_not_found() {
+    let repo = fresh_repo().await;
+    let bogus = uuid::Uuid::now_v7();
+    let err = repo
+        .entities()
+        .set_cover_image(bogus, Some("x.png"))
+        .await
+        .expect_err("not found");
+    assert!(matches!(err, RepoError::NotFound));
+}
+
+#[tokio::test]
 async fn update_unknown_entity_returns_not_found() {
     let repo = fresh_repo().await;
     let bogus = uuid::Uuid::now_v7();
