@@ -20,6 +20,7 @@ import { TimelineSection } from "@/components/TimelineSection";
 import { RagChatPanel } from "@/components/RagChatPanel";
 import { StoriesSection } from "@/components/StoriesSection";
 import { SimpleEntitySection } from "@/components/SimpleEntitySection";
+import { BrainstormPanel } from "@/components/BrainstormPanel";
 import { Package, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -323,6 +324,8 @@ export default function UniversePage() {
       <TimelineSection universeId={universeId} />
 
       <StoriesSection universeId={universeId!} />
+
+      <BrainstormPanel universeId={universeId!} />
 
       <RagChatPanel universeId={universeId} />
     </div>
