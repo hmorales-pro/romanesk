@@ -14,16 +14,15 @@ name = "romanesk_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2.0", features = [] }
+tauri-build = { version = "2", features = [] }
 
 [dependencies]
-# Versions tauri pinnées sur les minor stables connus pour s'aligner.
-# Le mismatch tauri/plugin-* causait un linker error « tauri::Manager::state
-# symbol not found » chez Hugo après l'ajout de tauri-plugin-dialog.
-# Si on bumpe tauri, bumper les plugins en parallèle.
-tauri = { version = "2.1", features = [] }
-tauri-plugin-shell = "2.0"
-tauri-plugin-dialog = "2.0"
+# Versions tauri en semver permissif (^2). cargo résout sur le dernier
+# minor compatible. Le pin précédent (2.1 strict) avait causé un mismatch
+# avec les plugins ; maintenant on laisse cargo aligner naturellement.
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chrono = { version = "0.4", features = ["serde"] }

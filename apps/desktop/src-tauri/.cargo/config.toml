@@ -1,0 +1,9 @@
+# Force le min deployment target macOS à 13.0.
+# Évite les warnings « built for newer 'macOS' version (26.2) than being
+# linked (11.0) » et l'undefined symbol qui en découle sur ARM64 récent
+# avec rustc 1.95+.
+#
+# Si tu es sur un Mac Intel ou un OS plus ancien, ajuste à 11.0 ou 12.0.
+
+[env]
+MACOSX_DEPLOYMENT_TARGET = "13.0"
