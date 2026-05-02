@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, MapPin, Network, Plus, Search, User } from "lucide-react";
+import { ArrowLeft, MapPin, Network, Plus, Search, Sparkles, User } from "lucide-react";
 
 import {
+  aiGenerateEntityDraft,
   characterCreate,
   entityListInUniverse,
   locationCreate,
@@ -235,6 +236,7 @@ function CharacterSection({ universeId, items, loading, error, onCreated }: Sect
   const [archetype, setArchetype] = useState("");
   const [traitsRaw, setTraitsRaw] = useState("");
   const [biography, setBiography] = useState("");
+  const [aiHint, setAiHint] = useState("");
 
   const createMutation = useMutation({
     mutationFn: characterCreate,
@@ -244,7 +246,18 @@ function CharacterSection({ universeId, items, loading, error, onCreated }: Sect
       setArchetype("");
       setTraitsRaw("");
       setBiography("");
+      setAiHint("");
       setShowForm(false);
+    },
+  });
+
+  const draftMutation = useMutation({
+    mutationFn: aiGenerateEntityDraft,
+    onSuccess: (draft) => {
+      if (draft.name) setName(draft.name);
+      if (draft.archetype) setArchetype(draft.archetype);
+      if (draft.traits && draft.traits.length > 0) setTraitsRaw(draft.traits.join(", "));
+      if (draft.biographyText) setBiography(draft.biographyText);
     },
   });
 
@@ -258,6 +271,16 @@ function CharacterSection({ universeId, items, loading, error, onCreated }: Sect
       archetype: archetype.trim() || undefined,
       traits,
       biography: biography.trim() || undefined,
+    });
+  };
+
+  const onGenerate = () => {
+    if (!name.trim()) return;
+    draftMutation.mutate({
+      universeId,
+      kind: "Character",
+      name: name.trim(),
+      hint: aiHint.trim() || undefined,
     });
   };
 
@@ -324,6 +347,43 @@ function CharacterSection({ universeId, items, loading, error, onCreated }: Sect
                   rows={5}
                 />
               </div>
+
+              {/* Bloc IA */}
+              <div className="flex flex-col gap-1.5 rounded-md border border-dashed border-border p-3">
+                <Label htmlFor="char-ai-hint" className="flex items-center gap-1.5">
+                  <Sparkles className="size-3.5 text-primary" aria-hidden />
+                  Idée / contexte pour l'IA (optionnel)
+                </Label>
+                <Input
+                  id="char-ai-hint"
+                  value={aiHint}
+                  onChange={(e) => setAiHint(e.target.value)}
+                  placeholder="ex. mentor exilé, traumatisé par la guerre, secret enfoui"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={onGenerate}
+                  disabled={draftMutation.isPending || !name.trim()}
+                  className="self-start"
+                >
+                  {draftMutation.isPending
+                    ? "Génération…"
+                    : "Générer avec IA (remplit les champs)"}
+                </Button>
+                {draftMutation.isError && (
+                  <p className="text-xs text-destructive" role="alert">
+                    Erreur IA : {String(draftMutation.error)}
+                  </p>
+                )}
+                {draftMutation.data?.parseWarning && (
+                  <p className="text-xs text-amber-700" role="alert">
+                    {draftMutation.data.parseWarning}
+                  </p>
+                )}
+              </div>
+
               <div className="flex gap-2">
                 <Button type="submit" disabled={createMutation.isPending || !name.trim()}>
                   {createMutation.isPending ? "Création…" : "Créer"}
@@ -375,6 +435,7 @@ function LocationSection({ universeId, items, loading, error, onCreated }: Secti
   const [climate, setClimate] = useState("");
   const [population, setPopulation] = useState("");
   const [summary, setSummary] = useState("");
+  const [aiHint, setAiHint] = useState("");
 
   const createMutation = useMutation({
     mutationFn: locationCreate,
@@ -385,7 +446,23 @@ function LocationSection({ universeId, items, loading, error, onCreated }: Secti
       setClimate("");
       setPopulation("");
       setSummary("");
+      setAiHint("");
       setShowForm(false);
+    },
+  });
+
+  const draftMutation = useMutation({
+    mutationFn: aiGenerateEntityDraft,
+    onSuccess: (draft) => {
+      if (draft.name) setName(draft.name);
+      if (draft.summary) setSummary(draft.summary);
+      if (draft.locationKind && LOCATION_KINDS.includes(draft.locationKind as LocationKind)) {
+        setKind(draft.locationKind as LocationKind);
+      }
+      if (draft.climate) setClimate(draft.climate);
+      if (draft.population) setPopulation(draft.population);
+      // descriptionText : pas encore de champ description dans ce form (on le
+      // remplira sur la page détail). Le draft est dans rawResponse pour debug.
     },
   });
 
@@ -399,6 +476,16 @@ function LocationSection({ universeId, items, loading, error, onCreated }: Secti
       kind,
       climate: climate.trim() || undefined,
       population: population.trim() || undefined,
+    });
+  };
+
+  const onGenerate = () => {
+    if (!name.trim()) return;
+    draftMutation.mutate({
+      universeId,
+      kind: "Location",
+      name: name.trim(),
+      hint: aiHint.trim() || undefined,
     });
   };
 
@@ -483,6 +570,43 @@ function LocationSection({ universeId, items, loading, error, onCreated }: Secti
                   />
                 </div>
               </div>
+
+              {/* Bloc IA */}
+              <div className="flex flex-col gap-1.5 rounded-md border border-dashed border-border p-3">
+                <Label htmlFor="loc-ai-hint" className="flex items-center gap-1.5">
+                  <Sparkles className="size-3.5 text-primary" aria-hidden />
+                  Idée / contexte pour l'IA (optionnel)
+                </Label>
+                <Input
+                  id="loc-ai-hint"
+                  value={aiHint}
+                  onChange={(e) => setAiHint(e.target.value)}
+                  placeholder="ex. cité portuaire en ruine, peuplée d'oubliés"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={onGenerate}
+                  disabled={draftMutation.isPending || !name.trim()}
+                  className="self-start"
+                >
+                  {draftMutation.isPending
+                    ? "Génération…"
+                    : "Générer avec IA (remplit les champs)"}
+                </Button>
+                {draftMutation.isError && (
+                  <p className="text-xs text-destructive" role="alert">
+                    Erreur IA : {String(draftMutation.error)}
+                  </p>
+                )}
+                {draftMutation.data?.parseWarning && (
+                  <p className="text-xs text-amber-700" role="alert">
+                    {draftMutation.data.parseWarning}
+                  </p>
+                )}
+              </div>
+
               <div className="flex gap-2">
                 <Button type="submit" disabled={createMutation.isPending || !name.trim()}>
                   {createMutation.isPending ? "Création…" : "Créer"}

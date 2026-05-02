@@ -128,7 +128,7 @@ pub fn run() {
                 base_url: std::env::var("OLLAMA_BASE_URL")
                     .unwrap_or_else(|_| "http://localhost:11434".into()),
                 default_model: std::env::var("OLLAMA_MODEL")
-                    .unwrap_or_else(|_| "gemma3:latest".into()),
+                    .unwrap_or_else(|_| "gemma4:latest".into()),
                 capabilities: romanesk_core::ai::Capabilities {
                     text: true,
                     vision: false,
@@ -183,6 +183,7 @@ pub fn run() {
             commands::snapshot::snapshot_delete,
             commands::ai::ai_ping,
             commands::ai::ai_complete,
+            commands::ai::ai_generate_entity_draft,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

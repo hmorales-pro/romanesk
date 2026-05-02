@@ -534,6 +534,36 @@ export function aiComplete(args: AiCompleteArgs): Promise<AiCompleteResult> {
   });
 }
 
+export interface EntityDraft {
+  name: string | null;
+  summary: string | null;
+  archetype: string | null;
+  traits: string[] | null;
+  biographyText: string | null;
+  locationKind: string | null;
+  climate: string | null;
+  population: string | null;
+  descriptionText: string | null;
+  rawResponse: string;
+  parseWarning: string | null;
+}
+
+export function aiGenerateEntityDraft(args: {
+  universeId: Uuid;
+  kind: EntityType;
+  name: string;
+  hint?: string;
+}): Promise<EntityDraft> {
+  return invoke<EntityDraft>("ai_generate_entity_draft", {
+    payload: {
+      universeId: args.universeId,
+      kind: args.kind,
+      name: args.name,
+      hint: args.hint ?? null,
+    },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Healthcheck
 // ---------------------------------------------------------------------------
