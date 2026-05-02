@@ -4,7 +4,74 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
 
 ## [Unreleased]
 
-_Rien pour l'instant — Phase 6 démarre au prochain commit._
+_Rien pour l'instant — Phase 7 démarre au prochain commit._
+
+## [0.6.0] — 2026-05-02
+
+Tag de fin de Phase 6 (Vision, multi-modèles, exports avancés).
+Romanesk gagne 5 modèles IA configurables, le mode image (vision
+Ollama), une sortie JSON typée pour la cohérence, l'export Markdown
+des stories et le drag-and-drop des chapitres.
+
+### Added — Phase 6
+- **P6.1** : AI draft pour Faction / Object / Concept. Étend
+  `ai_generate_entity_draft` (P3.2 ne couvrait que Character /
+  Location). 9 nouveaux champs dans `EntityDraft` (faction_kind,
+  ideology, founded, leader, object_kind, origin, owner, properties[],
+  concept_kind, domain). Composant `<AiDraftPanel>` couplage minimal
+  intégré dans les 3 fiches en mode édition.
+- **P6.2** : Override modèle par action IA + Tauri event broadcast.
+  `AppSettings` gagne `creative_model` et `literal_model`. Hook
+  `useSettings()` partagé avec helper `pickModel(kind)` qui résout le
+  fallback. 4 panels câblés (Continue/Brainstorm/Description = creative,
+  Actions/rewrite/summarize = literal). `settings_save` émet
+  `app.emit("settings-changed", ...)` ; `<AIStatusBadge>` écoute via
+  `@tauri-apps/api/event.listen()` et invalide les queries instantanément.
+- **P6.3** : Sortie JSON structurée pour `<AiConsistencyPanel>`. Prompt
+  strict JSON + parser robuste (isole `{` ... `}` puis JSON.parse) +
+  fallback gracieux sur le texte brut. Liste typée d'incohérences
+  (kind: lore/anachronism/other × severity: minor/major/blocker) avec
+  badges colorés et suggestions de correction.
+- **P6.4** : Drag-and-drop natif HTML5 pour réordonner les chapitres.
+  ~50 lignes, 0 dépendance externe. Boutons ▲/▼ gardés en fallback.
+  Affordance visuelle : icône `GripVertical` + cursor-grab + opacity-40
+  sur le dragged + dashed border sur la drop zone.
+- **P6.5** : Export d'une story en Markdown. Fonction Rust
+  `render_story_markdown(story, chapters)` qui utilise `render_tiptap_doc`
+  (P1.6) pour les bodys. Commande Tauri `story_export_markdown` +
+  bouton « Exporter MD » dans le header de StoryPage. Copie dans le
+  presse-papier (cohérent avec le pattern UniversePage).
+- **P6.6** : Atelier description en mode image (vision Ollama).
+  `OllamaProvider.describe_image()` implémenté (était TODO depuis P3) :
+  encode l'image en base64, POST sur `/api/chat` avec
+  `messages.images=[b64]`. Nouvelle commande Tauri `ai_describe_image`.
+  `AppSettings.vision_model` opt-in. Si configuré, bouton « Image » dans
+  `<AiDescriptionPanel>` qui ouvre le dialog Tauri pour choisir une
+  image et appelle le modèle vision avec un prompt qui respecte les
+  champs structurés déjà remplis.
+
+### Changed — Phase 6
+- `EntityDraft` (Rust + TS) étendu avec 9 nouveaux champs (Faction +
+  Object + Concept).
+- `AppSettings` (Rust + TS) gagne 3 champs optionnels :
+  `creative_model`, `literal_model`, `vision_model`. Tous fallback sur
+  `chat_model` (compat ascendante totale).
+- `AiConsistencyPanel` : prompt JSON strict + fallback texte gracieux.
+  Verdict header passe à 3 états (Cohérent / À vérifier / Incohérences
+  majeures).
+- Helper TS factorisé : `apps/desktop/src/lib/use-settings.ts`
+  (déduplication react-query + helper `pickModel`).
+
+### Dependencies
+- `crates/core/Cargo.toml` : ajout `base64 = "0.22"` (pour vision).
+
+### Versions
+- 0.5.0 → **0.6.0** sur Cargo.toml workspace + crates/core +
+  apps/desktop/src-tauri + tauri.conf.json + apps/desktop/package.json
+  + Layout.tsx (badge version) + Cargo.lock (deps internes).
+- Rétro complète : voir [`docs/RETRO-PHASE-6.md`](./docs/RETRO-PHASE-6.md).
+
+[0.6.0]: https://github.com/hmorales-pro/romanesk/releases/tag/v0.6.0
 
 ## [0.5.0] — 2026-05-02
 

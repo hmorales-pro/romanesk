@@ -60,20 +60,30 @@ Reflète le phasing du PRD (`PRD.md` §14). Mis à jour à chaque clôture de mi
 - ✅ Atelier description (Personnage / Lieu / Objet, mode édition)
 - 📄 Rétro : [`docs/RETRO-PHASE-5.md`](./docs/RETRO-PHASE-5.md)
 
+### Phase 6 — Vision, multi-modèles, exports · `v0.6.0` (2026-05-02)
+- ✅ AI draft pour Faction / Object / Concept
+- ✅ 5 modèles IA configurables (chat / embed / creative / literal / vision)
+- ✅ Tauri event broadcast sur settings_save → invalidation immédiate front
+- ✅ Sortie JSON structurée pour Cohérence (incohérences typées)
+- ✅ Drag-and-drop natif HTML5 pour réordonner les chapitres
+- ✅ Export d'une story en Markdown
+- ✅ Atelier description mode image (vision Ollama opt-in)
+- 📄 Rétro : [`docs/RETRO-PHASE-6.md`](./docs/RETRO-PHASE-6.md)
+
 ---
 
-## Now (Phase 6 — Vision, multi-modèles, exports avancés)
+## Now (Phase 7 — Polish UX + exports binaires + templates)
 
-**Sortie visée** : ~4-6 semaines après Phase 5.
+**Sortie visée** : ~4-6 semaines après Phase 6.
 
-- [ ] Atelier description mode image (vision Ollama via `llava` ou équivalent)
-- [ ] AI draft pour Faction / Object / Concept (étendre `ai_generate_entity_draft`)
-- [ ] Override de modèle par action IA (créatif vs littéral)
-- [ ] Sortie JSON structurée pour Cohérence (incohérences typées + sévérité)
-- [ ] Drag-and-drop pour réordonner les chapitres
-- [ ] Export d'une story en Markdown / EPUB / DOCX
-- [ ] Tauri event broadcast sur `settings_save` → front rafraîchit le badge
-- [ ] Premier release `v0.6.0`
+- [ ] Mode simple / avancé pour Settings (réduit la densité)
+- [ ] Override modèle dans `ai_rag_query` (Cohérence avec literal)
+- [ ] Découpage en passes pour la cohérence > 600 mots
+- [ ] Auto-save sur les fiches (pas que les chapitres)
+- [ ] Export EPUB / DOCX d'une story (avec save dialog Tauri)
+- [ ] Drag-and-drop pour réordonner époques / events
+- [ ] Templates par genre (fantasy / polar / SF) qui pré-remplissent un univers
+- [ ] Premier release `v0.7.0`
 
 ---
 
