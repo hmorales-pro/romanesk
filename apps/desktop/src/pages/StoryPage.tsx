@@ -20,6 +20,7 @@ import {
   ArrowLeft,
   ArrowUp,
   BookOpen,
+  GripVertical,
   Plus,
   Save,
   Trash2,
@@ -148,6 +149,51 @@ export default function StoryPage() {
     ]);
   };
 
+  // P6.4 : drag-and-drop natif HTML5. draggedId = id en cours de drag,
+  // overId = id survolé pour highlight de la zone de drop.
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+
+  const onDragStart = (e: React.DragEvent, id: string) => {
+    setDraggedId(id);
+    e.dataTransfer.effectAllowed = "move";
+    // Firefox exige un payload non vide pour démarrer le drag.
+    e.dataTransfer.setData("text/plain", id);
+  };
+
+  const onDragOver = (e: React.DragEvent, id: string) => {
+    if (!draggedId || draggedId === id) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (overId !== id) setOverId(id);
+  };
+
+  const onDragLeaveItem = () => {
+    setOverId(null);
+  };
+
+  const onDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    const dragged = draggedId;
+    setDraggedId(null);
+    setOverId(null);
+    if (!dragged || dragged === targetId) return;
+    const fromIdx = chapters.findIndex((c) => c.id === dragged);
+    const toIdx = chapters.findIndex((c) => c.id === targetId);
+    if (fromIdx < 0 || toIdx < 0) return;
+    const next = [...chapters];
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    reorderMutation.mutate(
+      next.map((c, i) => ({ id: c.id, sortOrder: i })),
+    );
+  };
+
+  const onDragEnd = () => {
+    setDraggedId(null);
+    setOverId(null);
+  };
+
   const onDelete = (chapter: Chapter) => {
     if (
       !window.confirm(
@@ -223,13 +269,30 @@ export default function StoryPage() {
           <ol className="flex flex-col gap-1">
             {chapters.map((c, i) => {
               const active = c.id === activeId;
+              const isDragging = draggedId === c.id;
+              const isDropTarget = overId === c.id && draggedId !== c.id;
               return (
                 <li
                   key={c.id}
-                  className={`rounded-md border p-2 flex items-start gap-2 ${
+                  draggable
+                  onDragStart={(e) => onDragStart(e, c.id)}
+                  onDragOver={(e) => onDragOver(e, c.id)}
+                  onDragLeave={onDragLeaveItem}
+                  onDrop={(e) => onDrop(e, c.id)}
+                  onDragEnd={onDragEnd}
+                  className={`rounded-md border p-2 flex items-start gap-2 transition ${
                     active ? "bg-accent border-primary" : "bg-card hover:bg-accent/40"
+                  } ${isDragging ? "opacity-40" : ""} ${
+                    isDropTarget ? "border-primary border-dashed bg-primary/5" : ""
                   }`}
                 >
+                  <span
+                    className="text-muted-foreground/60 cursor-grab pt-0.5"
+                    title="Glisser pour réordonner"
+                    aria-hidden
+                  >
+                    <GripVertical className="size-3.5" />
+                  </span>
                   <button
                     type="button"
                     className="flex-1 min-w-0 text-left"
@@ -251,7 +314,7 @@ export default function StoryPage() {
                       className="text-muted-foreground hover:text-foreground disabled:opacity-30"
                       onClick={() => onMove(c, -1)}
                       disabled={i === 0 || reorderMutation.isPending}
-                      title="Monter"
+                      title="Monter (ou glisser-déposer)"
                       aria-label="Monter"
                     >
                       <ArrowUp className="size-3.5" aria-hidden />
@@ -263,7 +326,7 @@ export default function StoryPage() {
                       disabled={
                         i === chapters.length - 1 || reorderMutation.isPending
                       }
-                      title="Descendre"
+                      title="Descendre (ou glisser-déposer)"
                       aria-label="Descendre"
                     >
                       <ArrowDown className="size-3.5" aria-hidden />
