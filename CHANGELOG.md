@@ -15,6 +15,13 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
   - ESLint 9 flat config + typescript-eslint.
   - Workspace Cargo : ajout de `apps/desktop/src-tauri` en membre.
   - `pnpm install`, `pnpm typecheck`, `pnpm lint` verts.
+- **Phase 0 — J3** : couche données SQLite + repository pattern dans `crates/core`.
+  - Module `db/` : `Database` wrapper (in-memory + on-disk WAL), `PRAGMA foreign_keys = ON`, migrations embarquées via `sqlx::migrate!("../../db/migrations")`.
+  - Module `domain/` : types `Universe`, `Entity`, `EntityType`, `NewUniverse`, `NewEntity`.
+  - Module `repo/` : `Repo` avec `UniverseRepo` (create / get / list / hard_delete / soft_delete) et `EntityRepo` (create / get / list_in_universe / count_in_universe / hard_delete / soft_delete) + `RepoError` typé.
+  - Tri sur `id` (UUID v7 monotone temporellement) plutôt que `created_at` — pas d'index supplémentaire requis.
+  - 11 tests d'intégration in-memory : CRUD, FK ON DELETE CASCADE, soft-delete, FK violation, round-trip JSON Unicode, `PRAGMA foreign_keys` actif.
+  - ADR `0004-migrations.md` : abandon de `refinery` au profit de `sqlx::migrate!` (évite le double driver SQLite).
 
 ### Changed
 - **Pivot du modèle de distribution** : open-source AGPL → **propriétaire source-available, free-use** sous Elastic License 2.0.

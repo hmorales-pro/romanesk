@@ -106,16 +106,14 @@ romanesk/
 **Livrable J2** : pnpm install, pnpm typecheck, pnpm lint verts dans le sandbox. `pnpm tauri dev` à valider en local sur Mac/Linux/Windows.
 
 ### Jour 3 — Couche données
-- [ ] Créer `crates/core` (workspace Cargo)
-- [ ] Ajouter `sqlx` + `refinery` ; configurer en mode offline (compile-time check sur DB de référence checked-in)
-- [ ] Créer `db/migrations/0001_init.sql` avec :
-  - `universes`, `lore_entities`, `relations`, `temporal_snapshots`, `timeline_eras`, `events`
-  - `reality_anchors`, `divergence_points`, `world_briefs`
-  - `media_assets`, `tags`, `ai_sessions`, `notes`
-- [ ] Repository pattern : `Repo::create_universe`, `Repo::create_entity`, `Repo::list_entities`
-- [ ] Tests unitaires sur Repo (in-memory SQLite)
+- [x] `crates/core` créé (déjà fait au bootstrap)
+- [x] ~~`sqlx` + `refinery`~~ → **`sqlx::migrate!`** seul (voir ADR 0004) ; migrations embarquées au compile-time, pas besoin de `DATABASE_URL` à la build
+- [x] `db/migrations/0001_init.sql` couvre toutes les tables du PRD §7 (déjà fait au bootstrap)
+- [x] Repository pattern : `Repo::universes()` (create / get / list / hard_delete / soft_delete) et `Repo::entities()` (create / get / list_in_universe / count_in_universe / hard_delete / soft_delete)
+- [x] Tests unitaires Repo en in-memory SQLite : 11 tests couvrant CRUD, FK CASCADE, soft-delete, round-trip JSON, FK violation
+- [ ] **Validation chez Hugo** : `cargo test --workspace` (Rust absent du sandbox)
 
-**Livrable J3** : tests verts sur Repo, migrations qui passent, schéma reflète le PRD §7.
+**Livrable J3** : code écrit + relu par un agent indépendant + 2 bugs corrigés (DateTime decoding fragile, lints pedantic). Compilation et tests à valider en local.
 
 ### Jour 4 — sqlite-vec & embeddings
 - [ ] Compiler / linker `sqlite-vec` extension dans `crates/core`
