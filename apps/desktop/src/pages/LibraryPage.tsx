@@ -9,6 +9,7 @@ import {
   universeExportMarkdown,
   universeList,
 } from "@/lib/api";
+import { AIStatusBadge } from "@/components/AIStatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -70,12 +71,15 @@ export default function LibraryPage() {
             </p>
           </div>
         </div>
-        {!showForm && (
-          <Button onClick={() => setShowForm(true)}>
-            <Plus className="size-4" aria-hidden />
-            Nouvel univers
-          </Button>
-        )}
+        <div className="flex items-center gap-3">
+          <AIStatusBadge />
+          {!showForm && (
+            <Button onClick={() => setShowForm(true)}>
+              <Plus className="size-4" aria-hidden />
+              Nouvel univers
+            </Button>
+          )}
+        </div>
       </header>
 
       {showForm && (

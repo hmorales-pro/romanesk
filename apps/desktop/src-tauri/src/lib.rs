@@ -19,11 +19,16 @@
 
 mod commands;
 
+use std::sync::Arc;
+
 use chrono::Utc;
+use romanesk_core::ai::{OllamaConfig, OllamaProvider};
 use romanesk_core::Database;
 use serde::Serialize;
 use tauri::Manager;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
+
+use commands::ai::AiProvider;
 
 #[derive(Debug, Serialize)]
 pub struct PingResult {
@@ -116,7 +121,24 @@ pub fn run() {
                 .expect("impossible d'ouvrir la base SQLite Romanesk");
 
             app.manage(db);
-            tracing::info!("Setup terminé, base prête");
+
+            // Provider IA — Phase 3.1 : Ollama hardcoded sur localhost:11434
+            // avec modèle gemma3:latest. Configuration dynamique en P3.2+.
+            let ollama = OllamaProvider::new(OllamaConfig {
+                base_url: std::env::var("OLLAMA_BASE_URL")
+                    .unwrap_or_else(|_| "http://localhost:11434".into()),
+                default_model: std::env::var("OLLAMA_MODEL")
+                    .unwrap_or_else(|_| "gemma3:latest".into()),
+                capabilities: romanesk_core::ai::Capabilities {
+                    text: true,
+                    vision: false,
+                    embeddings: false,
+                    tool_use: false,
+                    long_context: true,
+                },
+            });
+            app.manage(AiProvider(Arc::new(ollama)));
+            tracing::info!("Setup terminé, base prête, provider IA initialisé");
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -159,6 +181,8 @@ pub fn run() {
             commands::snapshot::snapshot_list_for_entity,
             commands::snapshot::snapshot_get,
             commands::snapshot::snapshot_delete,
+            commands::ai::ai_ping,
+            commands::ai::ai_complete,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

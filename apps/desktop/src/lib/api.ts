@@ -492,6 +492,49 @@ export function snapshotDelete(id: Uuid): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// AI (Phase 3)
+// ---------------------------------------------------------------------------
+
+export interface AiStatus {
+  providerId: string;
+  defaultModel: string;
+  reachable: boolean;
+  error: string | null;
+}
+
+export function aiPing(): Promise<AiStatus> {
+  return invoke<AiStatus>("ai_ping");
+}
+
+export interface AiCompleteArgs {
+  user: string;
+  system?: string;
+  temperature?: number;
+  maxTokens?: number;
+  model?: string;
+}
+
+export interface AiCompleteResult {
+  model: string;
+  content: string;
+  finishReason: string | null;
+  promptTokens: number | null;
+  completionTokens: number | null;
+}
+
+export function aiComplete(args: AiCompleteArgs): Promise<AiCompleteResult> {
+  return invoke<AiCompleteResult>("ai_complete", {
+    payload: {
+      user: args.user,
+      system: args.system ?? null,
+      temperature: args.temperature ?? null,
+      maxTokens: args.maxTokens ?? null,
+      model: args.model ?? null,
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Healthcheck
 // ---------------------------------------------------------------------------
 

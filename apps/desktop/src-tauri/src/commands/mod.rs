@@ -10,6 +10,7 @@
 // côté front (`invoke('universe_create')`). Plus lisible.
 #![allow(clippy::module_name_repetitions)]
 
+pub mod ai;
 pub mod entity;
 pub mod era;
 pub mod error;
