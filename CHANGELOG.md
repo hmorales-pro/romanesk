@@ -4,7 +4,69 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
 
 ## [Unreleased]
 
-_Rien pour l'instant — Phase 5 démarre au prochain commit._
+_Rien pour l'instant — Phase 6 démarre au prochain commit._
+
+## [0.5.0] — 2026-05-02
+
+Tag de fin de Phase 5 (Atelier description + multi-types + IA augmentée).
+Romanesk gagne 3 types d'entités (Faction / Object / Concept), un
+auto-save, le hot-reload des providers IA, un brainstorm transversal,
+un atelier description sur fiches, et l'extension anachronismes du panel
+cohérence.
+
+### Added — Phase 5
+- **P5.1** : Fiches **Faction** (gouvernement / guilde / secte / clan /
+  compagnie), **Object** (artefact / arme / armure / livre / relique /
+  outil), **Concept** (magie / religion / technologie / philosophie /
+  langue). 3 helpers TS, 3 builders API, 3 composants Detail, 1 composant
+  générique `<SimpleEntitySection>` paramétrable. **Zéro changement
+  backend** — l'archi polymorphe d'EntityType (P1) couvrait déjà tout.
+- **P5.2** : **Auto-save** debounced 3s sur les chapitres. Plante un
+  setTimeout à chaque changement de body/title/status, le clear si
+  nouvelle modif arrive, n'écrase jamais une mutation en cours.
+  Indicateurs visuels « modifié » (amber) / « sauvegarde… » (bleu) /
+  « ✓ enregistré » (emerald). Ctrl/Cmd-S explicite reste prioritaire.
+- **P5.3** : **Hot-reload des providers IA** après `settings_save`.
+  Refactor minimal : `AiProvider` et `AiEmbedder` deviennent
+  `Arc<RwLock<...>>`, chaque commande IA snapshote en début d'exécution
+  via `provider.snapshot().await`. `settings_save` reconstruit les
+  providers et les swap en place. Plus besoin de redémarrer Romanesk.
+- **P5.4** : **Brainstorm panel** transversal sur UniversePage. 3 modes :
+  5 idées de scènes (variées : intime / action / révélation / suspense
+  / contemplation), 3 dilemmes moraux (choix entre 2 valeurs
+  incompatibles), 3 twists narratifs. Sélecteur de story optionnel.
+  Pas de RAG volontairement — divergence créative.
+- **P5.5** : **Détection d'anachronismes** dans `<AiConsistencyPanel>`.
+  Si l'univers a un RealityAnchor (mode historical / divergent + pivot
+  date), le panel demande aussi de signaler les anachronismes (objets,
+  technologies, expressions, références hors période). Badge bleu
+  visible dans le header quand le mode est actif.
+- **P5.6** : **Atelier description** sur fiches Personnage / Lieu /
+  Objet. Nouveau composant `<AiDescriptionPanel>` paramétrable par
+  `targetKind` (system prompt dédié à chaque type). Construit le
+  contexte à partir des champs structurés déjà remplis + une indication
+  facultative. 4 actions sur la sortie : Remplacer / Ajouter à la suite
+  / Copier / Fermer.
+
+### Changed — Phase 5
+- `AiProvider` et `AiEmbedder` deviennent interior-mutable (cf. P5.3).
+- Les commandes IA (ai_ping, ai_complete, ai_generate_entity_draft,
+  ai_universe_reindex, ai_rag_query) ajoutent `let snap =
+  state.snapshot().await;` en début d'exécution. Aucun changement de
+  call-site côté front.
+- Helper `apps/desktop/src/lib/tiptap-utils.ts` factorisé : 3 helpers
+  purs (paragraphsToDoc, appendParagraphsToDoc, collectTextFromDoc).
+  StoryPage utilise les helpers factorisés ; les copies inline supprimées.
+- SettingsPage : bandeau post-save passe de amber « Redémarre Romanesk »
+  à emerald « Les providers IA ont été rechargés à chaud ».
+
+### Versions
+- 0.4.0 → **0.5.0** sur Cargo.toml workspace + crates/core +
+  apps/desktop/src-tauri + tauri.conf.json + apps/desktop/package.json
+  + Layout.tsx (badge version) + Cargo.lock (deps internes).
+- Rétro complète : voir [`docs/RETRO-PHASE-5.md`](./docs/RETRO-PHASE-5.md).
+
+[0.5.0]: https://github.com/hmorales-pro/romanesk/releases/tag/v0.5.0
 
 ## [0.4.0] — 2026-05-02
 

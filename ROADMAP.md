@@ -51,19 +51,29 @@ Reflète le phasing du PRD (`PRD.md` §14). Mis à jour à chaque clôture de mi
 - ✅ Détection d'incohérences via RAG sur le lore (`<AiConsistencyPanel>`)
 - 📄 Rétro : [`docs/RETRO-PHASE-4.md`](./docs/RETRO-PHASE-4.md)
 
+### Phase 5 — Atelier description + multi-types + IA augmentée · `v0.5.0` (2026-05-02)
+- ✅ Fiches Faction / Object / Concept (archi polymorphe payante)
+- ✅ Auto-save debounced sur chapitres
+- ✅ Hot-reload des providers IA après Settings save
+- ✅ Brainstorm panel transversal (5 scènes / 3 dilemmes / 3 twists)
+- ✅ Détection d'anachronismes (extension Cohérence × Reality Anchor)
+- ✅ Atelier description (Personnage / Lieu / Objet, mode édition)
+- 📄 Rétro : [`docs/RETRO-PHASE-5.md`](./docs/RETRO-PHASE-5.md)
+
 ---
 
-## Now (Phase 5 — Atelier description + multi-modèles + fiches étendues)
+## Now (Phase 6 — Vision, multi-modèles, exports avancés)
 
-**Sortie visée** : ~4-6 semaines après Phase 4 selon PRD §14.
+**Sortie visée** : ~4-6 semaines après Phase 5.
 
-- [ ] Atelier de description en mode image (vision Ollama si dispo)
-- [ ] Brainstorm panel transversal (idées de scènes, dilemmes, twists)
-- [ ] Fiches Faction / Object / Concept (archi `EntityType` polymorphe déjà prête)
-- [ ] Détection d'anachronismes (extension de la cohérence avec axes Reality Anchor)
-- [ ] Auto-save sur chapitres (debounced)
-- [ ] Hot-reload des providers IA après changement Settings
-- [ ] Premier release `v0.5.0`
+- [ ] Atelier description mode image (vision Ollama via `llava` ou équivalent)
+- [ ] AI draft pour Faction / Object / Concept (étendre `ai_generate_entity_draft`)
+- [ ] Override de modèle par action IA (créatif vs littéral)
+- [ ] Sortie JSON structurée pour Cohérence (incohérences typées + sévérité)
+- [ ] Drag-and-drop pour réordonner les chapitres
+- [ ] Export d'une story en Markdown / EPUB / DOCX
+- [ ] Tauri event broadcast sur `settings_save` → front rafraîchit le badge
+- [ ] Premier release `v0.6.0`
 
 ---
 
