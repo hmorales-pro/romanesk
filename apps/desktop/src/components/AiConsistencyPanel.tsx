@@ -48,16 +48,34 @@ interface AiConsistencyPanelProps {
   body: TiptapDoc;
 }
 
+interface ConsistencyResult {
+  /** Texte brut de la réponse. Affichage de fallback si le JSON parse fail. */
+  answer: string;
+  sources: RagSource[];
+  /** Si le modèle a joué le jeu du JSON, version typée. */
+  parsed: ParsedReport | null;
+}
+
+interface ParsedReport {
+  verdict: "ok" | "warn" | "error";
+  issues: ParsedIssue[];
+}
+
+interface ParsedIssue {
+  kind: "lore" | "anachronism" | "other";
+  severity: "minor" | "major" | "blocker";
+  source: string | null;
+  evidence: string;
+  suggestion: string | null;
+}
+
 export function AiConsistencyPanel({
   universeId,
   story,
   chapterTitle,
   body,
 }: AiConsistencyPanelProps) {
-  const [result, setResult] = useState<{
-    answer: string;
-    sources: RagSource[];
-  } | null>(null);
+  const [result, setResult] = useState<ConsistencyResult | null>(null);
 
   // P5.5 : si l'univers a un RealityAnchor (historical / divergent),
   // on étend la question RAG pour demander aussi les anachronismes.
@@ -83,16 +101,22 @@ export function AiConsistencyPanel({
       return aiRagQuery({ universeId, question, topK: TOP_K });
     },
     onSuccess: (res) => {
-      setResult({ answer: res.answer.trim(), sources: res.sources });
+      const answer = res.answer.trim();
+      setResult({
+        answer,
+        sources: res.sources,
+        parsed: tryParseReport(answer),
+      });
     },
   });
 
   const isEmpty = collectText(body).trim().length === 0;
 
-  // Heuristique d'affichage : si la réponse contient « cohérent »,
-  // « aucune incohérence », « pas de contradiction » et pas « mais »,
-  // on affiche un badge vert. Sinon, badge orange.
-  const verdictKind = result ? classifyVerdict(result.answer) : null;
+  // P6.3 : si le modèle a renvoyé un JSON parsable, on prend son verdict
+  // typé. Sinon, fallback sur l'heuristique textuelle de P4.6.
+  const verdictKind: "ok" | "warn" | "error" | null = result
+    ? result.parsed?.verdict ?? classifyVerdict(result.answer)
+    : null;
 
   return (
     <div className="rounded-md border border-dashed bg-muted/30 p-3 flex flex-col gap-3">
@@ -159,21 +183,40 @@ export function AiConsistencyPanel({
           <div className="flex items-center gap-2">
             {verdictKind === "ok" ? (
               <CheckCircle2 className="size-4 text-emerald-600" aria-hidden />
+            ) : verdictKind === "error" ? (
+              <ShieldAlert className="size-4 text-red-600" aria-hidden />
             ) : (
               <ShieldAlert className="size-4 text-amber-600" aria-hidden />
             )}
             <span
               className={`text-xs font-medium uppercase tracking-wide ${
-                verdictKind === "ok" ? "text-emerald-700" : "text-amber-700"
+                verdictKind === "ok"
+                  ? "text-emerald-700"
+                  : verdictKind === "error"
+                    ? "text-red-700"
+                    : "text-amber-700"
               }`}
             >
-              {verdictKind === "ok" ? "Cohérent" : "À vérifier"}
+              {verdictKind === "ok"
+                ? "Cohérent"
+                : verdictKind === "error"
+                  ? "Incohérences majeures"
+                  : "À vérifier"}
             </span>
+            {result.parsed && (
+              <span className="text-xs text-muted-foreground">
+                · {result.parsed.issues.length} point(s)
+              </span>
+            )}
           </div>
 
-          <div className="text-sm whitespace-pre-wrap leading-relaxed">
-            {result.answer}
-          </div>
+          {result.parsed ? (
+            <IssueList issues={result.parsed.issues} />
+          ) : (
+            <div className="text-sm whitespace-pre-wrap leading-relaxed">
+              {result.answer}
+            </div>
+          )}
 
           {result.sources.length > 0 && (
             <div className="border-t pt-2">
@@ -227,7 +270,21 @@ function buildQuestion(args: {
   );
   lines.push("");
   lines.push(
-    "Liste les éventuelles incohérences (âges, lieux, relations, événements, traits, dates). Cite la fiche concernée pour chaque point.",
+    "Réponds STRICTEMENT en JSON valide, avec ce schéma exact :",
+  );
+  lines.push("");
+  lines.push(
+    '{ "verdict": "ok" | "warn" | "error", "issues": [{ "kind": "lore" | "anachronism" | "other", "severity": "minor" | "major" | "blocker", "source": "<fiche concernée ou élément>", "evidence": "<ce qui pose problème, en une phrase>", "suggestion": "<correction proposée ou null>" }] }',
+  );
+  lines.push("");
+  lines.push(
+    "- `verdict` : `ok` si rien à signaler, `warn` si points mineurs, `error` si contradictions majeures.",
+  );
+  lines.push(
+    "- `issues` : tableau vide [] si tout est cohérent. Sinon, un objet par point. Cite chaque fiche par son nom.",
+  );
+  lines.push(
+    "- `kind` : `lore` (incohérence avec une fiche), `anachronism` (objet/concept/expression hors période), `other` (logique narrative).",
   );
   if (args.anchor) {
     const modeLabel =
@@ -236,21 +293,132 @@ function buildQuestion(args: {
         : "uchronie / divergence assumée";
     lines.push("");
     lines.push(
-      `L'univers est ancré au monde réel à la date pivot ${args.anchor.pivot_date} (${modeLabel}, base : ${args.anchor.base_world}).`,
-    );
-    lines.push(
-      "En plus des incohérences avec le lore, signale tout anachronisme : objets, technologies, expressions, références culturelles ou concepts qui ne pourraient pas exister à cette date dans ce contexte. Cite la chose concernée et explique pourquoi elle pose problème.",
+      `L'univers est ancré au monde réel à la date pivot ${args.anchor.pivot_date} (${modeLabel}, base : ${args.anchor.base_world}). Signale aussi les anachronismes (kind="anachronism").`,
     );
   }
   lines.push("");
-  lines.push(
-    "Si tout est cohérent, écris clairement : « Aucune incohérence détectée. »",
-  );
+  lines.push("Aucun texte autour du JSON. Pas d'explication. Juste l'objet JSON.");
   lines.push("");
   lines.push("PASSAGE :");
   lines.push(args.chapterTail);
   return lines.join("\n");
 }
+
+/**
+ * Tente de parser un report JSON renvoyé par le modèle. Retourne null si
+ * le parse échoue (ou si la structure ne match pas) — le caller bascule
+ * alors sur l'affichage texte de fallback.
+ */
+function tryParseReport(raw: string): ParsedReport | null {
+  // Le modèle peut entourer le JSON de boilerplate ; on isole le premier {
+  // et le dernier } pour rendre le parse robuste.
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start < 0 || end <= start) return null;
+  const slice = raw.slice(start, end + 1);
+  let v: unknown;
+  try {
+    v = JSON.parse(slice);
+  } catch {
+    return null;
+  }
+  if (!v || typeof v !== "object") return null;
+  const obj = v as Record<string, unknown>;
+  const verdict = parseVerdict(obj.verdict);
+  if (!verdict) return null;
+  const rawIssues = Array.isArray(obj.issues) ? obj.issues : [];
+  const issues: ParsedIssue[] = [];
+  for (const item of rawIssues) {
+    if (!item || typeof item !== "object") continue;
+    const it = item as Record<string, unknown>;
+    const evidence =
+      typeof it.evidence === "string" ? it.evidence.trim() : "";
+    if (!evidence) continue;
+    issues.push({
+      kind: parseIssueKind(it.kind) ?? "other",
+      severity: parseSeverity(it.severity) ?? "minor",
+      source: typeof it.source === "string" ? it.source : null,
+      evidence,
+      suggestion:
+        typeof it.suggestion === "string" && it.suggestion.trim().length > 0
+          ? it.suggestion.trim()
+          : null,
+    });
+  }
+  return { verdict, issues };
+}
+
+function parseVerdict(v: unknown): ParsedReport["verdict"] | null {
+  if (v === "ok" || v === "warn" || v === "error") return v;
+  return null;
+}
+function parseIssueKind(v: unknown): ParsedIssue["kind"] | null {
+  if (v === "lore" || v === "anachronism" || v === "other") return v;
+  return null;
+}
+function parseSeverity(v: unknown): ParsedIssue["severity"] | null {
+  if (v === "minor" || v === "major" || v === "blocker") return v;
+  return null;
+}
+
+function IssueList({ issues }: { issues: ParsedIssue[] }) {
+  if (issues.length === 0) {
+    return (
+      <p className="text-sm text-emerald-700 italic">
+        Aucune incohérence détectée.
+      </p>
+    );
+  }
+  return (
+    <ul className="flex flex-col gap-2">
+      {issues.map((i, idx) => (
+        <li
+          key={idx}
+          className={`rounded-md border p-2 flex flex-col gap-1 ${SEVERITY_BG[i.severity]}`}
+        >
+          <div className="flex items-center gap-2 flex-wrap">
+            <span
+              className={`text-[10px] uppercase tracking-wide rounded-full px-2 py-0.5 ${SEVERITY_BADGE[i.severity]}`}
+            >
+              {SEVERITY_LABELS[i.severity]}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {KIND_LABELS[i.kind]}
+              {i.source ? ` · ${i.source}` : ""}
+            </span>
+          </div>
+          <p className="text-sm">{i.evidence}</p>
+          {i.suggestion && (
+            <p className="text-xs italic text-muted-foreground">
+              Suggestion : {i.suggestion}
+            </p>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+const SEVERITY_LABELS: Record<ParsedIssue["severity"], string> = {
+  minor: "Mineur",
+  major: "Majeur",
+  blocker: "Bloquant",
+};
+const SEVERITY_BG: Record<ParsedIssue["severity"], string> = {
+  minor: "bg-amber-50/40 border-amber-200",
+  major: "bg-orange-50/40 border-orange-300",
+  blocker: "bg-red-50/40 border-red-300",
+};
+const SEVERITY_BADGE: Record<ParsedIssue["severity"], string> = {
+  minor: "bg-amber-100 text-amber-800",
+  major: "bg-orange-100 text-orange-800",
+  blocker: "bg-red-100 text-red-800",
+};
+const KIND_LABELS: Record<ParsedIssue["kind"], string> = {
+  lore: "Lore",
+  anachronism: "Anachronisme",
+  other: "Logique narrative",
+};
 
 function classifyVerdict(answer: string): "ok" | "warn" {
   const a = answer.toLowerCase();
