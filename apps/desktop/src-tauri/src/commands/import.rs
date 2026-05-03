@@ -277,7 +277,7 @@ pub async fn import_apply(
         let content = json!({
             "archetype": c.archetype,
             "traits": c.traits,
-            "biography": c.biography_text.as_ref().map(text_to_tiptap_doc),
+            "biography": c.biography_text.as_deref().map(text_to_tiptap_doc),
         });
         repo.entities()
             .create(NewEntity {
@@ -303,7 +303,7 @@ pub async fn import_apply(
             "kind": normalize_kind(l.kind.as_deref(), &["city","region","building","naturalFeature","celestial","other"]),
             "climate": l.climate,
             "population": l.population,
-            "description": l.description_text.as_ref().map(text_to_tiptap_doc),
+            "description": l.description_text.as_deref().map(text_to_tiptap_doc),
         });
         repo.entities()
             .create(NewEntity {
@@ -330,7 +330,7 @@ pub async fn import_apply(
             "ideology": f.ideology,
             "founded": f.founded,
             "leader": f.leader,
-            "description": f.description_text.as_ref().map(text_to_tiptap_doc),
+            "description": f.description_text.as_deref().map(text_to_tiptap_doc),
         });
         repo.entities()
             .create(NewEntity {
@@ -357,7 +357,7 @@ pub async fn import_apply(
             "origin": o.origin,
             "owner": o.owner,
             "properties": o.properties,
-            "description": o.description_text.as_ref().map(text_to_tiptap_doc),
+            "description": o.description_text.as_deref().map(text_to_tiptap_doc),
         });
         repo.entities()
             .create(NewEntity {
@@ -382,7 +382,7 @@ pub async fn import_apply(
         let content = json!({
             "kind": normalize_kind(c.kind.as_deref(), &["magic","religion","technology","philosophy","language","other"]),
             "domain": c.domain,
-            "description": c.description_text.as_ref().map(text_to_tiptap_doc),
+            "description": c.description_text.as_deref().map(text_to_tiptap_doc),
         });
         repo.entities()
             .create(NewEntity {
