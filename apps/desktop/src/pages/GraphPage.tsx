@@ -200,19 +200,21 @@ export default function GraphPage() {
 // référence pour ne pas re-monter les nœuds à chaque render parent.
 const NebulaNode = memo(function NebulaNode({ data }: NodeProps<Node<NebulaNodeData>>) {
   const color = entityTypeColor(data.kind);
-  // Taille selon le degré : 24px pour un nœud isolé, +3px par relation,
-  // plafonné à 56px pour éviter qu'un hub n'écrase tout.
-  const size = Math.min(56, 24 + data.degree * 3);
-  const haloSize = size * 2.4;
-  // Phase d'animation négative en secondes : décale chaque nœud de 0 à
-  // -8s (= la durée du keyframe float) pour qu'ils ne flottent pas en
-  // synchro.
+  // Taille selon le degré : 36px pour un nœud isolé, +4px par relation,
+  // plafonné à 72px. Bulle bien plus nette qu'avant (P7.7.y).
+  const size = Math.min(72, 36 + data.degree * 4);
+  // Halo plus serré (× 1.5 au lieu de × 2.4) → effet « lueur » plutôt
+  // que « brouillard ».
+  const haloSize = size * 1.5;
   const phaseDelay = `${(-data.phase * 8).toFixed(2)}s`;
 
   return (
     <div
       className="nebula-node-float relative flex flex-col items-center pointer-events-auto cursor-pointer"
-      style={{ ["--nebula-phase" as string]: phaseDelay }}
+      style={{
+        ["--nebula-phase" as string]: phaseDelay,
+        willChange: "transform",
+      }}
     >
       {/* Handles invisibles — requis pour que xyflow positionne les arêtes. */}
       <Handle
@@ -226,7 +228,7 @@ const NebulaNode = memo(function NebulaNode({ data }: NodeProps<Node<NebulaNodeD
         style={{ opacity: 0, pointerEvents: "none" }}
       />
 
-      {/* Halo flou pulsant en backdrop. */}
+      {/* Halo proche, modéré. Blur moins agressif → bulle reste lisible. */}
       <div
         aria-hidden
         className="nebula-halo absolute rounded-full -z-10"
@@ -235,29 +237,38 @@ const NebulaNode = memo(function NebulaNode({ data }: NodeProps<Node<NebulaNodeD
           height: `${haloSize}px`,
           top: `${(size - haloSize) / 2}px`,
           left: `${(size - haloSize) / 2}px`,
-          background: color,
-          filter: "blur(20px)",
+          background: `radial-gradient(circle, ${color}aa 0%, ${color}55 50%, transparent 75%)`,
+          filter: "blur(8px)",
           ["--nebula-phase" as string]: phaseDelay,
         }}
       />
-      {/* Pastille principale. */}
+      {/* Pastille principale — gradient + bord net + highlight 3D. */}
       <div
-        className="rounded-full ring-1 ring-white/20"
+        className="rounded-full"
         style={{
           width: `${size}px`,
           height: `${size}px`,
-          background: `radial-gradient(circle at 35% 30%, ${color}, ${color}cc 60%, ${color}88 100%)`,
-          boxShadow: `0 0 ${size * 0.7}px ${color}88, inset 0 1px 2px rgba(255,255,255,0.3)`,
+          background: `radial-gradient(circle at 32% 28%, #ffffff 0%, ${color} 35%, ${color} 60%, ${shade(color, -25)} 100%)`,
+          // Bord net pour bien délimiter (était ring-1 ring-white/20).
+          border: "1.5px solid rgba(255,255,255,0.35)",
+          // Glow externe + inner highlight pour effet cristal.
+          boxShadow: `
+            0 0 ${size * 0.4}px ${color}aa,
+            0 0 ${size * 0.2}px ${color}66,
+            inset 0 2px 4px rgba(255,255,255,0.4),
+            inset 0 -3px 6px rgba(0,0,0,0.25)
+          `,
         }}
       />
       {/* Label sous la pastille. */}
       <div
-        className="mt-1.5 text-xs px-2 py-0.5 rounded-md whitespace-nowrap"
+        className="mt-2 text-xs px-2.5 py-1 rounded-md whitespace-nowrap font-medium"
         style={{
-          background: "rgba(0,0,0,0.4)",
-          color: "rgba(255,255,255,0.92)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          textShadow: "0 1px 2px rgba(0,0,0,0.6)",
+          background: "rgba(15, 12, 35, 0.85)",
+          color: "rgba(255,255,255,0.95)",
+          border: "1px solid rgba(255,255,255,0.12)",
+          backdropFilter: "blur(8px)",
+          textShadow: "0 1px 2px rgba(0,0,0,0.8)",
         }}
       >
         {data.label}
@@ -265,6 +276,25 @@ const NebulaNode = memo(function NebulaNode({ data }: NodeProps<Node<NebulaNodeD
     </div>
   );
 });
+
+/**
+ * Éclaircit ou assombrit une couleur hex (#rrggbb) d'un pourcentage.
+ * Sert à dériver un bord plus sombre pour le gradient des bulles.
+ */
+function shade(hex: string, percent: number): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return hex;
+  const num = parseInt(m[1], 16);
+  const r = (num >> 16) & 0xff;
+  const g = (num >> 8) & 0xff;
+  const b = num & 0xff;
+  const factor = (100 + percent) / 100;
+  const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v * factor)));
+  const rr = clamp(r).toString(16).padStart(2, "0");
+  const gg = clamp(g).toString(16).padStart(2, "0");
+  const bb = clamp(b).toString(16).padStart(2, "0");
+  return `#${rr}${gg}${bb}`;
+}
 
 const NODE_TYPES_REGISTRY = { nebula: NebulaNode };
 
@@ -309,15 +339,16 @@ function buildGraph(entities: Entity[], relations: Relation[]) {
       animated: false,
       markerEnd: symmetric ? undefined : { type: "arrowclosed" as const },
       style: {
-        stroke: "rgba(180, 160, 220, 0.35)",
-        strokeWidth: 1,
+        stroke: "rgba(180, 160, 220, 0.5)",
+        strokeWidth: 1.2,
       },
       labelStyle: {
         fontSize: 10,
-        fill: "rgba(220, 215, 240, 0.7)",
+        fill: "rgba(230, 225, 245, 0.85)",
+        fontWeight: 500,
       },
       labelBgStyle: {
-        fill: "rgba(20, 18, 45, 0.7)",
+        fill: "rgba(15, 12, 35, 0.85)",
       },
       labelBgPadding: [3, 2] as [number, number],
       labelBgBorderRadius: 3,
