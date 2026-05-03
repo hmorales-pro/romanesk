@@ -1,15 +1,38 @@
-import { useMemo } from "react";
+/**
+ * Vue graphe d'un univers en mode nébuleux (P7.7).
+ *
+ * Refonte visuelle d'un layout workflow (xyflow par défaut) vers un
+ * visuel nébuleux/organique :
+ * - Layout : force-directed simple maison (Coulomb répulsion +
+ *   ressorts d'arête + centripète), itéré ~300 fois avant render. Pas
+ *   de nouvelle dep — c'est ~30 lignes en O(n²) qui suffit pour
+ *   les univers < 200 nœuds.
+ * - Nœuds : cercles colorés selon EntityType, halo flou (filter blur
+ *   en SVG), label en dessous. Custom node component xyflow.
+ * - Arêtes : bezier semi-transparentes avec couleur qui se fond dans
+ *   le fond.
+ * - Fond : dégradé radial sombre (nuit étoilée) avec dots subtils.
+ *
+ * xyflow reste pour l'interaction (zoom, pan, drag, click) mais le
+ * layout initial est calculé manuellement.
+ */
+
+import { useMemo, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import {
   Background,
+  BackgroundVariant,
   Controls,
+  Handle,
   MiniMap,
+  Position,
   ReactFlow,
   type Edge,
   type Node,
   type NodeMouseHandler,
+  type NodeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
@@ -26,16 +49,11 @@ import {
   relationTypeLabel,
 } from "@/lib/types";
 
-/**
- * Vue graphe interactive d'un univers.
- *
- * Phase 1.3 : layout circulaire initial (déterministe, pas besoin de
- * dagre/elkjs en deps), nœuds colorés par EntityType, arcs labelés par
- * type de relation, click sur un nœud → navigation vers la fiche.
- *
- * Phase 1.5+ : layout auto (dagre), zoom-to-fit après load, persistance
- * des positions custom user.
- */
+interface NebulaNodeData extends Record<string, unknown> {
+  label: string;
+  kind: EntityType;
+}
+
 export default function GraphPage() {
   const { universeId } = useParams<{ universeId: string }>();
   const navigate = useNavigate();
@@ -87,42 +105,74 @@ export default function GraphPage() {
           to={`/u/${universeId}`}
           className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
         >
-          <ArrowLeft className="size-3.5" aria-hidden /> {universeQuery.data?.name ?? "Univers"}
+          <ArrowLeft className="size-3.5" aria-hidden />{" "}
+          {universeQuery.data?.name ?? "Univers"}
         </Link>
         <span className="text-sm text-muted-foreground">·</span>
-        <h1 className="text-sm font-medium">Graphe des relations</h1>
+        <h1 className="text-sm font-medium">Graphe nébuleux</h1>
         <span className="text-xs text-muted-foreground ml-auto">
           {nodes.length} nœud{nodes.length > 1 ? "s" : ""} ·{" "}
           {edges.length} relation{edges.length > 1 ? "s" : ""}
         </span>
       </div>
 
-      <div className="flex-1 bg-secondary/20">
+      <div
+        className="flex-1 relative"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, #1a1238 0%, #0c0a1f 70%, #050414 100%)",
+        }}
+      >
+        {/* Voile lumineux subtil pour l'effet nébuleux. */}
+        <div
+          aria-hidden
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse 40% 30% at 30% 40%, rgba(99,102,241,0.12) 0%, transparent 70%), radial-gradient(ellipse 30% 25% at 70% 60%, rgba(236,72,153,0.10) 0%, transparent 70%)",
+          }}
+        />
+
         {entitiesQuery.isPending || relationsQuery.isPending ? (
-          <p className="text-sm text-muted-foreground p-6">Chargement…</p>
+          <p className="text-sm text-muted-foreground/80 p-6">Chargement…</p>
         ) : nodes.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-muted-foreground italic">
+            <p className="text-sm text-muted-foreground/80 italic max-w-md text-center px-6">
               Pas encore d'entités dans cet univers. Crée des Personnages et
               des Lieux depuis la page univers, puis ajoute des relations
-              entre eux pour voir le graphe se remplir.
+              entre eux pour voir la nébuleuse prendre forme.
             </p>
           </div>
         ) : (
           <ReactFlow
             nodes={nodes}
             edges={edges}
+            nodeTypes={NODE_TYPES_REGISTRY}
             onNodeClick={onNodeClick}
             fitView
-            // Désactive le snap-to-grid pour Phase 1, comportement libre.
+            fitViewOptions={{ padding: 0.3 }}
             nodesDraggable
             nodesConnectable={false}
             edgesFocusable={false}
+            proOptions={{ hideAttribution: true }}
           >
-            <Background />
-            <Controls showInteractive={false} />
+            <Background
+              variant={BackgroundVariant.Dots}
+              gap={32}
+              size={1}
+              color="rgba(255,255,255,0.08)"
+            />
+            <Controls
+              showInteractive={false}
+              className="!bg-white/5 !border-white/10 [&_button]:!bg-white/5 [&_button]:!border-white/10 [&_button]:!text-white/80"
+            />
             <MiniMap
               nodeColor={(n) => entityTypeColor(n.data?.kind as EntityType)}
+              maskColor="rgba(0,0,0,0.6)"
+              style={{
+                background: "rgba(12, 10, 31, 0.85)",
+                border: "1px solid rgba(255,255,255,0.1)",
+              }}
               pannable
               zoomable
             />
@@ -134,36 +184,83 @@ export default function GraphPage() {
 }
 
 // ---------------------------------------------------------------------------
-// Conversion entities/relations → nodes/edges
+// Custom node component — pastille colorée avec halo flou
+// ---------------------------------------------------------------------------
+
+// Map node-type → component, fournie à ReactFlow. Définie après le
+// composant pour éviter le "used before declaration" et stable par
+// référence pour ne pas re-monter les nœuds à chaque render parent.
+const NebulaNode = memo(function NebulaNode({ data }: NodeProps<Node<NebulaNodeData>>) {
+  const color = entityTypeColor(data.kind);
+  return (
+    <div className="flex flex-col items-center pointer-events-auto">
+      {/* Handles invisibles — requis pour que xyflow positionne les arêtes. */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ opacity: 0, pointerEvents: "none" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ opacity: 0, pointerEvents: "none" }}
+      />
+
+      {/* Halo flou en backdrop. */}
+      <div
+        aria-hidden
+        className="absolute size-12 rounded-full -z-10"
+        style={{
+          background: color,
+          filter: "blur(16px)",
+          opacity: 0.55,
+        }}
+      />
+      {/* Pastille principale. */}
+      <div
+        className="size-7 rounded-full ring-1 ring-white/20 shadow-lg"
+        style={{
+          background: color,
+          boxShadow: `0 0 18px ${color}66`,
+        }}
+      />
+      {/* Label sous la pastille. */}
+      <div
+        className="mt-1.5 text-xs px-2 py-0.5 rounded-md whitespace-nowrap"
+        style={{
+          background: "rgba(0,0,0,0.4)",
+          color: "rgba(255,255,255,0.92)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          textShadow: "0 1px 2px rgba(0,0,0,0.6)",
+        }}
+      >
+        {data.label}
+      </div>
+    </div>
+  );
+});
+
+const NODE_TYPES_REGISTRY = { nebula: NebulaNode };
+
+// ---------------------------------------------------------------------------
+// Conversion entities/relations → nodes/edges + force layout
 // ---------------------------------------------------------------------------
 
 function buildGraph(entities: Entity[], relations: Relation[]) {
-  const radius = Math.max(150, entities.length * 40);
-  const nodes: Node[] = entities.map((e, i) => {
-    const angle = (2 * Math.PI * i) / Math.max(entities.length, 1);
-    return {
-      id: e.id,
-      position: {
-        x: radius * Math.cos(angle),
-        y: radius * Math.sin(angle),
-      },
-      data: {
-        label: e.name,
-        kind: e.type,
-      },
-      // Style appliqué inline pour la couleur par type. CSS du package
-      // gère le reste (bord, padding, font).
-      style: {
-        background: entityTypeColor(e.type),
-        color: "white",
-        border: "2px solid rgba(0,0,0,0.2)",
-        borderRadius: 8,
-        padding: "8px 14px",
-        fontSize: 13,
-        fontWeight: 500,
-      },
-    };
-  });
+  // 1) Layout force-directed maison (~300 itérations).
+  const positions = forceLayout(entities, relations);
+
+  const nodes: Node<NebulaNodeData>[] = entities.map((e) => ({
+    id: e.id,
+    type: "nebula",
+    position: positions[e.id] ?? { x: 0, y: 0 },
+    data: {
+      label: e.name,
+      kind: e.type,
+    },
+    // Tailwind-free pour rester contrôlable depuis le composant.
+    style: { background: "transparent", border: "none", padding: 0 },
+  }));
 
   const edges: Edge[] = relations.map((r) => {
     const symmetric = isSymmetric(r.type);
@@ -174,21 +271,19 @@ function buildGraph(entities: Entity[], relations: Relation[]) {
       label: relationTypeLabel(r.type, "active"),
       type: "default",
       animated: false,
-      // Pour les arcs symétriques, pas de flèche directionnelle.
-      // Pour les asymétriques, la flèche par défaut suffit (target).
       markerEnd: symmetric ? undefined : { type: "arrowclosed" as const },
       style: {
-        stroke: symmetric ? "#94a3b8" : "#64748b",
-        strokeWidth: 1.5,
+        stroke: "rgba(180, 160, 220, 0.35)",
+        strokeWidth: 1,
       },
       labelStyle: {
-        fontSize: 11,
-        fill: "#475569",
+        fontSize: 10,
+        fill: "rgba(220, 215, 240, 0.7)",
       },
       labelBgStyle: {
-        fill: "rgba(255,255,255,0.85)",
+        fill: "rgba(20, 18, 45, 0.7)",
       },
-      labelBgPadding: [4, 2] as [number, number],
+      labelBgPadding: [3, 2] as [number, number],
       labelBgBorderRadius: 3,
     };
   });
@@ -196,21 +291,130 @@ function buildGraph(entities: Entity[], relations: Relation[]) {
   return { nodes, edges };
 }
 
+/**
+ * Mini force-directed layout en O(n² × iterations).
+ *
+ * - Répulsion de Coulomb entre toutes les paires de nœuds.
+ * - Force attractive de ressort le long de chaque arête.
+ * - Force centripète douce vers (0, 0) pour éviter la dérive.
+ *
+ * Suffisant pour < 200 nœuds. Les positions sont déterministes
+ * (seed sur les indices, pas de random) — l'utilisateur peut ensuite
+ * dragger les nœuds librement via xyflow.
+ */
+function forceLayout(
+  entities: Entity[],
+  relations: Relation[],
+): Record<string, { x: number; y: number }> {
+  const n = entities.length;
+  if (n === 0) return {};
+
+  // Init en cercle pour avoir un layout déterministe et bien réparti.
+  const positions: { id: string; x: number; y: number }[] = entities.map((e, i) => {
+    const angle = (2 * Math.PI * i) / n;
+    const r = 200 + n * 8;
+    return {
+      id: e.id,
+      x: r * Math.cos(angle),
+      y: r * Math.sin(angle),
+    };
+  });
+  const idx = new Map(positions.map((p, i) => [p.id, i]));
+
+  // Paramètres de simulation, tunés à la main pour Romanesk.
+  const REPULSION = 8000;
+  const SPRING_LENGTH = 180;
+  const SPRING_K = 0.04;
+  const CENTER_K = 0.005;
+  const DAMPING = 0.85;
+  const ITERATIONS = 300;
+
+  const velocities: { vx: number; vy: number }[] = positions.map(() => ({
+    vx: 0,
+    vy: 0,
+  }));
+
+  const edgePairs: [number, number][] = [];
+  for (const r of relations) {
+    const s = idx.get(r.source_id);
+    const t = idx.get(r.target_id);
+    if (s != null && t != null) edgePairs.push([s, t]);
+  }
+
+  for (let iter = 0; iter < ITERATIONS; iter++) {
+    // Reset forces.
+    const fx = new Array(n).fill(0);
+    const fy = new Array(n).fill(0);
+
+    // Répulsion entre toutes les paires.
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        const dx = positions[i].x - positions[j].x;
+        const dy = positions[i].y - positions[j].y;
+        const dist2 = dx * dx + dy * dy + 0.01;
+        const force = REPULSION / dist2;
+        const dist = Math.sqrt(dist2);
+        const fxi = (dx / dist) * force;
+        const fyi = (dy / dist) * force;
+        fx[i] += fxi;
+        fy[i] += fyi;
+        fx[j] -= fxi;
+        fy[j] -= fyi;
+      }
+    }
+
+    // Ressorts d'arêtes.
+    for (const [a, b] of edgePairs) {
+      const dx = positions[b].x - positions[a].x;
+      const dy = positions[b].y - positions[a].y;
+      const dist = Math.sqrt(dx * dx + dy * dy + 0.01);
+      const stretch = dist - SPRING_LENGTH;
+      const force = SPRING_K * stretch;
+      const fxi = (dx / dist) * force;
+      const fyi = (dy / dist) * force;
+      fx[a] += fxi;
+      fy[a] += fyi;
+      fx[b] -= fxi;
+      fy[b] -= fyi;
+    }
+
+    // Centripète douce.
+    for (let i = 0; i < n; i++) {
+      fx[i] -= positions[i].x * CENTER_K;
+      fy[i] -= positions[i].y * CENTER_K;
+    }
+
+    // Intégration + damping.
+    for (let i = 0; i < n; i++) {
+      velocities[i].vx = (velocities[i].vx + fx[i]) * DAMPING;
+      velocities[i].vy = (velocities[i].vy + fy[i]) * DAMPING;
+      positions[i].x += velocities[i].vx;
+      positions[i].y += velocities[i].vy;
+    }
+  }
+
+  const out: Record<string, { x: number; y: number }> = {};
+  for (const p of positions) {
+    out[p.id] = { x: p.x, y: p.y };
+  }
+  return out;
+}
+
 function entityTypeColor(kind: EntityType | undefined): string {
   switch (kind) {
     case "Character":
-      return "#6366f1"; // indigo
+      return "#818cf8"; // indigo light (visible sur fond sombre)
     case "Location":
-      return "#10b981"; // emerald
+      return "#34d399"; // emerald light
     case "Faction":
-      return "#f59e0b"; // amber
+      return "#fbbf24"; // amber light
     case "Object":
-      return "#a855f7"; // violet
+      return "#c084fc"; // violet light
     case "Concept":
-      return "#06b6d4"; // cyan
+      return "#22d3ee"; // cyan light
     case "RealEntity":
-      return "#64748b"; // slate
+      return "#94a3b8"; // slate light
     default:
-      return "#64748b";
+      return "#94a3b8";
   }
 }
