@@ -207,10 +207,10 @@ const NebulaNode = memo(function NebulaNode({ data }: NodeProps<Node<NebulaNodeD
   // scaling — vectoriel, infiniment net à n'importe quelle résolution.
   const svgSize = size * 1.6;
   const phaseDelay = `${(-data.phase * 8).toFixed(2)}s`;
-  // Identifiants uniques pour les `<defs>` SVG (sinon les filtres et
-  // gradients fuiraient entre instances).
+  // Identifiants uniques pour les `<defs>` SVG (sinon les gradients
+  // fuiraient entre instances rendant tous les nœuds de la même couleur).
   const gradId = `grad-${data.phase.toFixed(3).replace(".", "")}`;
-  const blurId = `blur-${data.phase.toFixed(3).replace(".", "")}`;
+  const haloGradId = `halo-${data.phase.toFixed(3).replace(".", "")}`;
   const darkColor = shade(color, -30);
 
   return (
@@ -251,37 +251,39 @@ const NebulaNode = memo(function NebulaNode({ data }: NodeProps<Node<NebulaNodeD
             <stop offset="65%" stopColor={color} stopOpacity="1" />
             <stop offset="100%" stopColor={darkColor} stopOpacity="1" />
           </radialGradient>
-          {/* Filtre Gaussien natif SVG pour le halo. Rendu plus propre
-           *  que filter CSS sur DOM — pas de composite bitmap. */}
-          <filter id={blurId} x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="6" />
-          </filter>
+          {/* P7.7.zz : halo en gradient radial pur (pas de feGaussianBlur).
+           *  feGaussianBlur est rasterisé en interne par le browser à
+           *  une résolution limitée → pixelisation visible. Un radial
+           *  gradient natif est mathématiquement précis et reste vectoriel. */}
+          <radialGradient id={haloGradId} cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0%" stopColor={color} stopOpacity="0.55" />
+            <stop offset="35%" stopColor={color} stopOpacity="0.28" />
+            <stop offset="70%" stopColor={color} stopOpacity="0.08" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </radialGradient>
         </defs>
 
-        {/* Halo flou (cercle + filter blur SVG). */}
+        {/* Halo lumineux : cercle large rempli d'un radial gradient qui
+         *  fade vers transparent. Aucun blur, donc aucune pixelisation
+         *  possible — c'est juste du dégradé vectoriel. */}
         <circle
           className="nebula-halo"
           cx="70"
           cy="70"
-          r="48"
-          fill={color}
-          fillOpacity="0.55"
-          filter={`url(#${blurId})`}
+          r="62"
+          fill={`url(#${haloGradId})`}
           style={{ ["--nebula-phase" as string]: phaseDelay }}
         />
-        {/* Glow proche, plus net (sans filter). */}
-        <circle cx="70" cy="70" r="40" fill={color} fillOpacity="0.18" />
         {/* Pastille principale (sphère 3D). */}
         <circle
           cx="70"
           cy="70"
           r="32"
           fill={`url(#${gradId})`}
-          stroke="rgba(255,255,255,0.45)"
+          stroke="rgba(255,255,255,0.5)"
           strokeWidth="1.5"
         />
-        {/* Highlight de surface plus marqué (petit reflet blanc en
-         *  haut-gauche). */}
+        {/* Highlight de surface (petit reflet blanc en haut-gauche). */}
         <ellipse
           cx="60"
           cy="58"
