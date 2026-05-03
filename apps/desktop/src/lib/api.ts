@@ -953,7 +953,6 @@ export interface DescribeImageArgs {
   prompt: string;
   model: string;
   baseUrl?: string;
-  temperature?: number;
 }
 
 export interface DescribeImageResult {
@@ -970,7 +969,6 @@ export function aiDescribeImage(
       prompt: args.prompt,
       model: args.model,
       baseUrl: args.baseUrl ?? null,
-      temperature: args.temperature ?? null,
     },
   });
 }

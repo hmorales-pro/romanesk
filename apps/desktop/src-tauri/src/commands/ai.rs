@@ -999,9 +999,6 @@ pub struct DescribeImagePayload {
     /// depuis le AiProvider (snapshot).
     #[serde(default)]
     pub base_url: Option<String>,
-    /// Température (0.0 - 1.0). Default 0.7.
-    #[serde(default)]
-    pub temperature: Option<f32>,
 }
 
 #[derive(Debug, Serialize)]

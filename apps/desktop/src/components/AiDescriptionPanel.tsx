@@ -117,7 +117,6 @@ export function AiDescriptionPanel({
         imagePath: picked,
         prompt: userPrompt,
         model: visionModel,
-        temperature: 0.7,
       });
       return res.content.trim();
     },
