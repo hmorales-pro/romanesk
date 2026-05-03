@@ -801,6 +801,99 @@ export function aiRagQuery(args: {
   });
 }
 
+// --- Import (P7.1) ----------------------------------------------------------
+
+export interface ImportCharacter {
+  name: string;
+  summary?: string;
+  archetype?: string;
+  traits: string[];
+  biographyText?: string;
+}
+export interface ImportLocation {
+  name: string;
+  summary?: string;
+  kind?: string;
+  climate?: string;
+  population?: string;
+  descriptionText?: string;
+}
+export interface ImportFaction {
+  name: string;
+  summary?: string;
+  kind?: string;
+  ideology?: string;
+  founded?: string;
+  leader?: string;
+  descriptionText?: string;
+}
+export interface ImportObjectItem {
+  name: string;
+  summary?: string;
+  kind?: string;
+  origin?: string;
+  owner?: string;
+  properties: string[];
+  descriptionText?: string;
+}
+export interface ImportConcept {
+  name: string;
+  summary?: string;
+  kind?: string;
+  domain?: string;
+  descriptionText?: string;
+}
+export interface ImportEra {
+  name: string;
+  startYear?: number | null;
+  endYear?: number | null;
+  description?: string;
+}
+export interface ImportEvent {
+  name: string;
+  year?: number | null;
+  eraName?: string;
+  description?: string;
+}
+export interface ImportChapter {
+  title: string;
+  bodyText: string;
+}
+export interface ImportUniverseHeader {
+  name: string;
+  description?: string;
+  language?: string;
+  tone?: string;
+}
+export interface ImportAnalysis {
+  universe: ImportUniverseHeader;
+  isNarrative: boolean;
+  storyTitle?: string;
+  characters: ImportCharacter[];
+  locations: ImportLocation[];
+  factions: ImportFaction[];
+  objects: ImportObjectItem[];
+  concepts: ImportConcept[];
+  eras: ImportEra[];
+  events: ImportEvent[];
+  chapters: ImportChapter[];
+  truncationWarning?: string;
+  parseWarning?: string;
+  rawResponse: string;
+}
+
+export function aiAnalyzeImport(args: {
+  text: string;
+  targetUniverseName?: string;
+}): Promise<ImportAnalysis> {
+  return invoke<ImportAnalysis>("ai_analyze_import", {
+    payload: {
+      text: args.text,
+      targetUniverseName: args.targetUniverseName ?? null,
+    },
+  });
+}
+
 // --- Vision (P6.6) ----------------------------------------------------------
 
 export interface DescribeImageArgs {

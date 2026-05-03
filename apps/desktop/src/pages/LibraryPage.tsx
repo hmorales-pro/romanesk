@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { BookOpen, Library, Plus } from "lucide-react";
+import { BookOpen, FileUp, Library, Plus } from "lucide-react";
 
 import {
   universeCreate,
@@ -73,6 +73,11 @@ export default function LibraryPage() {
         </div>
         <div className="flex items-center gap-3">
           <AIStatusBadge />
+          <Link to="/import">
+            <Button variant="outline">
+              <FileUp className="size-4" aria-hidden /> Importer un écrit
+            </Button>
+          </Link>
           {!showForm && (
             <Button onClick={() => setShowForm(true)}>
               <Plus className="size-4" aria-hidden />

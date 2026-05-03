@@ -8,6 +8,7 @@ import TimelinePage from "@/pages/TimelinePage";
 import AnchorPage from "@/pages/AnchorPage";
 import SettingsPage from "@/pages/SettingsPage";
 import StoryPage from "@/pages/StoryPage";
+import ImportPage from "@/pages/ImportPage";
 
 /**
  * On utilise `createHashRouter` plutôt que `createBrowserRouter` car
@@ -27,6 +28,7 @@ export const router = createHashRouter([
       { path: "u/:universeId/timeline", element: <TimelinePage /> },
       { path: "u/:universeId/anchor", element: <AnchorPage /> },
       { path: "u/:universeId/s/:storyId", element: <StoryPage /> },
+      { path: "import", element: <ImportPage /> },
       { path: "settings", element: <SettingsPage /> },
     ],
   },
