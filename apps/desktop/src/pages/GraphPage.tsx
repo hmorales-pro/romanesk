@@ -52,6 +52,14 @@ import {
 interface NebulaNodeData extends Record<string, unknown> {
   label: string;
   kind: EntityType;
+  /** Degré du nœud (nombre de relations entrantes + sortantes). Sert à
+   * dimensionner la pastille comme dans Obsidian — plus connecté = plus
+   * gros. */
+  degree: number;
+  /** Phase 0-1 utilisée comme delay négatif pour décaler les animations
+   * float / pulse de chaque nœud. Calculée à partir d'un hash stable de
+   * l'id pour rester déterministe. */
+  phase: number;
 }
 
 export default function GraphPage() {
@@ -192,8 +200,20 @@ export default function GraphPage() {
 // référence pour ne pas re-monter les nœuds à chaque render parent.
 const NebulaNode = memo(function NebulaNode({ data }: NodeProps<Node<NebulaNodeData>>) {
   const color = entityTypeColor(data.kind);
+  // Taille selon le degré : 24px pour un nœud isolé, +3px par relation,
+  // plafonné à 56px pour éviter qu'un hub n'écrase tout.
+  const size = Math.min(56, 24 + data.degree * 3);
+  const haloSize = size * 2.4;
+  // Phase d'animation négative en secondes : décale chaque nœud de 0 à
+  // -8s (= la durée du keyframe float) pour qu'ils ne flottent pas en
+  // synchro.
+  const phaseDelay = `${(-data.phase * 8).toFixed(2)}s`;
+
   return (
-    <div className="flex flex-col items-center pointer-events-auto">
+    <div
+      className="nebula-node-float relative flex flex-col items-center pointer-events-auto cursor-pointer"
+      style={{ ["--nebula-phase" as string]: phaseDelay }}
+    >
       {/* Handles invisibles — requis pour que xyflow positionne les arêtes. */}
       <Handle
         type="target"
@@ -206,22 +226,28 @@ const NebulaNode = memo(function NebulaNode({ data }: NodeProps<Node<NebulaNodeD
         style={{ opacity: 0, pointerEvents: "none" }}
       />
 
-      {/* Halo flou en backdrop. */}
+      {/* Halo flou pulsant en backdrop. */}
       <div
         aria-hidden
-        className="absolute size-12 rounded-full -z-10"
+        className="nebula-halo absolute rounded-full -z-10"
         style={{
+          width: `${haloSize}px`,
+          height: `${haloSize}px`,
+          top: `${(size - haloSize) / 2}px`,
+          left: `${(size - haloSize) / 2}px`,
           background: color,
-          filter: "blur(16px)",
-          opacity: 0.55,
+          filter: "blur(20px)",
+          ["--nebula-phase" as string]: phaseDelay,
         }}
       />
       {/* Pastille principale. */}
       <div
-        className="size-7 rounded-full ring-1 ring-white/20 shadow-lg"
+        className="rounded-full ring-1 ring-white/20"
         style={{
-          background: color,
-          boxShadow: `0 0 18px ${color}66`,
+          width: `${size}px`,
+          height: `${size}px`,
+          background: `radial-gradient(circle at 35% 30%, ${color}, ${color}cc 60%, ${color}88 100%)`,
+          boxShadow: `0 0 ${size * 0.7}px ${color}88, inset 0 1px 2px rgba(255,255,255,0.3)`,
         }}
       />
       {/* Label sous la pastille. */}
@@ -250,6 +276,14 @@ function buildGraph(entities: Entity[], relations: Relation[]) {
   // 1) Layout force-directed maison (~300 itérations).
   const positions = forceLayout(entities, relations);
 
+  // 2) Calcul du degré (nb de relations entrantes + sortantes) par
+  //    entité. Sert à dimensionner la pastille comme dans Obsidian.
+  const degreeOf = new Map<string, number>();
+  for (const r of relations) {
+    degreeOf.set(r.source_id, (degreeOf.get(r.source_id) ?? 0) + 1);
+    degreeOf.set(r.target_id, (degreeOf.get(r.target_id) ?? 0) + 1);
+  }
+
   const nodes: Node<NebulaNodeData>[] = entities.map((e) => ({
     id: e.id,
     type: "nebula",
@@ -257,6 +291,8 @@ function buildGraph(entities: Entity[], relations: Relation[]) {
     data: {
       label: e.name,
       kind: e.type,
+      degree: degreeOf.get(e.id) ?? 0,
+      phase: stableHashPhase(e.id),
     },
     // Tailwind-free pour rester contrôlable depuis le composant.
     style: { background: "transparent", border: "none", padding: 0 },
@@ -398,6 +434,20 @@ function forceLayout(
     out[p.id] = { x: p.x, y: p.y };
   }
   return out;
+}
+
+/**
+ * Hash stable et déterministe d'une string vers un float [0, 1[.
+ * Sert de "phase" pour décaler les animations float / pulse de chaque
+ * nœud — sans ça, ils flotteraient tous en synchro.
+ */
+function stableHashPhase(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = (h * 31 + s.charCodeAt(i)) | 0;
+  }
+  // Normalise à [0, 1[.
+  return ((h >>> 0) % 1000) / 1000;
 }
 
 function entityTypeColor(kind: EntityType | undefined): string {

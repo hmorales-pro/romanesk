@@ -206,3 +206,59 @@ body,
   height: 0;
   pointer-events: none;
 }
+
+/* ===========================================================================
+ * Graphe nébuleux (P7.7.x) — animations float / pulse / hover
+ * ========================================================================= */
+
+/* Flottement continu : oscillation sin sur 6-9s avec phase variable
+ * (set par variable CSS --phase sur chaque node, valeur entre 0 et 1
+ * convertie en délai négatif).
+ * Le translate3d est en plus du transform xyflow (qui positionne le node).
+ * On utilise un wrapper interne dans le node component pour ne pas
+ * écraser le transform de xyflow. */
+@keyframes nebula-float {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  25% {
+    transform: translate3d(2px, -3px, 0);
+  }
+  50% {
+    transform: translate3d(-1px, -5px, 0);
+  }
+  75% {
+    transform: translate3d(-3px, -2px, 0);
+  }
+}
+
+/* Pulsation subtile du halo. */
+@keyframes nebula-pulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.08);
+  }
+}
+
+.nebula-node-float {
+  animation: nebula-float 8s ease-in-out infinite;
+  animation-delay: var(--nebula-phase, 0s);
+  transition: transform 0.25s ease-out, filter 0.25s ease-out;
+}
+
+.nebula-node-float:hover {
+  /* Sur hover, on stoppe le float et on zoom légèrement. */
+  animation-play-state: paused;
+  transform: scale(1.18);
+  filter: brightness(1.15);
+  z-index: 10;
+}
+
+.nebula-halo {
+  animation: nebula-pulse 4s ease-in-out infinite;
+  animation-delay: var(--nebula-phase, 0s);
+}
