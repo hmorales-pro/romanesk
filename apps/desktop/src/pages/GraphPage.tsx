@@ -200,13 +200,18 @@ export default function GraphPage() {
 // référence pour ne pas re-monter les nœuds à chaque render parent.
 const NebulaNode = memo(function NebulaNode({ data }: NodeProps<Node<NebulaNodeData>>) {
   const color = entityTypeColor(data.kind);
-  // Taille selon le degré : 36px pour un nœud isolé, +4px par relation,
-  // plafonné à 72px. Bulle bien plus nette qu'avant (P7.7.y).
-  const size = Math.min(72, 36 + data.degree * 4);
-  // Halo plus serré (× 1.5 au lieu de × 2.4) → effet « lueur » plutôt
-  // que « brouillard ».
-  const haloSize = size * 1.5;
+  // Taille selon le degré : 40px isolé, +4px par relation, max 80px.
+  const size = Math.min(80, 40 + data.degree * 4);
+  // SVG viewBox de 100 unités, on dessine le halo dans une zone plus
+  // large (140) pour qu'il déborde de la bulle. Le SVG s'occupe du
+  // scaling — vectoriel, infiniment net à n'importe quelle résolution.
+  const svgSize = size * 1.6;
   const phaseDelay = `${(-data.phase * 8).toFixed(2)}s`;
+  // Identifiants uniques pour les `<defs>` SVG (sinon les filtres et
+  // gradients fuiraient entre instances).
+  const gradId = `grad-${data.phase.toFixed(3).replace(".", "")}`;
+  const blurId = `blur-${data.phase.toFixed(3).replace(".", "")}`;
+  const darkColor = shade(color, -30);
 
   return (
     <div
@@ -228,46 +233,72 @@ const NebulaNode = memo(function NebulaNode({ data }: NodeProps<Node<NebulaNodeD
         style={{ opacity: 0, pointerEvents: "none" }}
       />
 
-      {/* Halo proche, modéré. Blur moins agressif → bulle reste lisible. */}
-      <div
+      {/* Tout le rendu en SVG natif — vectoriel, pas d'artefact bitmap. */}
+      <svg
+        width={svgSize}
+        height={svgSize}
+        viewBox="0 0 140 140"
+        style={{ overflow: "visible", display: "block" }}
         aria-hidden
-        className="nebula-halo absolute rounded-full -z-10"
-        style={{
-          width: `${haloSize}px`,
-          height: `${haloSize}px`,
-          top: `${(size - haloSize) / 2}px`,
-          left: `${(size - haloSize) / 2}px`,
-          background: `radial-gradient(circle, ${color}aa 0%, ${color}55 50%, transparent 75%)`,
-          filter: "blur(8px)",
-          ["--nebula-phase" as string]: phaseDelay,
-        }}
-      />
-      {/* Pastille principale — gradient + bord net + highlight 3D. */}
-      <div
-        className="rounded-full"
-        style={{
-          width: `${size}px`,
-          height: `${size}px`,
-          background: `radial-gradient(circle at 32% 28%, #ffffff 0%, ${color} 35%, ${color} 60%, ${shade(color, -25)} 100%)`,
-          // Bord net pour bien délimiter (était ring-1 ring-white/20).
-          border: "1.5px solid rgba(255,255,255,0.35)",
-          // Glow externe + inner highlight pour effet cristal.
-          boxShadow: `
-            0 0 ${size * 0.4}px ${color}aa,
-            0 0 ${size * 0.2}px ${color}66,
-            inset 0 2px 4px rgba(255,255,255,0.4),
-            inset 0 -3px 6px rgba(0,0,0,0.25)
-          `,
-        }}
-      />
+      >
+        <defs>
+          {/* Gradient radial pour la sphère 3D : highlight blanc en
+           *  haut-gauche → couleur pleine au centre → bord assombri.
+           *  cx/cy à 35/30 pour la source de lumière. */}
+          <radialGradient id={gradId} cx="0.35" cy="0.30" r="0.7">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+            <stop offset="20%" stopColor={color} stopOpacity="1" />
+            <stop offset="65%" stopColor={color} stopOpacity="1" />
+            <stop offset="100%" stopColor={darkColor} stopOpacity="1" />
+          </radialGradient>
+          {/* Filtre Gaussien natif SVG pour le halo. Rendu plus propre
+           *  que filter CSS sur DOM — pas de composite bitmap. */}
+          <filter id={blurId} x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="6" />
+          </filter>
+        </defs>
+
+        {/* Halo flou (cercle + filter blur SVG). */}
+        <circle
+          className="nebula-halo"
+          cx="70"
+          cy="70"
+          r="48"
+          fill={color}
+          fillOpacity="0.55"
+          filter={`url(#${blurId})`}
+          style={{ ["--nebula-phase" as string]: phaseDelay }}
+        />
+        {/* Glow proche, plus net (sans filter). */}
+        <circle cx="70" cy="70" r="40" fill={color} fillOpacity="0.18" />
+        {/* Pastille principale (sphère 3D). */}
+        <circle
+          cx="70"
+          cy="70"
+          r="32"
+          fill={`url(#${gradId})`}
+          stroke="rgba(255,255,255,0.45)"
+          strokeWidth="1.5"
+        />
+        {/* Highlight de surface plus marqué (petit reflet blanc en
+         *  haut-gauche). */}
+        <ellipse
+          cx="60"
+          cy="58"
+          rx="10"
+          ry="6"
+          fill="#ffffff"
+          fillOpacity="0.35"
+        />
+      </svg>
+
       {/* Label sous la pastille. */}
       <div
-        className="mt-2 text-xs px-2.5 py-1 rounded-md whitespace-nowrap font-medium"
+        className="-mt-1 text-xs px-2.5 py-1 rounded-md whitespace-nowrap font-medium"
         style={{
-          background: "rgba(15, 12, 35, 0.85)",
+          background: "rgba(15, 12, 35, 0.9)",
           color: "rgba(255,255,255,0.95)",
-          border: "1px solid rgba(255,255,255,0.12)",
-          backdropFilter: "blur(8px)",
+          border: "1px solid rgba(255,255,255,0.15)",
           textShadow: "0 1px 2px rgba(0,0,0,0.8)",
         }}
       >
