@@ -19,20 +19,27 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   CheckCircle2,
+  ExternalLink,
   FileUp,
   Loader2,
+  ShieldAlert,
   Sparkles,
   Upload,
 } from "lucide-react";
 
 import {
   aiAnalyzeImport,
+  aiRagQuery,
   importApply,
   universeList,
   type ImportAnalysis,
+  type ImportResult,
   type ImportTarget,
+  type RagAnswer,
 } from "@/lib/api";
+import { extractText, detectFormat } from "@/lib/import-extract";
 import type { Universe } from "@/lib/types";
+import { entityTypeLabel } from "@/lib/types";
 import { useSettings } from "@/lib/use-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,6 +81,12 @@ export default function ImportPage() {
   const navigate = useNavigate();
   const [text, setText] = useState("");
   const [analysis, setAnalysis] = useState<ImportAnalysis | null>(null);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [importedTargetMode, setImportedTargetMode] = useState<
+    "new" | "existing" | null
+  >(null);
+  const [extractError, setExtractError] = useState<string | null>(null);
+  const [extracting, setExtracting] = useState(false);
   const { pickModel } = useSettings();
 
   // Sélections par catégorie : Map<index → bool>. Par défaut tout coché.
@@ -157,31 +170,34 @@ export default function ImportPage() {
       });
     },
     onSuccess: (res) => {
-      // Navigation directe vers l'univers (story si dispo, sinon univers).
-      if (res.storyId) {
-        navigate(`/u/${res.universeId}/s/${res.storyId}`);
-      } else {
-        navigate(`/u/${res.universeId}`);
-      }
+      // P7.5 : on reste sur ImportPage avec un récap pour permettre la
+      // vérification de cohérence + éviter la navigation hors flow.
+      setImportResult(res);
+      setImportedTargetMode(targetMode);
     },
   });
 
-  // P7.4 preview : upload .md/.txt simple via input file natif.
-  const onFileChange = (file: File | null) => {
+  // P7.4 : extraction texte pour .md / .txt / .docx / .pdf via lazy imports.
+  const onFileChange = async (file: File | null) => {
     if (!file) return;
-    if (
-      !/\.(md|txt|markdown)$/i.test(file.name) &&
-      file.type !== "text/plain"
-    ) {
-      window.alert(
-        "Pour l'instant : .md / .txt uniquement. .docx et .pdf en P7.4.",
+    setExtractError(null);
+    if (!detectFormat(file)) {
+      setExtractError(
+        `Format non supporté : ${file.name}. Accepte .md, .txt, .docx, .pdf.`,
       );
       return;
     }
-    void file.text().then((content) => {
+    setExtracting(true);
+    try {
+      const content = await extractText(file);
       setText(content);
       setAnalysis(null);
-    });
+      setImportResult(null);
+    } catch (err) {
+      setExtractError(`Échec de l'extraction : ${String(err)}`);
+    } finally {
+      setExtracting(false);
+    }
   };
 
   // Selection helpers.
@@ -246,8 +262,11 @@ export default function ImportPage() {
           <div className="flex items-center gap-2 flex-wrap">
             <input
               type="file"
-              accept=".md,.txt,.markdown,text/plain,text/markdown"
-              onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
+              accept=".md,.txt,.markdown,.docx,.pdf,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              onChange={(e) => {
+                void onFileChange(e.target.files?.[0] ?? null);
+                e.target.value = "";
+              }}
               className="hidden"
               id="import-file"
             />
@@ -255,12 +274,24 @@ export default function ImportPage() {
               htmlFor="import-file"
               className="inline-flex items-center justify-center gap-1 h-9 rounded-md border border-input bg-background px-3 text-sm cursor-pointer hover:bg-accent"
             >
-              <Upload className="size-3.5" aria-hidden /> Charger .md / .txt
+              {extracting ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin" aria-hidden />{" "}
+                  Extraction…
+                </>
+              ) : (
+                <>
+                  <Upload className="size-3.5" aria-hidden /> Charger un
+                  fichier (.md / .txt / .docx / .pdf)
+                </>
+              )}
             </label>
-            <span className="text-xs text-muted-foreground">
-              .docx et .pdf en P7.4
-            </span>
           </div>
+          {extractError && (
+            <p className="text-sm text-destructive" role="alert">
+              {extractError}
+            </p>
+          )}
           <Label htmlFor="import-text" className="sr-only">
             Texte à analyser
           </Label>
@@ -409,8 +440,26 @@ export default function ImportPage() {
         </Card>
       )}
 
+      {/* Résultat post-import (P7.5) */}
+      {importResult && (
+        <ImportResultCard
+          result={importResult}
+          fromExistingUniverse={importedTargetMode === "existing"}
+          analyzedText={text}
+          onGoToUniverse={() => {
+            if (importResult.storyId) {
+              navigate(
+                `/u/${importResult.universeId}/s/${importResult.storyId}`,
+              );
+            } else {
+              navigate(`/u/${importResult.universeId}`);
+            }
+          }}
+        />
+      )}
+
       {/* 3) Sélections + bouton Importer */}
-      {analysis && (
+      {analysis && !importResult && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">
@@ -614,4 +663,181 @@ function renderItemSubtitle(category: Category, item: ImportItem) {
 
 function filterByIdx<T>(items: T[], selection: SelectionMap): T[] {
   return items.filter((_, i) => selection[String(i)]);
+}
+
+// ---------------------------------------------------------------------------
+// Résultat post-import (P7.5) — récap + bouton vérification cohérence RAG
+// ---------------------------------------------------------------------------
+
+interface ImportResultCardProps {
+  result: ImportResult;
+  fromExistingUniverse: boolean;
+  /** Texte d'origine (pour relancer le RAG sur conflits potentiels). */
+  analyzedText: string;
+  onGoToUniverse: () => void;
+}
+
+function ImportResultCard({
+  result,
+  fromExistingUniverse,
+  analyzedText,
+  onGoToUniverse,
+}: ImportResultCardProps) {
+  const [conflicts, setConflicts] = useState<RagAnswer | null>(null);
+
+  const counts = [
+    { label: "Personnages", count: result.createdCharacters },
+    { label: "Lieux", count: result.createdLocations },
+    { label: "Factions", count: result.createdFactions },
+    { label: "Objets", count: result.createdObjects },
+    { label: "Concepts", count: result.createdConcepts },
+    { label: "Époques", count: result.createdEras },
+    { label: "Événements", count: result.createdEvents },
+    { label: "Chapitres", count: result.createdChapters },
+  ];
+  const totalCreated = counts.reduce((a, b) => a + b.count, 0);
+
+  const ragMutation = useMutation({
+    mutationFn: () => {
+      const tail = analyzedText.split(/\s+/).slice(-600).join(" ");
+      return aiRagQuery({
+        universeId: result.universeId,
+        question: [
+          "Voici un texte qui vient d'être importé dans cet univers. Identifie les fiches existantes du lore qui sont impactées (personnages mentionnés, lieux décrits, événements évoqués), et signale tout point qui contredit le lore existant.",
+          "",
+          "PASSAGE :",
+          tail,
+        ].join("\n"),
+        topK: 8,
+      });
+    },
+    onSuccess: setConflicts,
+  });
+
+  return (
+    <Card className="border-emerald-300">
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <CheckCircle2 className="size-5 text-emerald-600" aria-hidden />
+          Import réussi · {totalCreated} élément(s) créé(s)
+        </CardTitle>
+        <CardDescription>
+          {fromExistingUniverse
+            ? "Les fiches ont été ajoutées à l'univers existant."
+            : "Un nouvel univers a été créé."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {counts.map((c) => (
+            <div
+              key={c.label}
+              className="rounded-md border p-2 text-center"
+            >
+              <div className="text-2xl font-semibold">{c.count}</div>
+              <div className="text-xs text-muted-foreground">{c.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {result.skipped.length > 0 && (
+          <details className="rounded-md border bg-amber-50/30 border-amber-300">
+            <summary className="cursor-pointer px-3 py-2 text-sm font-medium hover:bg-amber-100/40">
+              {result.skipped.length} fiche(s) skippée(s) (déjà présente(s))
+            </summary>
+            <ul className="px-3 py-2 flex flex-col gap-1 text-xs text-amber-900">
+              {result.skipped.map((s, i) => (
+                <li key={i}>• {s}</li>
+              ))}
+            </ul>
+          </details>
+        )}
+
+        {fromExistingUniverse && (
+          <div className="rounded-md border border-dashed bg-muted/30 p-3 flex flex-col gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <ShieldAlert className="size-4 text-blue-600" aria-hidden />
+              <span className="text-sm font-medium">
+                Vérifier les conflits avec le lore existant
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setConflicts(null);
+                  ragMutation.mutate();
+                }}
+                disabled={ragMutation.isPending}
+              >
+                {ragMutation.isPending ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin" aria-hidden />{" "}
+                    Analyse RAG…
+                  </>
+                ) : conflicts ? (
+                  "Re-vérifier"
+                ) : (
+                  "Lancer la vérification"
+                )}
+              </Button>
+            </div>
+            {ragMutation.isError && (
+              <p className="text-xs text-destructive" role="alert">
+                {String(ragMutation.error)}
+              </p>
+            )}
+            {!conflicts && !ragMutation.isPending && (
+              <p className="text-xs text-muted-foreground">
+                Croise le texte importé avec les fiches existantes (via le
+                RAG du lore) pour signaler des contradictions ou des fiches
+                à mettre à jour.
+              </p>
+            )}
+            {conflicts && (
+              <div className="rounded-md border bg-background/60 p-3 flex flex-col gap-2">
+                <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                  {conflicts.answer}
+                </div>
+                {conflicts.sources.length > 0 && (
+                  <div className="border-t pt-2">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                      Fiches consultées
+                    </p>
+                    <ul className="flex flex-col gap-1">
+                      {conflicts.sources.map((s) => (
+                        <li
+                          key={`${s.entityId}-${s.score}`}
+                          className="text-xs"
+                        >
+                          <Link
+                            to={`/u/${result.universeId}/e/${s.entityId}`}
+                            className="text-foreground hover:underline font-medium"
+                            target="_blank"
+                            rel="noopener"
+                          >
+                            {s.entityName}
+                          </Link>{" "}
+                          <span className="text-muted-foreground">
+                            · {entityTypeLabel(s.entityType)} · score{" "}
+                            {s.score.toFixed(2)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex items-center justify-end gap-2 border-t pt-3">
+          <Button onClick={onGoToUniverse}>
+            <ExternalLink className="size-4" aria-hidden /> Aller à
+            l'univers
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
