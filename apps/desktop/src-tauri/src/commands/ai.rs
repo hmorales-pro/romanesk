@@ -1103,40 +1103,60 @@ pub async fn ai_universe_reindex(
         });
     }
 
-    // Texte par entité.
-    let texts: Vec<String> = entities.iter().map(entity_to_text).collect();
+    // P7.6 : 1 entité → N chunks (header + paragraphes de bio/desc).
+    // On garde le mapping (entity_id, chunk_idx, content) pour les
+    // insertions ensuite.
+    let mut chunks: Vec<(Uuid, i64, String)> = Vec::new();
+    for entity in &entities {
+        for (idx, content) in entity_to_chunks(entity).into_iter().enumerate() {
+            chunks.push((entity.id, idx as i64, content));
+        }
+    }
+    if chunks.is_empty() {
+        return Ok(ReindexResult {
+            indexed_count: 0,
+            model: embedder.model.clone(),
+            dimension: 0,
+        });
+    }
 
-    // Embeddings en batch (un seul appel HTTP).
+    // Préfixage Nomic + embedding en batch (un seul appel HTTP).
+    let texts_for_embed: Vec<String> = chunks
+        .iter()
+        .map(|(_, _, t)| with_embed_prefix(&embedder.model, t, false))
+        .collect();
     let vectors = embedder
         .provider
-        .embed_with_model(texts.clone(), &embedder.model)
+        .embed_with_model(texts_for_embed, &embedder.model)
         .await
         .map_err(|e| CommandError::Other(format!("embedding failed: {e}")))?;
 
-    if vectors.len() != entities.len() {
+    if vectors.len() != chunks.len() {
         return Err(CommandError::Other(format!(
-            "embedder returned {} vectors for {} entities",
+            "embedder returned {} vectors for {} chunks",
             vectors.len(),
-            entities.len()
+            chunks.len()
         )));
     }
 
     let dim = vectors.first().map(Vec::len).unwrap_or(0);
 
-    // Purge l'ancien index puis ré-insère.
+    // Purge l'ancien index pour toutes les entités, puis ré-insère
+    // tous les chunks (le contenu stocké ne contient PAS le préfixe
+    // Nomic — celui-ci est un détail d'embedding, pas de display).
     for entity in &entities {
         repo.embeddings()
             .delete_for(SourceType::Entity, entity.id)
             .await?;
     }
 
-    for ((entity, text), vector) in entities.iter().zip(texts.iter()).zip(vectors.iter()) {
+    for ((entity_id, chunk_idx, content), vector) in chunks.iter().zip(vectors.iter()) {
         repo.embeddings()
             .insert(NewEmbedding {
                 source_type: SourceType::Entity,
-                source_id: entity.id,
-                chunk_idx: 0,
-                content: text.clone(),
+                source_id: *entity_id,
+                chunk_idx: *chunk_idx,
+                content: content.clone(),
                 model: embedder.model.clone(),
                 vector: vector.clone(),
             })
@@ -1144,7 +1164,7 @@ pub async fn ai_universe_reindex(
     }
 
     Ok(ReindexResult {
-        indexed_count: entities.len(),
+        indexed_count: chunks.len(),
         model: embedder.model.clone(),
         dimension: dim,
     })
@@ -1200,10 +1220,11 @@ pub async fn ai_rag_query(
         .await?
         .ok_or_else(|| CommandError::Other(format!("universe {uid} not found")))?;
 
-    // 1. Embed la question
+    // 1. Embed la question (avec préfixe Nomic search_query: si applicable)
+    let q_text = with_embed_prefix(&embedder.model, payload.question.trim(), true);
     let q_vectors = embedder
         .provider
-        .embed_with_model(vec![payload.question.clone()], &embedder.model)
+        .embed_with_model(vec![q_text], &embedder.model)
         .await
         .map_err(|e| CommandError::Other(format!("embed question: {e}")))?;
     let q_vec = q_vectors
@@ -1211,10 +1232,12 @@ pub async fn ai_rag_query(
         .next()
         .ok_or_else(|| CommandError::Other("embedder returned no vector".into()))?;
 
-    // 2. Search top-k
-    let k = payload.top_k.unwrap_or(5).max(1).min(20);
+    // 2. Search top-k. Default 8 (P7.6 : avant 5, mais avec le chunking
+    // par paragraphe il y a plus de chunks par entité, on remonte un
+    // peu pour ne pas couper court).
+    let k = payload.top_k.unwrap_or(8).max(1).min(30);
     use romanesk_core::rag::SearchFilter;
-    let hits = repo
+    let raw_hits = repo
         .embeddings()
         .search_topk(
             &q_vec,
@@ -1223,9 +1246,28 @@ pub async fn ai_rag_query(
         )
         .await?;
 
+    // P7.6 : cutoff de score. La cosine similarity sur du texte
+    // sémantiquement lointain reste positive (souvent 0.2-0.4) sans
+    // pour autant être pertinente. On filtre à 0.45 pour Nomic et 0.35
+    // pour les autres (ils sont moins centrés). Si tous les hits sont
+    // sous le seuil, on renvoie un message explicite plutôt que du
+    // bruit.
+    let cutoff: f32 = if embedder.model.to_lowercase().starts_with("nomic-embed") {
+        0.45
+    } else {
+        0.35
+    };
+    let hits: Vec<_> = raw_hits.into_iter().filter(|h| h.score >= cutoff).collect();
+
     if hits.is_empty() {
         return Ok(RagAnswer {
-            answer: "Je n'ai trouvé aucune fiche correspondante. As-tu indexé l'univers ? (bouton « Réindexer »)".into(),
+            answer: format!(
+                "Je ne trouve pas d'élément suffisamment pertinent dans le lore pour répondre. \
+                 Pistes : (1) vérifie que tu as réindexé l'univers après tes derniers changements, \
+                 (2) essaie de reformuler avec des noms propres ou termes précis qui apparaissent \
+                 dans tes fiches, (3) si la fiche existe mais ne matche pas, ajoute-y un résumé \
+                 explicite. Seuil de pertinence courant : {cutoff:.2}."
+            ),
             sources: Vec::new(),
             used_model_chat: "none".into(),
             used_model_embed: embedder.model.clone(),
@@ -1254,7 +1296,16 @@ pub async fn ai_rag_query(
             score: hit.score,
             snippet: snippet.clone(),
         });
-        context_blocks.push(format!("--- Fiche {} : {} ---\n{}\n", i + 1, name, snippet));
+        // P7.6 : on envoie le content COMPLET du chunk au modèle (pas
+        // le snippet tronqué — le snippet sert juste à l'affichage UI).
+        // On inclut le score pour aider le modèle à pondérer.
+        context_blocks.push(format!(
+            "--- Extrait {} (fiche : {}, pertinence : {:.2}) ---\n{}\n",
+            i + 1,
+            name,
+            hit.score,
+            hit.embedding.content
+        ));
     }
 
     // 4. Construit le prompt
@@ -1267,14 +1318,22 @@ pub async fn ai_rag_query(
 
     let system = format!(
         "Tu es un assistant de worldbuilding qui répond en {lang_label} aux questions \
-         sur l'univers fictionnel « {}». Utilise UNIQUEMENT les extraits de fiches \
-         fournis ci-dessous pour répondre. Si tu ne sais pas, dis-le honnêtement. \
-         Cite les noms des fiches que tu utilises. Sois concis (3-5 phrases).",
+         sur l'univers fictionnel « {}».\n\n\
+         RÈGLES STRICTES :\n\
+         1. Utilise UNIQUEMENT les extraits de fiches fournis. N'invente rien.\n\
+         2. Si la réponse n'est PAS dans les extraits, écris exactement : \
+         « Je ne trouve pas cette information dans le lore actuel. » et précise \
+         quelles fiches ont été consultées sans donner de réponse fabriquée.\n\
+         3. Cite les noms des fiches que tu utilises (ex. « D'après la fiche Lyra… »).\n\
+         4. Reste concis (3-5 phrases max). Pas de remplissage.\n\
+         5. Si plusieurs fiches sont pertinentes mais se contredisent, dis-le.",
         universe.name
     );
 
     let user = format!(
-        "Question : {}\n\nExtraits de fiches :\n\n{}\n\nRéponse :",
+        "Question : {}\n\n\
+         Extraits de fiches (par score décroissant de pertinence) :\n\n{}\n\n\
+         Réponse :",
         payload.question.trim(),
         context_blocks.join("\n")
     );
@@ -1311,39 +1370,77 @@ pub async fn ai_rag_query(
 }
 
 /// Convertit une entité en texte plat indexable.
-fn entity_to_text(entity: &Entity) -> String {
-    let mut out = String::new();
-    out.push_str(&format!(
-        "{} ({:?})\n",
-        entity.name,
-        entity.kind
-    ));
-    if let Some(s) = &entity.summary {
-        out.push_str(s);
-        out.push_str("\n\n");
-    }
+/// Split une entité en plusieurs chunks pour l'indexation.
+///
+/// P7.6 : avant cette refactorisation, 1 entité = 1 chunk (donc 1 vecteur)
+/// quelle que soit la longueur de la fiche. Pour les fiches avec une
+/// biographie de plusieurs paragraphes, le sens était dilué dans un
+/// embedding moyen et la similarité cosine devenait peu discriminante.
+///
+/// Stratégie :
+/// - Chunk 0 : header structuré (nom + kind + summary + champs typés
+///   courts : archetype, traits, climat, etc.). Toujours indexé.
+/// - Chunks 1+ : 1 paragraphe = 1 chunk (split sur double-newline du
+///   render Markdown du Tiptap). Chaque paragraphe est préfixé par le
+///   nom de l'entité pour que le contexte sémantique reste fort même
+///   sur un fragment court.
+/// - Les paragraphes de moins de 5 mots sont fusionnés avec le précédent
+///   pour éviter les chunks bruyants (titres seuls, numéros…).
+fn entity_to_chunks(entity: &Entity) -> Vec<String> {
+    let mut chunks: Vec<String> = Vec::new();
 
-    // Champs courants typés (Character, Location)
+    // Header
+    let mut header = String::new();
+    header.push_str(&format!("{} ({:?})\n", entity.name, entity.kind));
+    if let Some(s) = &entity.summary {
+        header.push_str(s);
+        header.push('\n');
+    }
     if let Some(s) = entity.content.get("archetype").and_then(|v| v.as_str()) {
-        out.push_str(&format!("Archétype : {s}\n"));
+        header.push_str(&format!("Archétype : {s}\n"));
     }
     if let Some(arr) = entity.content.get("traits").and_then(|v| v.as_array()) {
         let traits: Vec<&str> = arr.iter().filter_map(|t| t.as_str()).collect();
         if !traits.is_empty() {
-            out.push_str(&format!("Traits : {}\n", traits.join(", ")));
+            header.push_str(&format!("Traits : {}\n", traits.join(", ")));
         }
     }
     if let Some(s) = entity.content.get("climate").and_then(|v| v.as_str()) {
-        out.push_str(&format!("Climat : {s}\n"));
+        header.push_str(&format!("Climat : {s}\n"));
     }
     if let Some(s) = entity.content.get("population").and_then(|v| v.as_str()) {
-        out.push_str(&format!("Population : {s}\n"));
+        header.push_str(&format!("Population : {s}\n"));
     }
     if let Some(s) = entity.content.get("kind").and_then(|v| v.as_str()) {
-        out.push_str(&format!("Type de lieu : {s}\n"));
+        header.push_str(&format!("Sous-type : {s}\n"));
     }
+    if let Some(s) = entity.content.get("ideology").and_then(|v| v.as_str()) {
+        header.push_str(&format!("Idéologie : {s}\n"));
+    }
+    if let Some(s) = entity.content.get("founded").and_then(|v| v.as_str()) {
+        header.push_str(&format!("Fondation : {s}\n"));
+    }
+    if let Some(s) = entity.content.get("leader").and_then(|v| v.as_str()) {
+        header.push_str(&format!("Dirigeant : {s}\n"));
+    }
+    if let Some(s) = entity.content.get("origin").and_then(|v| v.as_str()) {
+        header.push_str(&format!("Origine : {s}\n"));
+    }
+    if let Some(s) = entity.content.get("owner").and_then(|v| v.as_str()) {
+        header.push_str(&format!("Propriétaire : {s}\n"));
+    }
+    if let Some(arr) = entity.content.get("properties").and_then(|v| v.as_array()) {
+        let props: Vec<&str> = arr.iter().filter_map(|t| t.as_str()).collect();
+        if !props.is_empty() {
+            header.push_str(&format!("Propriétés : {}\n", props.join(", ")));
+        }
+    }
+    if let Some(s) = entity.content.get("domain").and_then(|v| v.as_str()) {
+        header.push_str(&format!("Domaine : {s}\n"));
+    }
+    chunks.push(header);
 
-    // Bio / description : Tiptap doc ou string legacy
+    // Bio / description : split en paragraphes
     for key in ["biography", "description", "biographyText", "descriptionText"] {
         if let Some(v) = entity.content.get(key) {
             let text = if let Some(s) = v.as_str() {
@@ -1353,13 +1450,52 @@ fn entity_to_text(entity: &Entity) -> String {
             } else {
                 continue;
             };
-            if !text.trim().is_empty() {
-                out.push_str(&format!("\n{}", text));
+            if text.trim().is_empty() {
+                continue;
+            }
+            // Split sur double-newline (paragraphes du render Markdown).
+            // Chaque chunk est préfixé par le nom de l'entité pour
+            // garder le contexte sémantique fort même sur un fragment.
+            for para in text.split("\n\n") {
+                let p = para.trim();
+                if p.is_empty() {
+                    continue;
+                }
+                let word_count = p.split_whitespace().count();
+                if word_count < 5 {
+                    // Fusionne avec le chunk précédent au lieu de créer
+                    // un chunk bruyant (titre solitaire par ex.).
+                    if let Some(last) = chunks.last_mut() {
+                        last.push_str("\n\n");
+                        last.push_str(p);
+                    }
+                    continue;
+                }
+                chunks.push(format!("{} : {}", entity.name, p));
             }
         }
     }
 
-    out
+    chunks
+}
+
+/// P7.6 : préfixe `search_document: ` (indexation) ou `search_query: `
+/// (query) si le modèle est de la famille nomic-embed-text. Ces
+/// préfixes sont attendus par le modèle et améliorent significativement
+/// la pertinence de la similarité cosine. Pour les autres modèles
+/// d'embedding (bge, mxbai, qwen-embedding), on retourne le texte tel
+/// quel (ils ne suivent pas la même convention).
+fn with_embed_prefix(model: &str, text: &str, is_query: bool) -> String {
+    let m = model.to_lowercase();
+    if m.starts_with("nomic-embed") {
+        if is_query {
+            format!("search_query: {text}")
+        } else {
+            format!("search_document: {text}")
+        }
+    } else {
+        text.to_string()
+    }
 }
 
 fn truncate(s: &str, n: usize) -> String {
