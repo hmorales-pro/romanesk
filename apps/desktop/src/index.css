@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* P7.7.macos : font smoothing global pour WKWebView Apple Silicon.
+ * Sans ces hints, le sub-pixel anti-aliasing par défaut peut donner
+ * un rendu fragmenté sur les écrans Retina. */
+html, body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
 /*
  * Romanesk — design tokens (Phase 0).
  *
@@ -253,8 +262,13 @@ body,
    * que les radial-gradient sont re-samplés à une résolution
    * intermédiaire (souvent ~1×) au lieu du DPR de l'écran. On préfère
    * un rendu CPU de base, parfaitement net, et on ne déclenche le
-   * compositor GPU qu'au hover. */
-  image-rendering: -webkit-optimize-contrast;
+   * compositor GPU qu'au hover.
+   *
+   * P7.7.macos : `image-rendering: high-quality` demande à WKWebView
+   * d'utiliser le sampling Lanczos (meilleur sur Retina) plutôt que
+   * le bilinear par défaut. -webkit-optimize-contrast sur Safari
+   * bascule sur nearest-neighbor (très net mais brut) — on évite. */
+  image-rendering: high-quality;
 }
 
 .nebula-node-float:hover {

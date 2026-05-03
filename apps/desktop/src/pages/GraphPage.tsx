@@ -157,8 +157,18 @@ export default function GraphPage() {
             edges={edges}
             nodeTypes={NODE_TYPES_REGISTRY}
             onNodeClick={onNodeClick}
-            fitView
-            fitViewOptions={{ padding: 0.3 }}
+            // P7.7.macos : on demarre a zoom 1.0 exact (pas de fitView)
+            // pour eviter que xyflow n'applique un scale fractionnel
+            // (ex. 0.83) au viewport parent, qui re-sampleait les
+            // radial-gradient des bulles en bitmap intermediaire.
+            // L'utilisateur peut toujours zoomer/panner manuellement.
+            defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+            minZoom={0.25}
+            maxZoom={2.5}
+            // Snap les zooms à des increments propres pour rester
+            // sur des scales qui resamplent peu (Mac retina aime
+            // les multiples de 0.5).
+            zoomActivationKeyCode="Meta"
             nodesDraggable
             nodesConnectable={false}
             edgesFocusable={false}
