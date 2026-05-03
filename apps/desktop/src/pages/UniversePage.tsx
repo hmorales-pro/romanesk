@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { Anchor, ArrowLeft, MapPin, Network, Plus, Search, Sparkles, User } from "lucide-react";
+import { Anchor, ArrowLeft, BookOpen, MapPin, Network, Plus, Search, Sparkles, User } from "lucide-react";
 
 import {
   aiGenerateEntityDraft,
@@ -179,6 +179,17 @@ export default function UniversePage() {
         </div>
         {universeQuery.data && (
           <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={() =>
+                document
+                  .getElementById("stories")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" })
+              }
+              title="Aller à la section Histoires"
+            >
+              <BookOpen className="size-4" aria-hidden /> Écrire
+            </Button>
             <Link to={`/u/${universeId}/anchor`}>
               <Button variant="outline" size="sm">
                 <Anchor className="size-4" aria-hidden /> Ancrage
@@ -323,7 +334,9 @@ export default function UniversePage() {
 
       <TimelineSection universeId={universeId} />
 
-      <StoriesSection universeId={universeId!} />
+      <div id="stories" className="scroll-mt-6">
+        <StoriesSection universeId={universeId!} />
+      </div>
 
       <BrainstormPanel universeId={universeId!} />
 

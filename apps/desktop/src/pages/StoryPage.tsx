@@ -543,6 +543,8 @@ function ChapterEditor({
         onChange={setBody}
         placeholder="Écris ton chapitre…"
         className="min-h-[400px]"
+        toolbar
+        frenchTypography
       />
 
       <div className="text-xs text-muted-foreground flex items-center gap-3">

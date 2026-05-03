@@ -127,6 +127,15 @@ body,
 
 .tiptap-content .ProseMirror p {
   margin: 0.25em 0;
+  line-height: 1.6;
+}
+
+/* P7.0 : style spécial pour les répliques de dialogue (paragraphes
+ * commençant par un tiret cadratin). On enlève l'indentation
+ * naturelle et on isole la réplique avec un peu plus d'espace. */
+.tiptap-content .ProseMirror p:has(span:first-child:first-letter),
+.tiptap-content .ProseMirror p {
+  text-indent: 0;
 }
 
 .tiptap-content .ProseMirror h1 {
