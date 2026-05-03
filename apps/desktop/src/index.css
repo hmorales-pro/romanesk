@@ -261,9 +261,6 @@ body,
 .nebula-halo {
   animation: nebula-pulse 4s ease-in-out infinite;
   animation-delay: var(--nebula-phase, 0s);
-  /* Indispensable pour que `transform: scale` du keyframe pulse
-   * applique le scale depuis le centre du cercle SVG (par défaut,
-   * l'origine d'un transform SVG est le coin haut-gauche du viewBox). */
-  transform-origin: 70px 70px;
-  transform-box: fill-box;
+  /* Halo en div HTML (P7.7.zzz) — origin par défaut = center, parfait. */
+  transform-origin: center;
 }

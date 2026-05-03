@@ -202,16 +202,15 @@ const NebulaNode = memo(function NebulaNode({ data }: NodeProps<Node<NebulaNodeD
   const color = entityTypeColor(data.kind);
   // Taille selon le degré : 40px isolé, +4px par relation, max 80px.
   const size = Math.min(80, 40 + data.degree * 4);
-  // SVG viewBox de 100 unités, on dessine le halo dans une zone plus
-  // large (140) pour qu'il déborde de la bulle. Le SVG s'occupe du
-  // scaling — vectoriel, infiniment net à n'importe quelle résolution.
-  const svgSize = size * 1.6;
+  const haloSize = size * 1.9;
   const phaseDelay = `${(-data.phase * 8).toFixed(2)}s`;
-  // Identifiants uniques pour les `<defs>` SVG (sinon les gradients
-  // fuiraient entre instances rendant tous les nœuds de la même couleur).
-  const gradId = `grad-${data.phase.toFixed(3).replace(".", "")}`;
-  const haloGradId = `halo-${data.phase.toFixed(3).replace(".", "")}`;
   const darkColor = shade(color, -30);
+
+  // Hex avec alpha pour les radial-gradient CSS. Le browser rasterise
+  // les gradients au DPR final → aucun artefact de pixelisation.
+  const haloGradient = `radial-gradient(circle, ${withAlpha(color, 0.55)} 0%, ${withAlpha(color, 0.28)} 35%, ${withAlpha(color, 0.08)} 70%, ${withAlpha(color, 0)} 100%)`;
+  const sphereGradient = `radial-gradient(circle at 32% 28%, rgba(255,255,255,0.95) 0%, ${color} 22%, ${color} 60%, ${darkColor} 100%)`;
+  const reflectGradient = `radial-gradient(ellipse 60% 50% at 35% 30%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 70%)`;
 
   return (
     <div
@@ -233,70 +232,45 @@ const NebulaNode = memo(function NebulaNode({ data }: NodeProps<Node<NebulaNodeD
         style={{ opacity: 0, pointerEvents: "none" }}
       />
 
-      {/* Tout le rendu en SVG natif — vectoriel, pas d'artefact bitmap. */}
-      <svg
-        width={svgSize}
-        height={svgSize}
-        viewBox="0 0 140 140"
-        style={{ overflow: "visible", display: "block" }}
+      {/* Halo lumineux : div ronde + radial-gradient CSS qui fade vers
+       *  transparent. 100% vectoriel, rasterisé au DPR final. Pas de
+       *  filter:blur (qui pixélise), pas de box-shadow (qui pixélise
+       *  aussi sur certains compositors). */}
+      <div
         aria-hidden
+        className="nebula-halo absolute rounded-full pointer-events-none -z-10"
+        style={{
+          width: `${haloSize}px`,
+          height: `${haloSize}px`,
+          top: `${(size - haloSize) / 2}px`,
+          left: `${(size - haloSize) / 2}px`,
+          background: haloGradient,
+          ["--nebula-phase" as string]: phaseDelay,
+        }}
+      />
+      {/* Pastille principale : sphère 3D via radial-gradient CSS.
+       *  Le highlight blanc + bord sombre sont 4 stops du même gradient. */}
+      <div
+        className="rounded-full relative"
+        style={{
+          width: `${size}px`,
+          height: `${size}px`,
+          background: sphereGradient,
+          border: "1.5px solid rgba(255,255,255,0.5)",
+        }}
       >
-        <defs>
-          {/* Gradient radial pour la sphère 3D : highlight blanc en
-           *  haut-gauche → couleur pleine au centre → bord assombri.
-           *  cx/cy à 35/30 pour la source de lumière. */}
-          <radialGradient id={gradId} cx="0.35" cy="0.30" r="0.7">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-            <stop offset="20%" stopColor={color} stopOpacity="1" />
-            <stop offset="65%" stopColor={color} stopOpacity="1" />
-            <stop offset="100%" stopColor={darkColor} stopOpacity="1" />
-          </radialGradient>
-          {/* P7.7.zz : halo en gradient radial pur (pas de feGaussianBlur).
-           *  feGaussianBlur est rasterisé en interne par le browser à
-           *  une résolution limitée → pixelisation visible. Un radial
-           *  gradient natif est mathématiquement précis et reste vectoriel. */}
-          <radialGradient id={haloGradId} cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0%" stopColor={color} stopOpacity="0.55" />
-            <stop offset="35%" stopColor={color} stopOpacity="0.28" />
-            <stop offset="70%" stopColor={color} stopOpacity="0.08" />
-            <stop offset="100%" stopColor={color} stopOpacity="0" />
-          </radialGradient>
-        </defs>
-
-        {/* Halo lumineux : cercle large rempli d'un radial gradient qui
-         *  fade vers transparent. Aucun blur, donc aucune pixelisation
-         *  possible — c'est juste du dégradé vectoriel. */}
-        <circle
-          className="nebula-halo"
-          cx="70"
-          cy="70"
-          r="62"
-          fill={`url(#${haloGradId})`}
-          style={{ ["--nebula-phase" as string]: phaseDelay }}
+        {/* Couche supplémentaire pour le reflet brillant en haut-gauche
+         *  (ellipse) — superposée à la sphère principale. */}
+        <div
+          aria-hidden
+          className="absolute inset-0 rounded-full pointer-events-none"
+          style={{ background: reflectGradient }}
         />
-        {/* Pastille principale (sphère 3D). */}
-        <circle
-          cx="70"
-          cy="70"
-          r="32"
-          fill={`url(#${gradId})`}
-          stroke="rgba(255,255,255,0.5)"
-          strokeWidth="1.5"
-        />
-        {/* Highlight de surface (petit reflet blanc en haut-gauche). */}
-        <ellipse
-          cx="60"
-          cy="58"
-          rx="10"
-          ry="6"
-          fill="#ffffff"
-          fillOpacity="0.35"
-        />
-      </svg>
+      </div>
 
       {/* Label sous la pastille. */}
       <div
-        className="-mt-1 text-xs px-2.5 py-1 rounded-md whitespace-nowrap font-medium"
+        className="mt-2 text-xs px-2.5 py-1 rounded-md whitespace-nowrap font-medium"
         style={{
           background: "rgba(15, 12, 35, 0.9)",
           color: "rgba(255,255,255,0.95)",
@@ -309,6 +283,21 @@ const NebulaNode = memo(function NebulaNode({ data }: NodeProps<Node<NebulaNodeD
     </div>
   );
 });
+
+/**
+ * Convertit une couleur hex (#rrggbb) en rgba(r, g, b, alpha) pour
+ * radial-gradient CSS. Évite la concaténation `${color}88` qui ne
+ * marche que si la couleur est en hex sur 6 chiffres exactement.
+ */
+function withAlpha(hex: string, alpha: number): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return hex;
+  const num = parseInt(m[1], 16);
+  const r = (num >> 16) & 0xff;
+  const g = (num >> 8) & 0xff;
+  const b = num & 0xff;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 /**
  * Éclaircit ou assombrit une couleur hex (#rrggbb) d'un pourcentage.
