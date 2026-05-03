@@ -894,6 +894,58 @@ export function aiAnalyzeImport(args: {
   });
 }
 
+// --- Import apply (P7.3) ----------------------------------------------------
+
+export type ImportTarget =
+  | { kind: "NewUniverse"; name: string; description?: string }
+  | { kind: "ExistingUniverse"; id: Uuid };
+
+/**
+ * Sous-ensemble de ImportAnalysis qu'on envoie à import_apply : juste
+ * les listes (pas les warnings ni rawResponse). Le front filtre les
+ * entités décochées avant d'envoyer.
+ */
+export interface ImportSelections {
+  characters: ImportCharacter[];
+  locations: ImportLocation[];
+  factions: ImportFaction[];
+  objects: ImportObjectItem[];
+  concepts: ImportConcept[];
+  eras: ImportEra[];
+  events: ImportEvent[];
+  chapters: ImportChapter[];
+  storyTitle?: string;
+  isNarrative: boolean;
+}
+
+export interface ImportResult {
+  universeId: Uuid;
+  storyId: Uuid | null;
+  createdCharacters: number;
+  createdLocations: number;
+  createdFactions: number;
+  createdObjects: number;
+  createdConcepts: number;
+  createdEras: number;
+  createdEvents: number;
+  createdChapters: number;
+  skipped: string[];
+}
+
+export function importApply(args: {
+  analysis: ImportSelections;
+  target: ImportTarget;
+  forceDuplicates?: boolean;
+}): Promise<ImportResult> {
+  return invoke<ImportResult>("import_apply", {
+    payload: {
+      analysis: args.analysis,
+      target: args.target,
+      forceDuplicates: args.forceDuplicates ?? false,
+    },
+  });
+}
+
 // --- Vision (P6.6) ----------------------------------------------------------
 
 export interface DescribeImageArgs {

@@ -17,6 +17,7 @@ pub mod entity;
 pub mod era;
 pub mod error;
 pub mod event;
+pub mod import;
 pub mod relation;
 pub mod settings;
 pub mod snapshot;

@@ -230,6 +230,7 @@ pub fn run() {
             commands::story::story_update,
             commands::story::story_delete,
             commands::story::story_export_markdown,
+            commands::import::import_apply,
             commands::chapter::chapter_create,
             commands::chapter::chapter_list_for_story,
             commands::chapter::chapter_get,
