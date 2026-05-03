@@ -215,10 +215,7 @@ const NebulaNode = memo(function NebulaNode({ data }: NodeProps<Node<NebulaNodeD
   return (
     <div
       className="nebula-node-float relative flex flex-col items-center pointer-events-auto cursor-pointer"
-      style={{
-        ["--nebula-phase" as string]: phaseDelay,
-        willChange: "transform",
-      }}
+      style={{ ["--nebula-phase" as string]: phaseDelay }}
     >
       {/* Handles invisibles — requis pour que xyflow positionne les arêtes. */}
       <Handle

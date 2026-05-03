@@ -248,14 +248,22 @@ body,
   animation: nebula-float 8s ease-in-out infinite;
   animation-delay: var(--nebula-phase, 0s);
   transition: transform 0.25s ease-out, filter 0.25s ease-out;
+  /* P7.7.tauri : NE PAS mettre will-change ici. Sur certains webviews
+   * Tauri (WebKitGTK, WebView2 ancien), un layer GPU permanent fait
+   * que les radial-gradient sont re-samplés à une résolution
+   * intermédiaire (souvent ~1×) au lieu du DPR de l'écran. On préfère
+   * un rendu CPU de base, parfaitement net, et on ne déclenche le
+   * compositor GPU qu'au hover. */
+  image-rendering: -webkit-optimize-contrast;
 }
 
 .nebula-node-float:hover {
-  /* Sur hover, on stoppe le float et on zoom légèrement. */
+  /* Sur hover : compositor GPU temporaire pour l'animation fluide. */
   animation-play-state: paused;
   transform: scale(1.18);
   filter: brightness(1.15);
   z-index: 10;
+  will-change: transform;
 }
 
 .nebula-halo {
@@ -263,4 +271,7 @@ body,
   animation-delay: var(--nebula-phase, 0s);
   /* Halo en div HTML (P7.7.zzz) — origin par défaut = center, parfait. */
   transform-origin: center;
+  /* Pas de will-change non plus : le keyframe pulse est lent (4s) et
+   * peu coûteux, le browser peut le compositer correctement à la
+   * volée sans hint. */
 }
