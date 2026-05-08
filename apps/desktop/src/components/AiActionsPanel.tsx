@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 
 import { aiComplete } from "@/lib/api";
+import { confirmDialog } from "@/lib/dialog";
 import type { Story } from "@/lib/types";
 import { useSettings } from "@/lib/use-settings";
 import { Button } from "@/components/ui/button";
@@ -104,15 +105,14 @@ export function AiActionsPanel({
     if (result) void navigator.clipboard.writeText(result.text);
   };
 
-  const replace = () => {
+  const replace = async () => {
     if (!result) return;
-    if (
-      !window.confirm(
-        "Remplacer le contenu du chapitre par cette réécriture ? (annulable via Annuler tant que tu n'as pas sauvé)",
-      )
-    ) {
-      return;
-    }
+    const ok = await confirmDialog({
+      title: "Remplacer le chapitre par cette réécriture ?",
+      body: "Le contenu actuel sera remplacé. Tu pourras annuler via le bouton Annuler tant que tu n'as pas sauvegardé.",
+      confirmLabel: "Remplacer",
+    });
+    if (!ok) return;
     const paragraphs = result.text
       .split(/\n{2,}/)
       .map((p) => p.trim())

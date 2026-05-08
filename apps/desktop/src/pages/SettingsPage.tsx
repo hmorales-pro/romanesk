@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, BrainCog, Save } from "lucide-react";
 
 import { aiPing, settingsGet, settingsSave, type AppSettings } from "@/lib/api";
+import { alertDialog } from "@/lib/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,13 +66,15 @@ export default function SettingsPage() {
   const onTest = () => {
     aiPing().then(
       (s) => {
-        window.alert(
+        void alertDialog(
           s.reachable
-            ? `✓ Ollama joignable (${s.providerId})`
-            : `✗ Ollama hors ligne : ${s.error ?? "raison inconnue"}`,
+            ? `Ollama joignable via ${s.providerId}.`
+            : `Ollama hors ligne : ${s.error ?? "raison inconnue"}.`,
+          { title: s.reachable ? "✓ Connexion OK" : "✗ Connexion impossible" },
         );
       },
-      (err) => window.alert(`Erreur: ${String(err)}`),
+      (err) =>
+        void alertDialog(String(err), { title: "Erreur de test" }),
     );
   };
 

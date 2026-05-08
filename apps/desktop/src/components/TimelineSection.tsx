@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { confirmDialog } from "@/lib/dialog";
 import {
   Card,
   CardContent,
@@ -238,10 +239,14 @@ function ErasCard({ universeId }: { universeId: string }) {
               <EraRow
                 key={era.id}
                 era={era}
-                onDelete={() => {
-                  if (window.confirm(`Supprimer l'époque « ${era.name} » ?`)) {
-                    deleteMutation.mutate(era.id);
-                  }
+                onDelete={async () => {
+                  const ok = await confirmDialog({
+                    title: `Supprimer l'époque ?`,
+                    body: `« ${era.name} » sera retirée de la frise. Action irréversible.`,
+                    confirmLabel: "Supprimer",
+                    destructive: true,
+                  });
+                  if (ok) deleteMutation.mutate(era.id);
                 }}
                 deleting={deleteMutation.isPending}
                 onUpdated={() =>
@@ -583,10 +588,14 @@ function EventsCard({ universeId }: { universeId: string }) {
                 event={ev}
                 era={ev.era_id ? erasById.get(ev.era_id) ?? null : null}
                 allEras={erasQuery.data ?? []}
-                onDelete={() => {
-                  if (window.confirm(`Supprimer l'événement « ${ev.name} » ?`)) {
-                    deleteMutation.mutate(ev.id);
-                  }
+                onDelete={async () => {
+                  const ok = await confirmDialog({
+                    title: `Supprimer cet événement ?`,
+                    body: `« ${ev.name} » sera retiré de la frise. Action irréversible.`,
+                    confirmLabel: "Supprimer",
+                    destructive: true,
+                  });
+                  if (ok) deleteMutation.mutate(ev.id);
                 }}
                 deleting={deleteMutation.isPending}
                 onUpdated={() =>

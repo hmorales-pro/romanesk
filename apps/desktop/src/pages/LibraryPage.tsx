@@ -10,6 +10,7 @@ import {
   universeList,
 } from "@/lib/api";
 import { AIStatusBadge } from "@/components/AIStatusBadge";
+import { alertDialog, confirmDialog } from "@/lib/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -199,11 +200,14 @@ export default function LibraryPage() {
                         try {
                           const md = await universeExportMarkdown(u.id);
                           await navigator.clipboard.writeText(md);
-                          window.alert(
-                            `Markdown de « ${u.name} » copié dans le presse-papier (${md.length} caractères).`,
+                          void alertDialog(
+                            `« ${u.name} » copié dans le presse-papier (${md.length} caractères).`,
+                            { title: "Markdown exporté" },
                           );
                         } catch (err) {
-                          window.alert(`Échec de l'export : ${String(err)}`);
+                          void alertDialog(String(err), {
+                            title: "Échec de l'export",
+                          });
                         }
                       }}
                     >
@@ -213,10 +217,14 @@ export default function LibraryPage() {
                     <button
                       type="button"
                       className="hover:text-bordeaux"
-                      onClick={() => {
-                        if (window.confirm(`Supprimer "${u.name}" ?`)) {
-                          deleteMutation.mutate(u.id);
-                        }
+                      onClick={async () => {
+                        const ok = await confirmDialog({
+                          title: `Supprimer « ${u.name} » ?`,
+                          body: "Cette action est irréversible. Toutes les fiches et histoires de cet univers seront perdues.",
+                          confirmLabel: "Supprimer",
+                          destructive: true,
+                        });
+                        if (ok) deleteMutation.mutate(u.id);
                       }}
                     >
                       Supprimer

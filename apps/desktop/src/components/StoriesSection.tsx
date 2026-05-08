@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { confirmDialog } from "@/lib/dialog";
 
 interface StoriesSectionProps {
   universeId: string;
@@ -203,14 +204,14 @@ export function StoriesSection({ universeId }: StoriesSectionProps) {
             key={s.id}
             story={s}
             onUpdate={(args) => updateMutation.mutateAsync(args)}
-            onDelete={() => {
-              if (
-                window.confirm(
-                  `Supprimer l'histoire « ${s.title} » ? (les chapitres seront perdus)`,
-                )
-              ) {
-                deleteMutation.mutate(s.id);
-              }
+            onDelete={async () => {
+              const ok = await confirmDialog({
+                title: `Supprimer cette histoire ?`,
+                body: `« ${s.title} » sera retirée, ainsi que tous ses chapitres. Action irréversible.`,
+                confirmLabel: "Supprimer",
+                destructive: true,
+              });
+              if (ok) deleteMutation.mutate(s.id);
             }}
             updating={updateMutation.isPending}
             deleting={deleteMutation.isPending}

@@ -42,6 +42,7 @@ import { Label } from "@/components/ui/label";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Glyph } from "@/components/ui/glyph";
 import { Pill } from "@/components/ui/pill";
+import { alertDialog, confirmDialog } from "@/lib/dialog";
 import { TiptapEditor, type TiptapDoc } from "@/components/TiptapEditor";
 import { AiContinuePanel } from "@/components/AiContinuePanel";
 import { AiActionsPanel } from "@/components/AiActionsPanel";
@@ -205,15 +206,14 @@ export default function StoryPage() {
     setOverId(null);
   };
 
-  const onDelete = (chapter: Chapter) => {
-    if (
-      !window.confirm(
-        `Supprimer le chapitre « ${chapter.title ?? "(sans titre)"} » ? (irréversible)`,
-      )
-    ) {
-      return;
-    }
-    deleteMutation.mutate(chapter.id);
+  const onDelete = async (chapter: Chapter) => {
+    const ok = await confirmDialog({
+      title: `Supprimer ce chapitre ?`,
+      body: `« ${chapter.title ?? "(sans titre)"} » sera retiré de l'histoire. Action irréversible.`,
+      confirmLabel: "Supprimer",
+      destructive: true,
+    });
+    if (ok) deleteMutation.mutate(chapter.id);
   };
 
   if (!universeId || !storyId) return null;
@@ -326,11 +326,14 @@ export default function StoryPage() {
                   try {
                     const md = await storyExportMarkdown(storyId);
                     await navigator.clipboard.writeText(md);
-                    window.alert(
-                      `Markdown copié (${md.length} caractères).`,
+                    void alertDialog(
+                      `${md.length} caractères copiés dans le presse-papier.`,
+                      { title: "Markdown exporté" },
                     );
                   } catch (err) {
-                    window.alert(`Échec de l'export : ${String(err)}`);
+                    void alertDialog(String(err), {
+                      title: "Échec de l'export",
+                    });
                   }
                 }}
                 className="inline-flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[0.08em] text-ink-faint transition hover:text-bordeaux"
