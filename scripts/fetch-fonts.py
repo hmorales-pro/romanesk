@@ -34,7 +34,12 @@ import urllib.request
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-OUT_DIR = REPO_ROOT / "apps" / "desktop" / "public" / "fonts"
+# Les .woff2 vont dans public/ (servis tels quels par Vite à la racine /fonts/).
+# Le fonts.css va dans src/ pour que `@import "./fonts.css"` depuis index.css
+# soit résolu côté build (Vite/Tailwind 4 ne suit pas les imports CSS via la
+# racine publique).
+WOFF_DIR = REPO_ROOT / "apps" / "desktop" / "public" / "fonts"
+CSS_OUT = REPO_ROOT / "apps" / "desktop" / "src" / "fonts.css"
 
 GOOGLE_CSS_URL = (
     "https://fonts.googleapis.com/css2?"
@@ -82,8 +87,10 @@ def filename_for(family: str, weight: str, style: str, subset: str) -> str:
 
 
 def main() -> int:
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    print(f"→ {OUT_DIR}")
+    WOFF_DIR.mkdir(parents=True, exist_ok=True)
+    CSS_OUT.parent.mkdir(parents=True, exist_ok=True)
+    print(f"→ woff2: {WOFF_DIR}")
+    print(f"→ css:   {CSS_OUT}")
     print(f"→ {GOOGLE_CSS_URL[:80]}…")
 
     css = fetch_google_css()
@@ -106,7 +113,7 @@ def main() -> int:
         style = m_s.group(1) if m_s else "normal"
 
         fname = filename_for(family, weight, style, subset)
-        local_path = OUT_DIR / fname
+        local_path = WOFF_DIR / fname
         if not local_path.exists():
             print(f"  DL {fname}")
             urllib.request.urlretrieve(url, local_path)
@@ -114,7 +121,7 @@ def main() -> int:
 
     # Déduplique les .woff2 identiques (Google sert le même fichier pour
     # plusieurs poids de polices variables / quasi-identiques).
-    files = sorted(p for p in OUT_DIR.iterdir() if p.suffix == ".woff2")
+    files = sorted(p for p in WOFF_DIR.iterdir() if p.suffix == ".woff2")
     hash_to_canonical: dict[str, str] = {}
     fname_to_canonical: dict[str, str] = {}
     for path in files:
@@ -148,9 +155,9 @@ def main() -> int:
         " * Régénérer via : python3 scripts/fetch-fonts.py\n"
         " */\n\n"
     )
-    (OUT_DIR / "fonts.css").write_text(header + css_out + "\n", encoding="utf-8")
+    CSS_OUT.write_text(header + css_out + "\n", encoding="utf-8")
 
-    remaining = sum(p.stat().st_size for p in OUT_DIR.iterdir() if p.suffix == ".woff2")
+    remaining = sum(p.stat().st_size for p in WOFF_DIR.iterdir() if p.suffix == ".woff2")
     print(f"=== {len(rewritten)} @font-face blocs · {removed} doublons supprimés ===")
     print(f"=== Total woff2 : {remaining // 1024} KB ===")
     return 0
