@@ -706,6 +706,43 @@ export function aiListModels(baseUrl: string): Promise<AiModel[]> {
   });
 }
 
+/**
+ * Lance le téléchargement d'un modèle depuis le registry Ollama.
+ * Le progrès est diffusé via l'event Tauri "model-pull-progress" — le
+ * caller doit s'y abonner avec listen() pour afficher une barre de
+ * progression. La promise résout quand le pull est terminé (success ou
+ * erreur). Modèles courants : gemma3:4b, qwen2.5:3b, nomic-embed-text:latest,
+ * llava:7b.
+ */
+export function aiPullModel(
+  baseUrl: string,
+  model: string,
+): Promise<void> {
+  return invoke<void>("ai_pull_model", {
+    payload: { baseUrl, model },
+  });
+}
+
+/**
+ * Supprime un modèle local du serveur Ollama.
+ */
+export function aiDeleteModel(
+  baseUrl: string,
+  model: string,
+): Promise<void> {
+  return invoke<void>("ai_delete_model", {
+    payload: { baseUrl, model },
+  });
+}
+
+export interface ModelPullProgress {
+  model: string;
+  status: string;
+  completed: number | null;
+  total: number | null;
+  done: boolean;
+}
+
 export interface AiCompleteArgs {
   user: string;
   system?: string;

@@ -23,6 +23,7 @@ import { ArrowLeft, Settings as SettingsIcon } from "lucide-react";
 import { Sigillum } from "@/components/ui/sigillum";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { AIStatusBadge } from "@/components/AIStatusBadge";
+import { OnboardingGate } from "@/components/OnboardingGate";
 import {
   PageMetaProvider,
   usePageMetaState,
@@ -44,6 +45,10 @@ function LayoutShell() {
 
   return (
     <div className="flex min-h-screen flex-col bg-paper text-ink">
+      {/* Modale d'onboarding au premier lancement (P9.3) — détecte si
+       * Ollama est joignable et propose les bonnes étapes le cas échéant. */}
+      <OnboardingGate />
+
       {/*
         Wrapper sticky du header global : titlebar mono + nav restent
         visibles quand le contenu scrolle (P8.3-G). z-50 pour passer

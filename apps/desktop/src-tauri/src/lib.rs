@@ -208,6 +208,8 @@ pub fn run() {
             commands::snapshot::snapshot_delete,
             commands::ai::ai_ping,
             commands::ai::ai_list_models,
+            commands::ai::ai_pull_model,
+            commands::ai::ai_delete_model,
             commands::ai::ai_complete,
             commands::ai::ai_generate_entity_draft,
             commands::ai::ai_describe_image,

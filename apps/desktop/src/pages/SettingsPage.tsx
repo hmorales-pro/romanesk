@@ -12,6 +12,7 @@ import {
   type AppSettings,
 } from "@/lib/api";
 import { alertDialog } from "@/lib/dialog";
+import { ModelPullPanel } from "@/components/ModelPullPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -218,6 +219,10 @@ export default function SettingsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* P9.2 — téléchargeur de modèles intégré, accessible directement
+       * sans passer par le terminal. */}
+      {settingsQuery.data && <ModelPullPanel baseUrl={ollamaBaseUrl} />}
     </div>
   );
 }
