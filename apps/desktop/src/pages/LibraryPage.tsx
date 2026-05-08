@@ -9,7 +9,6 @@ import {
   universeExportMarkdown,
   universeList,
 } from "@/lib/api";
-import { AIStatusBadge } from "@/components/AIStatusBadge";
 import { alertDialog, confirmDialog } from "@/lib/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,7 +81,6 @@ export default function LibraryPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <AIStatusBadge />
           <Link to="/import">
             <Button variant="outline" size="sm">
               <FileUp className="size-4" aria-hidden /> Importer un écrit

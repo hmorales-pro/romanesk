@@ -22,6 +22,7 @@ import { ArrowLeft, Settings as SettingsIcon } from "lucide-react";
 
 import { Sigillum } from "@/components/ui/sigillum";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { AIStatusBadge } from "@/components/AIStatusBadge";
 import {
   PageMetaProvider,
   usePageMetaState,
@@ -118,36 +119,29 @@ function LayoutShell() {
         <Outlet />
       </main>
 
-      {/* Footer global — légende des kinds + assertion local-first.
-       * Présent sur toutes les pages, scellé par un filet 1px.
-       * Charte § 05 — Filet de réassurance. */}
-      <footer className="mx-auto w-full max-w-[1440px] px-6 pb-4">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-rule pt-3 font-mono text-[11px] tracking-[0.04em] text-ink-faint">
-          <span className="inline-flex items-center gap-2">
+      {/* Footer barre d'état (P8.3-I, option 3 — utilité plutôt que
+       * décoration). Sticky bas pour rester visible au scroll. Affiche
+       * l'état IA, la version, un raccourci Settings, et un rappel
+       * discret du local-first. */}
+      <footer className="sticky bottom-0 z-40 border-t border-rule bg-paper">
+        <div className="mx-auto flex w-full max-w-[1440px] items-center gap-4 px-6 py-2 font-mono text-[11px] tracking-[0.04em] text-ink-faint">
+          <AIStatusBadge />
+          <span className="text-ink-faint/40">·</span>
+          <Link
+            to="/settings"
+            className="inline-flex items-center gap-1.5 transition hover:text-bordeaux"
+            title="Paramètres IA + base"
+          >
+            <SettingsIcon className="size-3" aria-hidden />
+            Paramètres
+          </Link>
+          <span className="ml-auto inline-flex items-center gap-2 text-ink-faint">
             <i
               aria-hidden
-              className="inline-block size-2 rounded-full bg-bordeaux"
+              className="inline-block size-1.5 rounded-full bg-bordeaux"
             />
-            Personnages
+            local-first · rien ne sort
           </span>
-          <span className="inline-flex items-center gap-2">
-            <i
-              aria-hidden
-              className="inline-block size-2 rounded-full bg-ivy"
-            />
-            Lieux
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <i
-              aria-hidden
-              className="inline-block size-2 rounded-full bg-ocre"
-            />
-            Factions
-          </span>
-          <span className="text-ink-soft">
-            — Objets · Concepts · Entités réelles
-          </span>
-          <span className="ml-auto">tout est local · rien ne sort</span>
         </div>
       </footer>
     </div>

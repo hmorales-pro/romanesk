@@ -3240,6 +3240,7 @@ version = "0.6.0"
 dependencies = [
  "base64 0.22.1",
  "chrono",
+ "reqwest 0.12.28",
  "romanesk-core",
  "serde",
  "serde_json",

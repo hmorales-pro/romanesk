@@ -3,7 +3,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { ArrowLeft, BrainCog, Save } from "lucide-react";
 
-import { aiPing, settingsGet, settingsSave, type AppSettings } from "@/lib/api";
+import {
+  aiListModels,
+  aiPing,
+  settingsGet,
+  settingsSave,
+  type AiModel,
+  type AppSettings,
+} from "@/lib/api";
 import { alertDialog } from "@/lib/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -130,86 +137,55 @@ export default function SettingsPage() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="set-chat">Modèle chat (par défaut)</Label>
-                  <Input
-                    id="set-chat"
-                    value={chatModel}
-                    onChange={(e) => setChatModel(e.target.value)}
-                    placeholder="gemma4:e2b"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Modèle utilisé par défaut pour toutes les actions IA.
-                    Suggestions : gemma4:e2b, llama3.2:latest, mistral:latest.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="set-embed">Modèle d'embedding</Label>
-                  <Input
-                    id="set-embed"
-                    value={embedModel}
-                    onChange={(e) => setEmbedModel(e.target.value)}
-                    placeholder="nomic-embed-text:latest"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Pour l'indexation RAG. Doit être un modèle d'embedding
-                    (768-1024 dim). Suggestions : nomic-embed-text:latest,
-                    qwen3-embedding:4b ou :8b, bge-m3:latest.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2 border-t pt-4">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="set-creative">
-                    Modèle créatif (optionnel)
-                  </Label>
-                  <Input
-                    id="set-creative"
-                    value={creativeModel}
-                    onChange={(e) => setCreativeModel(e.target.value)}
-                    placeholder="(vide → modèle par défaut)"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Utilisé pour les actions divergentes : continuation,
-                    brainstorm, atelier description, drafts. Idéalement un
-                    modèle plus gros / plus créatif (mistral, llama3.3:70b…).
-                  </p>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="set-literal">
-                    Modèle littéral (optionnel)
-                  </Label>
-                  <Input
-                    id="set-literal"
-                    value={literalModel}
-                    onChange={(e) => setLiteralModel(e.target.value)}
-                    placeholder="(vide → modèle par défaut)"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Utilisé pour les actions strictes : réécriture, résumé,
-                    cohérence. Idéalement un modèle qui suit bien les
-                    instructions JSON (gemma3:12b, qwen2.5:14b…).
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1.5 border-t pt-4">
-                <Label htmlFor="set-vision">
-                  Modèle vision (optionnel — atelier description en mode image)
-                </Label>
-                <Input
-                  id="set-vision"
-                  value={visionModel}
-                  onChange={(e) => setVisionModel(e.target.value)}
-                  placeholder="(vide → fonctionnalité désactivée)"
+                <ModelSelect
+                  id="set-chat"
+                  label="Modèle chat (par défaut)"
+                  value={chatModel}
+                  onChange={setChatModel}
+                  baseUrl={ollamaBaseUrl}
+                  hint="Modèle utilisé par défaut pour toutes les actions IA. Suggestions : gemma4:e2b, llama3.2:latest, mistral:latest."
                 />
-                <p className="text-xs text-muted-foreground">
-                  Active l'atelier description en mode image sur les fiches
-                  Personnage / Lieu / Objet. Doit être un modèle Ollama
-                  vision-capable. Suggestions : llava:latest,
-                  qwen2.5vl:7b, gemma3:4b (avec vision).
-                </p>
+                <ModelSelect
+                  id="set-embed"
+                  label="Modèle d'embedding"
+                  value={embedModel}
+                  onChange={setEmbedModel}
+                  baseUrl={ollamaBaseUrl}
+                  hint="Pour l'indexation RAG. Doit être un modèle d'embedding (768-1024 dim). Suggestions : nomic-embed-text:latest, qwen3-embedding:4b ou :8b, bge-m3:latest."
+                />
+              </div>
+
+              <div className="grid gap-4 border-t border-rule pt-4 sm:grid-cols-2">
+                <ModelSelect
+                  id="set-creative"
+                  label="Modèle créatif (optionnel)"
+                  value={creativeModel}
+                  onChange={setCreativeModel}
+                  baseUrl={ollamaBaseUrl}
+                  optional
+                  hint="Utilisé pour les actions divergentes : continuation, brainstorm, atelier description, drafts. Idéalement un modèle plus gros / plus créatif (mistral, llama3.3:70b…)."
+                />
+                <ModelSelect
+                  id="set-literal"
+                  label="Modèle littéral (optionnel)"
+                  value={literalModel}
+                  onChange={setLiteralModel}
+                  baseUrl={ollamaBaseUrl}
+                  optional
+                  hint="Utilisé pour les actions strictes : réécriture, résumé, cohérence. Idéalement un modèle qui suit bien les instructions JSON (gemma3:12b, qwen2.5:14b…)."
+                />
+              </div>
+
+              <div className="border-t border-rule pt-4">
+                <ModelSelect
+                  id="set-vision"
+                  label="Modèle vision (optionnel — atelier description en mode image)"
+                  value={visionModel}
+                  onChange={setVisionModel}
+                  baseUrl={ollamaBaseUrl}
+                  optional
+                  hint="Active l'atelier description en mode image sur les fiches Personnage / Lieu / Objet. Doit être un modèle Ollama vision-capable. Suggestions : llava:latest, qwen2.5vl:7b, gemma3:4b (avec vision)."
+                />
               </div>
 
               <div className="flex gap-2">
@@ -244,4 +220,119 @@ export default function SettingsPage() {
       </Card>
     </div>
   );
+}
+
+// ---------------------------------------------------------------------------
+// ModelSelect — dropdown des modèles Ollama installés
+// ---------------------------------------------------------------------------
+
+interface ModelSelectProps {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (next: string) => void;
+  /** URL du serveur Ollama à interroger pour la liste. */
+  baseUrl: string;
+  /** Si true, expose une option vide "(par défaut)". */
+  optional?: boolean;
+  /** Petit texte d'aide en dessous. */
+  hint?: string;
+}
+
+function ModelSelect({
+  id,
+  label,
+  value,
+  onChange,
+  baseUrl,
+  optional = false,
+  hint,
+}: ModelSelectProps) {
+  const [models, setModels] = useState<AiModel[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Charge la liste à l'arrivée et quand l'URL Ollama change.
+  useEffect(() => {
+    if (!baseUrl.trim()) return;
+    setLoading(true);
+    setError(null);
+    aiListModels(baseUrl)
+      .then((list) => {
+        setModels(list);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(String(err));
+        setModels(null);
+        setLoading(false);
+      });
+  }, [baseUrl]);
+
+  // Si la valeur courante n'est pas dans la liste retournée par Ollama, on
+  // l'ajoute en option custom pour éviter de la perdre silencieusement.
+  const optionsList = (() => {
+    if (!models) return [];
+    const names = models.map((m) => m.name);
+    if (value && !names.includes(value)) {
+      return [{ name: value, sizeBytes: 0, modifiedAt: null }, ...models];
+    }
+    return models;
+  })();
+
+  // Fallback texte si Ollama hors ligne.
+  if (error) {
+    return (
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={id}>{label}</Label>
+        <Input
+          id={id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={optional ? "(vide → modèle par défaut)" : ""}
+        />
+        <p className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-bordeaux">
+          Ollama hors ligne — saisie libre
+        </p>
+        {hint && (
+          <p className="text-xs italic text-ink-faint">{hint}</p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <select
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={loading}
+        className="h-9 rounded-[3px] border border-rule bg-paper px-3 font-body text-[14px] text-ink transition-colors focus-visible:border-bordeaux/40 focus-visible:outline-none disabled:opacity-50"
+      >
+        {loading && <option value={value}>Chargement…</option>}
+        {!loading && optional && (
+          <option value="">— modèle par défaut —</option>
+        )}
+        {!loading &&
+          optionsList.map((m) => (
+            <option key={m.name} value={m.name}>
+              {m.name}
+              {m.sizeBytes > 0 ? ` · ${formatSize(m.sizeBytes)}` : ""}
+            </option>
+          ))}
+      </select>
+      {hint && (
+        <p className="text-xs italic leading-snug text-ink-faint">{hint}</p>
+      )}
+    </div>
+  );
+}
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / 1024 / 1024).toFixed(0)} MB`;
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
 }

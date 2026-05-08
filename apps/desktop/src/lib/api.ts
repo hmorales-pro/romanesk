@@ -688,6 +688,24 @@ export function aiPing(): Promise<AiStatus> {
   return invoke<AiStatus>("ai_ping");
 }
 
+export interface AiModel {
+  name: string;
+  sizeBytes: number;
+  modifiedAt: string | null;
+}
+
+/**
+ * Liste les modèles installés sur le serveur Ollama configuré.
+ * Permet aux Settings d'afficher des dropdowns au lieu de champs texte
+ * libres. Échoue si Ollama est hors ligne — le caller doit gérer le
+ * fallback (champ texte libre par exemple).
+ */
+export function aiListModels(baseUrl: string): Promise<AiModel[]> {
+  return invoke<AiModel[]>("ai_list_models", {
+    payload: { baseUrl },
+  });
+}
+
 export interface AiCompleteArgs {
   user: string;
   system?: string;
