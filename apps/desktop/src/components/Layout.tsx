@@ -1,10 +1,14 @@
 /**
  * Layout global — titlebar éditoriale (Phase 8.2).
  *
- * Reprend l'idiome de la charte § 05 — Démonstration :
+ * Reprend l'idiome de la charte § 05 — Démonstration. Sur macOS, on
+ * utilise titleBarStyle: "Overlay" + hiddenTitle (cf. tauri.conf.json) :
+ * les traffic-light buttons natifs (rouge/jaune/vert) apparaissent en
+ * superposition sur notre titlebar custom, et on garde le drag natif via
+ * data-tauri-drag-region.
  *
  *  ┌────────────────────────────────────────────────────────────────────┐
- *  │  · · ·   Cendrelune.romanesk · Chapitre 7        14 327 mots · ok  │
+ *  │ ●●●     Cendrelune.romanesk · Chapitre 7    14 327 mots · sauvegardé│
  *  ├────────────────────────────────────────────────────────────────────┤
  *  │ ←  ⊕ Romanesk   v0.6.0 · pre-alpha                       Settings  │
  *  └────────────────────────────────────────────────────────────────────┘
@@ -39,17 +43,28 @@ function LayoutShell() {
 
   return (
     <div className="flex min-h-screen flex-col bg-paper text-ink">
-      {/* Titlebar mono — 3 points + breadcrumb + meta */}
-      <div className="flex items-center justify-between gap-4 border-b border-rule bg-paper-deep px-4 py-2.5 font-mono text-[11px] tracking-[0.04em] text-ink-faint">
-        <div className="flex shrink-0 items-center gap-1.5" aria-hidden>
-          <span className="size-2.5 rounded-full bg-ink-faint/30" />
-          <span className="size-2.5 rounded-full bg-ink-faint/30" />
-          <span className="size-2.5 rounded-full bg-ink-faint/30" />
-        </div>
-        <span className="min-w-0 flex-1 truncate text-center">
+      {/*
+        Titlebar mono — la zone des traffic-light buttons macOS est
+        réservée à gauche (pl-[88px]) parce qu'avec titleBarStyle:Overlay,
+        les boutons natifs sont positionnés à x=16 (cf. tauri.conf.json)
+        et prennent ~78px (3 boutons × 14px + 8px gap × 2 + marge droite).
+
+        data-tauri-drag-region rend la titlebar entière draggable comme
+        une vraie barre titre macOS — on peut l'attraper pour déplacer la
+        fenêtre. Les éléments interactifs (button, input, a) à l'intérieur
+        annulent automatiquement le drag.
+      */}
+      <div
+        data-tauri-drag-region
+        className="flex h-[38px] shrink-0 items-center justify-between gap-4 border-b border-rule bg-paper-deep pl-[88px] pr-4 font-mono text-[11px] tracking-[0.04em] text-ink-faint select-none"
+      >
+        <span
+          data-tauri-drag-region
+          className="min-w-0 flex-1 truncate text-center"
+        >
           {breadcrumb ?? "Romanesk · atelier d'écriture"}
         </span>
-        <span className="shrink-0">
+        <span data-tauri-drag-region className="shrink-0">
           {meta ?? "local-first · aucun cloud"}
         </span>
       </div>
