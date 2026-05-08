@@ -44,67 +44,75 @@ function LayoutShell() {
   return (
     <div className="flex min-h-screen flex-col bg-paper text-ink">
       {/*
-        Titlebar mono — la zone des traffic-light buttons macOS est
-        réservée à gauche (pl-[88px]) parce qu'avec titleBarStyle:Overlay,
-        les boutons natifs sont positionnés à x=16 (cf. tauri.conf.json)
-        et prennent ~78px (3 boutons × 14px + 8px gap × 2 + marge droite).
-
-        data-tauri-drag-region rend la titlebar entière draggable comme
-        une vraie barre titre macOS — on peut l'attraper pour déplacer la
-        fenêtre. Les éléments interactifs (button, input, a) à l'intérieur
-        annulent automatiquement le drag.
+        Wrapper sticky du header global : titlebar mono + nav restent
+        visibles quand le contenu scrolle (P8.3-G). z-50 pour passer
+        au-dessus des panels et de l'éditeur. La couleur de fond doit
+        être opaque (sinon le contenu transparait à travers au scroll).
       */}
-      <div
-        data-tauri-drag-region
-        className="flex h-[38px] shrink-0 items-center justify-between gap-4 border-b border-rule bg-paper-deep pl-[88px] pr-4 font-mono text-[11px] tracking-[0.04em] text-ink-faint select-none"
-      >
-        <span
-          data-tauri-drag-region
-          className="min-w-0 flex-1 truncate text-center"
-        >
-          {breadcrumb ?? "Romanesk · atelier d'écriture"}
-        </span>
-        <span data-tauri-drag-region className="shrink-0">
-          {meta ?? "local-first · aucun cloud"}
-        </span>
-      </div>
+      <div className="sticky top-0 z-50 bg-paper">
+        {/*
+          Titlebar mono — la zone des traffic-light buttons macOS est
+          réservée à gauche (pl-[88px]) parce qu'avec titleBarStyle:Overlay,
+          les boutons natifs sont positionnés à x=16 (cf. tauri.conf.json)
+          et prennent ~78px (3 boutons × 14px + 8px gap × 2 + marge droite).
 
-      {/* Barre nav — brand + retour + version + settings */}
-      <header className="border-b border-rule bg-paper">
-        <div className="mx-auto flex max-w-[1440px] items-center gap-3 px-6 py-3">
-          {showBack && (
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="inline-flex size-8 items-center justify-center rounded-[3px] text-ink-faint transition hover:bg-paper-shade hover:text-ink"
-              title="Retour à la page précédente"
-              aria-label="Retour"
-            >
-              <ArrowLeft className="size-4" aria-hidden />
-            </button>
-          )}
-          <Link
-            to="/"
-            className="flex items-center gap-2 text-ink transition hover:text-bordeaux"
+          data-tauri-drag-region rend la titlebar entière draggable comme
+          une vraie barre titre macOS — on peut l'attraper pour déplacer la
+          fenêtre. Les éléments interactifs (button, input, a) à l'intérieur
+          annulent automatiquement le drag.
+        */}
+        <div
+          data-tauri-drag-region
+          className="flex h-[38px] items-center justify-between gap-4 border-b border-rule bg-paper-deep pl-[88px] pr-4 font-mono text-[11px] tracking-[0.04em] text-ink-faint select-none"
+        >
+          <span
+            data-tauri-drag-region
+            className="min-w-0 flex-1 truncate text-center"
           >
-            <Sigillum size={20} className="text-bordeaux" />
-            <span className="font-display text-lg font-medium tracking-[-0.005em]">
-              Romanesk
-            </span>
-          </Link>
-          <Eyebrow bullet={false} className="ml-2 text-ink-faint">
-            v0.6.0 · pre-alpha
-          </Eyebrow>
-          <Link
-            to="/settings"
-            className="ml-auto inline-flex items-center gap-1 text-ink-faint transition hover:text-ink"
-            title="Paramètres"
-          >
-            <SettingsIcon className="size-4" aria-hidden />
-            <span className="sr-only">Paramètres</span>
-          </Link>
+            {breadcrumb ?? "Romanesk · atelier d'écriture"}
+          </span>
+          <span data-tauri-drag-region className="shrink-0">
+            {meta ?? "local-first · aucun cloud"}
+          </span>
         </div>
-      </header>
+
+        {/* Barre nav — brand + retour + version + settings */}
+        <header className="border-b border-rule bg-paper">
+          <div className="mx-auto flex max-w-[1440px] items-center gap-3 px-6 py-3">
+            {showBack && (
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="inline-flex size-8 items-center justify-center rounded-[3px] text-ink-faint transition hover:bg-paper-shade hover:text-ink"
+                title="Retour à la page précédente"
+                aria-label="Retour"
+              >
+                <ArrowLeft className="size-4" aria-hidden />
+              </button>
+            )}
+            <Link
+              to="/"
+              className="flex items-center gap-2 text-ink transition hover:text-bordeaux"
+            >
+              <Sigillum size={20} className="text-bordeaux" />
+              <span className="font-display text-lg font-medium tracking-[-0.005em]">
+                Romanesk
+              </span>
+            </Link>
+            <Eyebrow bullet={false} className="ml-2 text-ink-faint">
+              v0.6.0 · pre-alpha
+            </Eyebrow>
+            <Link
+              to="/settings"
+              className="ml-auto inline-flex items-center gap-1 text-ink-faint transition hover:text-ink"
+              title="Paramètres"
+            >
+              <SettingsIcon className="size-4" aria-hidden />
+              <span className="sr-only">Paramètres</span>
+            </Link>
+          </div>
+        </header>
+      </div>
 
       <main className="flex-1">
         <Outlet />
