@@ -63,3 +63,4 @@ logs/
 coverage/
 *.lcov
 .nyc_output/
+scripts/__pycache__/

@@ -1,31 +1,23 @@
 /**
- * Surface d'écriture multi-chapitres pour une `Story` (Phase 4.3).
+ * Surface d'écriture multi-chapitres pour une `Story` (P8.2 — refonte
+ * éditoriale de la layout, charte § 05 — Démonstration).
  *
- * Layout 2 colonnes :
- * - Sidebar gauche : liste des chapitres (sort_order croissant), bouton
- *   « Nouveau chapitre », boutons ▲/▼ pour réordonner localement, suppression.
- * - Centre : titre du chapitre actif éditable + éditeur Tiptap pour le corps,
- *   bouton « Enregistrer ». Le `word_count` est calculé à la volée côté front.
+ * Layout :
+ *   ┌── 240 ──┬─────────── 1fr ─────────────┐
+ *   │ Sidebar │     Éditeur  │   Sparring    │
+ *   │ chap.   │   (Tiptap)   │   (3 panels)  │
+ *   └─────────┴──────────────┴───────────────┘
  *
- * Le save reste manuel (pas d'auto-save) en P4.3 pour éviter les races avec
- * la mutation react-query — l'auto-save (debounce + dirty tracking) viendra
- * en P4.x si Hugo le veut.
+ * Le state `body` du chapitre actif vit dans `ChapterWorkspace` qui
+ * englobe l'éditeur central et les panneaux IA — comme ça l'éditeur et
+ * les panels partagent le même doc Tiptap (continuation IA = append au
+ * doc, réécriture = replace).
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
-import {
-  ArrowDown,
-  ArrowLeft,
-  ArrowUp,
-  BookOpen,
-  Download,
-  GripVertical,
-  Plus,
-  Save,
-  Trash2,
-} from "lucide-react";
+import { useParams } from "react-router-dom";
+import { ArrowDown, ArrowUp, Download, Plus, Save, Trash2 } from "lucide-react";
 
 import {
   chapterCreate,
@@ -43,15 +35,18 @@ import {
   type ChapterStatus,
   chapterStatusLabel,
   countWordsInTiptap,
-  storyTypeLabel,
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Eyebrow } from "@/components/ui/eyebrow";
+import { Glyph } from "@/components/ui/glyph";
+import { Pill } from "@/components/ui/pill";
 import { TiptapEditor, type TiptapDoc } from "@/components/TiptapEditor";
 import { AiContinuePanel } from "@/components/AiContinuePanel";
 import { AiActionsPanel } from "@/components/AiActionsPanel";
 import { AiConsistencyPanel } from "@/components/AiConsistencyPanel";
+import { usePageMeta } from "@/components/PageMeta";
 import {
   appendParagraphsToDoc,
   paragraphsToDoc,
@@ -90,7 +85,6 @@ export default function StoryPage() {
     mutationFn: chapterCreate,
     onSuccess: (created) => {
       invalidateChapters();
-      // Active automatiquement le nouveau chapitre.
       setActiveId(created.id);
     },
   });
@@ -113,8 +107,6 @@ export default function StoryPage() {
   );
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  // Sélection auto : premier chapitre quand la liste arrive et qu'aucun
-  // n'est actif. Préserve la sélection si elle reste valide.
   useEffect(() => {
     if (chapters.length === 0) {
       setActiveId(null);
@@ -129,6 +121,26 @@ export default function StoryPage() {
     () => chapters.find((c) => c.id === activeId) ?? null,
     [chapters, activeId],
   );
+
+  const activeIndex = useMemo(
+    () =>
+      activeChapter ? chapters.findIndex((c) => c.id === activeChapter.id) : -1,
+    [activeChapter, chapters],
+  );
+
+  const universeName = universeQuery.data?.name ?? "Univers";
+  const universeSlug = universeName.toLowerCase().replace(/\s+/g, "");
+  const totalWords = chapters.reduce((acc, c) => acc + c.word_count, 0);
+  const activeWords = activeChapter?.word_count ?? 0;
+  const breadcrumb = activeChapter
+    ? `${universeSlug}.romanesk · Chapitre ${activeIndex + 1}${
+        activeChapter.title ? ` — ${activeChapter.title}` : ""
+      }`
+    : `${universeSlug}.romanesk · ${storyQuery.data?.title ?? ""}`;
+  const meta = activeChapter
+    ? `${activeWords.toLocaleString("fr-FR")} mots · sauvegardé`
+    : `${totalWords.toLocaleString("fr-FR")} mots · ${chapters.length} chapitres`;
+  usePageMeta({ breadcrumb, meta });
 
   const onCreate = () => {
     if (!storyId) return;
@@ -151,15 +163,12 @@ export default function StoryPage() {
     ]);
   };
 
-  // P6.4 : drag-and-drop natif HTML5. draggedId = id en cours de drag,
-  // overId = id survolé pour highlight de la zone de drop.
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
 
   const onDragStart = (e: React.DragEvent, id: string) => {
     setDraggedId(id);
     e.dataTransfer.effectAllowed = "move";
-    // Firefox exige un payload non vide pour démarrer le drag.
     e.dataTransfer.setData("text/plain", id);
   };
 
@@ -210,183 +219,194 @@ export default function StoryPage() {
   if (!universeId || !storyId) return null;
 
   return (
-    <div className="container mx-auto px-6 py-6 flex flex-col gap-4">
-      <nav className="flex items-center gap-2 text-sm">
-        <Link
-          to={`/u/${universeId}`}
-          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-        >
-          <ArrowLeft className="size-3.5" aria-hidden /> Univers
-        </Link>
-        {universeQuery.data && (
-          <span className="text-muted-foreground">/ {universeQuery.data.name}</span>
-        )}
-      </nav>
-
-      <header className="flex items-start gap-3">
-        <div className="rounded-full bg-secondary p-3 text-secondary-foreground">
-          <BookOpen className="size-5" aria-hidden />
-        </div>
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold">
-            {storyQuery.data?.title ?? "Chargement…"}
-          </h1>
-          {storyQuery.data && (
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {storyTypeLabel(storyQuery.data.type)} ·{" "}
-              {chapters.length} chapitre{chapters.length > 1 ? "s" : ""} ·{" "}
-              {chapters.reduce((acc, c) => acc + c.word_count, 0).toLocaleString("fr-FR")}{" "}
-              mots écrits
-              {storyQuery.data.target_word_count != null &&
-                ` / ${storyQuery.data.target_word_count.toLocaleString("fr-FR")}`}
-            </p>
-          )}
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={async () => {
-            try {
-              const md = await storyExportMarkdown(storyId);
-              await navigator.clipboard.writeText(md);
-              window.alert(
-                `Markdown de l'histoire copié dans le presse-papier (${md.length} caractères).`,
-              );
-            } catch (err) {
-              window.alert(`Échec de l'export : ${String(err)}`);
-            }
-          }}
-          title="Exporter cette histoire en Markdown (presse-papier)"
-        >
-          <Download className="size-3.5" aria-hidden /> Exporter MD
-        </Button>
-      </header>
-
-      <div className="grid gap-4 md:grid-cols-[260px_1fr]">
-        {/* Sidebar chapitres */}
-        <aside className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Chapitres
-            </h2>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onCreate}
-              disabled={createMutation.isPending}
-            >
-              <Plus className="size-3.5" aria-hidden />
-            </Button>
-          </div>
-          {chaptersQuery.isPending && (
-            <p className="text-sm text-muted-foreground">Chargement…</p>
-          )}
-          {chapters.length === 0 && !chaptersQuery.isPending && (
-            <p className="text-sm text-muted-foreground">
-              Aucun chapitre. Crée le premier pour commencer.
-            </p>
-          )}
-          <ol className="flex flex-col gap-1">
-            {chapters.map((c, i) => {
-              const active = c.id === activeId;
-              const isDragging = draggedId === c.id;
-              const isDropTarget = overId === c.id && draggedId !== c.id;
-              return (
-                <li
-                  key={c.id}
-                  draggable
-                  onDragStart={(e) => onDragStart(e, c.id)}
-                  onDragOver={(e) => onDragOver(e, c.id)}
-                  onDragLeave={onDragLeaveItem}
-                  onDrop={(e) => onDrop(e, c.id)}
-                  onDragEnd={onDragEnd}
-                  className={`rounded-md border p-2 flex items-start gap-2 transition ${
-                    active ? "bg-accent border-primary" : "bg-card hover:bg-accent/40"
-                  } ${isDragging ? "opacity-40" : ""} ${
-                    isDropTarget ? "border-primary border-dashed bg-primary/5" : ""
-                  }`}
-                >
-                  <span
-                    className="text-muted-foreground/60 cursor-grab pt-0.5"
-                    title="Glisser pour réordonner"
-                    aria-hidden
-                  >
-                    <GripVertical className="size-3.5" />
-                  </span>
-                  <button
-                    type="button"
-                    className="flex-1 min-w-0 text-left"
-                    onClick={() => setActiveId(c.id)}
-                  >
-                    <div className="text-xs text-muted-foreground">
-                      Ch. {i + 1} · {chapterStatusLabel(c.status)}
-                    </div>
-                    <div className="text-sm font-medium truncate">
-                      {c.title ?? "(sans titre)"}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {c.word_count.toLocaleString("fr-FR")} mots
-                    </div>
-                  </button>
-                  <div className="flex flex-col gap-0.5">
-                    <button
-                      type="button"
-                      className="text-muted-foreground hover:text-foreground disabled:opacity-30"
-                      onClick={() => onMove(c, -1)}
-                      disabled={i === 0 || reorderMutation.isPending}
-                      title="Monter (ou glisser-déposer)"
-                      aria-label="Monter"
-                    >
-                      <ArrowUp className="size-3.5" aria-hidden />
-                    </button>
-                    <button
-                      type="button"
-                      className="text-muted-foreground hover:text-foreground disabled:opacity-30"
-                      onClick={() => onMove(c, 1)}
-                      disabled={
-                        i === chapters.length - 1 || reorderMutation.isPending
-                      }
-                      title="Descendre (ou glisser-déposer)"
-                      aria-label="Descendre"
-                    >
-                      <ArrowDown className="size-3.5" aria-hidden />
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        </aside>
-
-        {/* Éditeur */}
-        <main className="min-w-0">
-          {!activeChapter && chapters.length === 0 && (
-            <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
-              Crée un chapitre pour commencer à écrire.
+    <div className="mx-auto flex max-w-[1440px] flex-col gap-0 px-4 py-4">
+      <div className="overflow-hidden rounded-[4px] border border-rule bg-paper-deep">
+        <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)]">
+          {/* ─────────── Sidebar gauche : chapitres ─────────── */}
+          <aside className="border-b border-rule bg-[color-mix(in_oklab,var(--paper-deep)_80%,var(--paper-shade))] p-4 lg:border-b-0 lg:border-r">
+            <div className="flex items-center justify-between pb-3">
+              <Eyebrow bullet={false}>
+                {storyQuery.data?.title ?? "Histoire"} · {chapters.length}{" "}
+                chap.
+              </Eyebrow>
+              <button
+                type="button"
+                onClick={onCreate}
+                disabled={createMutation.isPending}
+                className="inline-flex size-6 items-center justify-center rounded-[2px] text-ink-faint transition hover:bg-paper hover:text-bordeaux disabled:opacity-50"
+                title="Nouveau chapitre"
+              >
+                <Plus className="size-3.5" aria-hidden />
+              </button>
             </div>
-          )}
-          {activeChapter && storyQuery.data && (
-            <ChapterEditor
-              key={activeChapter.id}
-              universeId={universeId}
-              chapter={activeChapter}
-              story={storyQuery.data}
-              onSave={(args) => updateMutation.mutateAsync(args)}
-              onDelete={() => onDelete(activeChapter)}
-              saving={updateMutation.isPending}
-              deleting={deleteMutation.isPending}
-            />
-          )}
-        </main>
+
+            {chaptersQuery.isPending && (
+              <p className="font-body text-sm italic text-ink-faint">
+                Chargement…
+              </p>
+            )}
+            {chapters.length === 0 && !chaptersQuery.isPending && (
+              <p className="font-body text-sm italic text-ink-faint">
+                Aucun chapitre. Crée le premier.
+              </p>
+            )}
+
+            <ol className="flex flex-col gap-0.5">
+              {chapters.map((c, i) => {
+                const active = c.id === activeId;
+                const isDragging = draggedId === c.id;
+                const isDropTarget = overId === c.id && draggedId !== c.id;
+                return (
+                  <li
+                    key={c.id}
+                    draggable
+                    onDragStart={(e) => onDragStart(e, c.id)}
+                    onDragOver={(e) => onDragOver(e, c.id)}
+                    onDragLeave={onDragLeaveItem}
+                    onDrop={(e) => onDrop(e, c.id)}
+                    onDragEnd={onDragEnd}
+                    className={[
+                      "group flex cursor-default items-center gap-2.5 rounded-[3px] px-2.5 py-2 text-[14px] text-ink transition",
+                      active
+                        ? "bg-paper shadow-[inset_2px_0_0_var(--bordeaux)]"
+                        : "hover:bg-[color-mix(in_oklab,var(--paper)_55%,transparent)]",
+                      isDragging ? "opacity-40" : "",
+                      isDropTarget
+                        ? "bg-[color-mix(in_oklab,var(--bordeaux)_8%,transparent)]"
+                        : "",
+                    ].join(" ")}
+                  >
+                    <Glyph kind="chapter" letter={String(i + 1)} />
+                    <button
+                      type="button"
+                      className="min-w-0 flex-1 text-left"
+                      onClick={() => setActiveId(c.id)}
+                    >
+                      <div className="truncate font-body">
+                        {c.title ?? "(sans titre)"}
+                      </div>
+                    </button>
+                    <span className="font-mono text-[10px] tracking-[0.06em] text-ink-faint">
+                      {c.word_count.toLocaleString("fr-FR")}
+                    </span>
+                    <div className="flex flex-col gap-0.5 opacity-0 transition group-hover:opacity-100">
+                      <button
+                        type="button"
+                        className="text-ink-faint hover:text-ink disabled:opacity-30"
+                        onClick={() => onMove(c, -1)}
+                        disabled={i === 0 || reorderMutation.isPending}
+                        title="Monter"
+                        aria-label="Monter"
+                      >
+                        <ArrowUp className="size-3" aria-hidden />
+                      </button>
+                      <button
+                        type="button"
+                        className="text-ink-faint hover:text-ink disabled:opacity-30"
+                        onClick={() => onMove(c, 1)}
+                        disabled={
+                          i === chapters.length - 1 ||
+                          reorderMutation.isPending
+                        }
+                        title="Descendre"
+                        aria-label="Descendre"
+                      >
+                        <ArrowDown className="size-3" aria-hidden />
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+
+            <div className="mt-4 border-t border-dotted border-rule pt-3">
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const md = await storyExportMarkdown(storyId);
+                    await navigator.clipboard.writeText(md);
+                    window.alert(
+                      `Markdown copié (${md.length} caractères).`,
+                    );
+                  } catch (err) {
+                    window.alert(`Échec de l'export : ${String(err)}`);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[0.08em] text-ink-faint transition hover:text-bordeaux"
+                title="Exporter cette histoire en Markdown"
+              >
+                <Download className="size-3" aria-hidden />
+                Exporter MD
+              </button>
+            </div>
+          </aside>
+
+          {/* ─────────── Workspace : éditeur + sparring partner ─────────── */}
+          <div className="min-w-0">
+            {!activeChapter && chapters.length === 0 && (
+              <div className="m-6 rounded-[3px] border border-dashed border-rule p-8 text-center font-body italic text-ink-faint">
+                Crée un chapitre pour commencer à écrire.
+              </div>
+            )}
+            {activeChapter && storyQuery.data && (
+              <ChapterWorkspace
+                key={activeChapter.id}
+                universeId={universeId}
+                chapter={activeChapter}
+                story={storyQuery.data}
+                chapterIndex={activeIndex}
+                onSave={(args) => updateMutation.mutateAsync(args)}
+                onDelete={() => onDelete(activeChapter)}
+                saving={updateMutation.isPending}
+                deleting={deleteMutation.isPending}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ─────────── Footer mince — légende des kinds ─────────── */}
+      <div className="mt-4 flex flex-wrap items-center gap-x-8 gap-y-2 px-2 font-mono text-[11px] tracking-[0.04em] text-ink-faint">
+        <span className="inline-flex items-center gap-2">
+          <i
+            aria-hidden
+            className="inline-block size-2 rounded-full bg-bordeaux"
+          />
+          Personnages
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <i
+            aria-hidden
+            className="inline-block size-2 rounded-full bg-ivy"
+          />
+          Lieux
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <i
+            aria-hidden
+            className="inline-block size-2 rounded-full bg-ocre"
+          />
+          Factions
+        </span>
+        <span className="text-ink-soft">
+          — Objets · Concepts · Entités réelles
+        </span>
+        <span className="ml-auto">tout est local · rien ne sort</span>
       </div>
     </div>
   );
 }
 
-interface ChapterEditorProps {
+// ─────────────────────────────────────────────────────────────────────────
+// ChapterWorkspace — colonne éditeur + sparring partner
+// ─────────────────────────────────────────────────────────────────────────
+
+interface ChapterWorkspaceProps {
   universeId: string;
   chapter: Chapter;
   story: Story;
+  chapterIndex: number;
   onSave: (args: {
     id: string;
     title?: string;
@@ -399,19 +419,19 @@ interface ChapterEditorProps {
   deleting: boolean;
 }
 
-function ChapterEditor({
+function ChapterWorkspace({
   universeId,
   chapter,
   story,
+  chapterIndex,
   onSave,
   onDelete,
   saving,
   deleting,
-}: ChapterEditorProps) {
+}: ChapterWorkspaceProps) {
   const [title, setTitle] = useState(chapter.title ?? "");
   const [body, setBody] = useState<TiptapDoc>(chapter.body_json as TiptapDoc);
   const [status, setStatus] = useState<ChapterStatus>(chapter.status);
-  // Le ref garde la dernière version DB pour calculer "dirty".
   const initialRef = useRef({
     title: chapter.title ?? "",
     bodyJson: JSON.stringify(chapter.body_json),
@@ -444,7 +464,7 @@ function ChapterEditor({
     window.setTimeout(() => setSavedFlash(false), 1500);
   };
 
-  // Ctrl/Cmd-S pour sauver — réflexe d'écriture.
+  // Cmd/Ctrl-S manuel.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
@@ -456,13 +476,9 @@ function ChapterEditor({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [dirty, saving, body, title, status, save]);
+  }, [dirty, saving, body, title, status]);
 
-  // Auto-save debounced : 3s après la dernière touche.
-  // - Reset à chaque changement de body/title/status pendant que dirty
-  // - Pas d'auto-save tant qu'une mutation est en cours (évite les races
-  //   avec Ctrl/Cmd-S manuel).
-  // - Cleanup propre au unmount + au switch de chapitre (key prop).
+  // Auto-save 3s.
   const AUTOSAVE_DELAY_MS = 3000;
   const autosaveTimerRef = useRef<number | null>(null);
   useEffect(() => {
@@ -486,12 +502,35 @@ function ChapterEditor({
         autosaveTimerRef.current = null;
       }
     };
-  }, [dirty, saving, body, title, status, save]);
+  }, [dirty, saving, body, title, status]);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex-1 min-w-[200px]">
+    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px]">
+      {/* Centre : éditeur Tiptap */}
+      <div className="bg-paper">
+        {/* Hint éditorial */}
+        <div className="border-b border-rule bg-[color-mix(in_oklab,var(--bordeaux)_5%,var(--paper))] px-7 py-2 font-mono text-[11px] tracking-[0.02em] text-ink-faint">
+          Cmd/Ctrl-S pour sauver · sauvegarde auto 3 s · les guillemets «&nbsp;»,
+          cadratins et apostrophes typographiques se posent tout seuls
+        </div>
+
+        {/* Cartouche du chapitre */}
+        <div className="px-7 pb-2 pt-7">
+          <div className="flex items-baseline gap-3">
+            <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-faint">
+              Chapitre {chapterIndex + 1}
+            </span>
+            <span className="font-body text-[12px] italic text-ink-faint">
+              ·{" "}
+              {savedFlash && !dirty
+                ? "enregistré"
+                : saving
+                ? "sauvegarde…"
+                : dirty
+                ? "modifié"
+                : "à jour"}
+            </span>
+          </div>
           <Label htmlFor="ch-title" className="sr-only">
             Titre du chapitre
           </Label>
@@ -500,16 +539,31 @@ function ChapterEditor({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Titre du chapitre"
-            className="text-lg font-semibold"
+            className="mt-1 border-0 bg-transparent px-0 font-display text-[28px] font-medium leading-[1.1] tracking-[-0.01em] text-ink shadow-none focus-visible:ring-0"
+          />
+          <div className="mt-1 font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-faint">
+            {(title.trim() || "Sans titre")} ·{" "}
+            {wordCount.toLocaleString("fr-FR")} mots
+          </div>
+        </div>
+
+        {/* Éditeur Tiptap */}
+        <div className="px-1 pb-4">
+          <TiptapEditor
+            value={body}
+            onChange={setBody}
+            placeholder="Écris ton chapitre…"
+            className="min-h-[400px]"
+            toolbar
+            frenchTypography
           />
         </div>
-        <div>
-          <Label htmlFor="ch-status" className="sr-only">
-            Statut
-          </Label>
+
+        {/* Barre du bas — statut + actions */}
+        <div className="flex flex-wrap items-center gap-3 border-t border-rule bg-paper-deep/50 px-7 py-3 font-mono text-[11px] text-ink-faint">
           <select
             id="ch-status"
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+            className="h-7 rounded-[3px] border border-rule bg-paper px-2 font-body text-[12px] text-ink"
             value={status}
             onChange={(e) => setStatus(e.target.value as ChapterStatus)}
           >
@@ -519,69 +573,66 @@ function ChapterEditor({
               </option>
             ))}
           </select>
-        </div>
-        <Button onClick={save} disabled={!dirty || saving}>
-          <Save className="size-4" aria-hidden />
-          {saving ? "Enregistrement…" : "Enregistrer"}
-        </Button>
-        {savedFlash && !dirty && (
-          <span className="text-xs text-emerald-600">✓ enregistré</span>
-        )}
-        <Button
-          variant="ghost"
-          className="text-destructive hover:text-destructive"
-          onClick={onDelete}
-          disabled={deleting}
-          title="Supprimer ce chapitre"
-        >
-          <Trash2 className="size-4" aria-hidden />
-        </Button>
-      </div>
-
-      <TiptapEditor
-        value={body}
-        onChange={setBody}
-        placeholder="Écris ton chapitre…"
-        className="min-h-[400px]"
-        toolbar
-        frenchTypography
-      />
-
-      <div className="text-xs text-muted-foreground flex items-center gap-3">
-        <span>{wordCount.toLocaleString("fr-FR")} mots</span>
-        {saving && <span className="text-blue-600">• sauvegarde…</span>}
-        {!saving && dirty && (
-          <span className="text-amber-600">
-            • modifié — sauvegarde auto dans quelques secondes
+          <Button
+            size="sm"
+            onClick={save}
+            disabled={!dirty || saving}
+            variant="outline"
+          >
+            <Save className="size-3.5" aria-hidden />
+            {saving ? "Enregistrement…" : "Enregistrer"}
+          </Button>
+          <span className="ml-auto">
+            {saving
+              ? "sauvegarde…"
+              : dirty
+              ? "auto-save dans quelques secondes"
+              : savedFlash
+              ? "✓ enregistré"
+              : "à jour"}
           </span>
-        )}
-        {!saving && !dirty && savedFlash && (
-          <span className="text-emerald-600">• ✓ enregistré</span>
-        )}
-        <span className="ml-auto">Auto-save 3s · Ctrl/Cmd-S pour sauver maintenant</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-ink-faint hover:text-bordeaux"
+            onClick={onDelete}
+            disabled={deleting}
+            title="Supprimer ce chapitre"
+          >
+            <Trash2 className="size-3.5" aria-hidden />
+          </Button>
+        </div>
       </div>
 
-      <AiContinuePanel
-        story={story}
-        chapterTitle={chapter.title}
-        body={body}
-        onAccept={(paragraphs) => setBody(appendParagraphsToDoc(body, paragraphs))}
-      />
-
-      <AiActionsPanel
-        story={story}
-        chapterTitle={chapter.title}
-        body={body}
-        onReplaceBody={(paragraphs) => setBody(paragraphsToDoc(paragraphs))}
-      />
-
-      <AiConsistencyPanel
-        universeId={universeId}
-        story={story}
-        chapterTitle={chapter.title}
-        body={body}
-      />
+      {/* Droite : sparring partner */}
+      <aside className="border-t border-rule bg-[color-mix(in_oklab,var(--paper-deep)_90%,var(--paper-shade))] p-4 lg:border-l lg:border-t-0">
+        <div className="flex items-center justify-between pb-3">
+          <Eyebrow bullet={false}>Sparring partner</Eyebrow>
+          <Pill tone="bordeaux">Modèle créatif</Pill>
+        </div>
+        <div className="flex flex-col gap-4">
+          <AiContinuePanel
+            story={story}
+            chapterTitle={chapter.title}
+            body={body}
+            onAccept={(paragraphs) =>
+              setBody(appendParagraphsToDoc(body, paragraphs))
+            }
+          />
+          <AiActionsPanel
+            story={story}
+            chapterTitle={chapter.title}
+            body={body}
+            onReplaceBody={(paragraphs) => setBody(paragraphsToDoc(paragraphs))}
+          />
+          <AiConsistencyPanel
+            universeId={universeId}
+            story={story}
+            chapterTitle={chapter.title}
+            body={body}
+          />
+        </div>
+      </aside>
     </div>
   );
 }
-

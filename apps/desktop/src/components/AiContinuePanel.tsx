@@ -88,10 +88,18 @@ export function AiContinuePanel({
   };
 
   return (
-    <div className="rounded-md border border-dashed bg-muted/30 p-3 flex flex-col gap-3">
-      <div className="flex items-center gap-2 flex-wrap">
-        <Sparkles className="size-4 text-amber-600" aria-hidden />
-        <span className="text-sm font-medium">Continuation IA</span>
+    // P8.2 — pattern ai-card "you" (filet pointillé) tant qu'il n'y a pas
+    // de suggestion. Au-dessus, role mono uppercase ; au-dessous le bouton
+    // d'action et la suggestion.
+    <div className="flex flex-col gap-3 rounded-[3px] border border-dashed border-rule bg-transparent p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-ink-faint">
+          IA · Continuer
+        </span>
+        <Sparkles
+          className="size-3.5 text-bordeaux"
+          aria-hidden
+        />
         <Button
           size="sm"
           variant="outline"
@@ -130,20 +138,20 @@ export function AiContinuePanel({
       )}
 
       {suggestion && (
-        <div className="rounded-md border bg-background/60 p-3">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">
+        <div className="rounded-[3px] border border-rule bg-paper p-3">
+          <p className="mb-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-ink-faint">
             Suggestion (non sauvegardée)
           </p>
-          <div className="text-sm text-muted-foreground italic whitespace-pre-wrap leading-relaxed">
+          <div className="whitespace-pre-wrap text-sm italic leading-relaxed text-ink-soft">
             {suggestion}
           </div>
         </div>
       )}
 
       {!suggestion && !mutation.isPending && !mutation.isError && (
-        <p className="text-xs text-muted-foreground">
-          Le modèle voit le synopsis et les ~{MAX_CONTEXT_WORDS} derniers mots du
-          chapitre courant. Il propose 1 à 3 paragraphes que tu peux accepter,
+        <p className="font-body text-[12px] italic leading-relaxed text-ink-faint">
+          Le modèle voit le synopsis et les ~{MAX_CONTEXT_WORDS} derniers mots
+          du chapitre courant. Il propose 1 à 3 paragraphes à accepter,
           rejeter, ou régénérer.
         </p>
       )}

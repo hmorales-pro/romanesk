@@ -119,15 +119,18 @@ export function AiConsistencyPanel({
     : null;
 
   return (
-    <div className="rounded-md border border-dashed bg-muted/30 p-3 flex flex-col gap-3">
-      <div className="flex items-center gap-2 flex-wrap">
-        <ShieldAlert className="size-4 text-blue-600" aria-hidden />
-        <span className="text-sm font-medium">Cohérence avec le lore</span>
+    // P8.2 — pattern ai-card "you" pour le panneau Cohérence.
+    <div className="flex flex-col gap-3 rounded-[3px] border border-dashed border-rule bg-transparent p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-ink-faint">
+          Cohérence
+        </span>
+        <ShieldAlert className="size-3.5 text-bordeaux" aria-hidden />
         {anachronismMode && anchor && (
-          <span className="inline-flex items-center gap-1 text-xs rounded-full bg-blue-100 px-2 py-0.5 text-blue-800">
+          <span className="inline-flex items-center gap-1 rounded-full border border-[color-mix(in_oklab,var(--ocre)_50%,var(--rule))] px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.08em] text-ocre">
             <Clock className="size-3" aria-hidden />
-            + anachronismes ({realityModeLabel(anchor.mode)},{" "}
-            {anchor.pivot_date})
+            anachronismes · {realityModeLabel(anchor.mode)} ·{" "}
+            {anchor.pivot_date}
           </span>
         )}
         <Button
@@ -179,22 +182,22 @@ export function AiConsistencyPanel({
       )}
 
       {result && (
-        <div className="rounded-md border bg-background/60 p-3 flex flex-col gap-3">
+        <div className="flex flex-col gap-3 rounded-[3px] border border-rule bg-paper p-3">
           <div className="flex items-center gap-2">
             {verdictKind === "ok" ? (
-              <CheckCircle2 className="size-4 text-emerald-600" aria-hidden />
+              <CheckCircle2 className="size-4 text-ivy" aria-hidden />
             ) : verdictKind === "error" ? (
-              <ShieldAlert className="size-4 text-red-600" aria-hidden />
+              <ShieldAlert className="size-4 text-bordeaux" aria-hidden />
             ) : (
-              <ShieldAlert className="size-4 text-amber-600" aria-hidden />
+              <ShieldAlert className="size-4 text-ocre" aria-hidden />
             )}
             <span
-              className={`text-xs font-medium uppercase tracking-wide ${
+              className={`font-mono text-[10px] font-medium uppercase tracking-[0.12em] ${
                 verdictKind === "ok"
-                  ? "text-emerald-700"
+                  ? "text-ivy"
                   : verdictKind === "error"
-                    ? "text-red-700"
-                    : "text-amber-700"
+                    ? "text-bordeaux"
+                    : "text-ocre"
               }`}
             >
               {verdictKind === "ok"

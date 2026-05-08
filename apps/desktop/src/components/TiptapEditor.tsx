@@ -187,8 +187,10 @@ export function TiptapEditor({
   return (
     <div
       className={cn(
-        "rounded-md border border-input bg-background",
-        "focus-within:ring-2 focus-within:ring-ring focus-within:outline-none",
+        // P8.2 — wrapper éditeur dans l'idiome papier de la charte :
+        // filet 1 px (rule), radius 3 px, fond papier ; focus → bordeaux.
+        "rounded-[3px] border border-rule bg-paper",
+        "focus-within:border-bordeaux/40 focus-within:outline-none",
         className,
       )}
     >
@@ -198,8 +200,8 @@ export function TiptapEditor({
       <EditorContent
         editor={editor}
         className={cn(
-          "min-h-[160px] text-sm tiptap-content",
-          toolbar ? "px-3 py-3" : "px-3 py-2",
+          "tiptap-content min-h-[160px] text-sm",
+          toolbar ? "px-7 py-5" : "px-3 py-2",
         )}
       />
     </div>
@@ -267,7 +269,9 @@ function TiptapToolbar({ editor, frenchTypography }: ToolbarProps) {
   };
 
   return (
-    <div className="flex items-center gap-0.5 flex-wrap border-b border-input px-2 py-1 text-muted-foreground">
+    // P8.2 — toolbar éditoriale (charte § 05 — Démonstration). Mono 11 px,
+    // séparateurs en filet vertical 1 px, hover paper, active bordeaux.
+    <div className="flex flex-wrap items-center gap-1 border-b border-rule bg-[color-mix(in_oklab,var(--paper-deep)_70%,var(--paper))] px-3 py-2 font-mono text-[11px] tracking-[0.04em] text-ink-soft">
       <ToolbarBtn
         title="Annuler (Cmd/Ctrl-Z)"
         onClick={() => editor.chain().focus().undo().run()}
@@ -392,10 +396,11 @@ function ToolbarBtn({ title, onClick, disabled, active, children }: BtnProps) {
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "inline-flex items-center justify-center rounded px-2 py-1 text-xs",
-        "hover:bg-accent hover:text-foreground",
-        "disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground",
-        active && "bg-accent text-foreground",
+        "inline-flex items-center justify-center rounded-[3px] px-2 py-1.5",
+        "transition-colors hover:bg-paper hover:text-ink",
+        "disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink-soft",
+        active &&
+          "bg-[color-mix(in_oklab,var(--bordeaux)_12%,transparent)] text-bordeaux",
       )}
     >
       {children}
@@ -404,5 +409,5 @@ function ToolbarBtn({ title, onClick, disabled, active, children }: BtnProps) {
 }
 
 function ToolbarSep() {
-  return <span className="mx-1 h-4 w-px bg-input" aria-hidden />;
+  return <span className="mx-1 h-4 w-px bg-rule" aria-hidden />;
 }

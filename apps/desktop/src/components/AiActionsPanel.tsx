@@ -126,10 +126,13 @@ export function AiActionsPanel({
   const otherDisabled = mutation.isPending || isEmpty;
 
   return (
-    <div className="rounded-md border border-dashed bg-muted/30 p-3 flex flex-col gap-3">
+    // P8.2 — pattern ai-card "you" charte § 05.
+    <div className="flex flex-col gap-3 rounded-[3px] border border-dashed border-rule bg-transparent p-3">
       <div className="flex items-center gap-2">
-        <Sparkles className="size-4 text-violet-600" aria-hidden />
-        <span className="text-sm font-medium">Actions IA sur le chapitre</span>
+        <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-ink-faint">
+          IA · Actions
+        </span>
+        <Sparkles className="size-3.5 text-bordeaux" aria-hidden />
       </div>
 
       <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
@@ -192,9 +195,9 @@ export function AiActionsPanel({
       )}
 
       {result && (
-        <div className="rounded-md border bg-background/60 p-3">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+        <div className="rounded-[3px] border border-rule bg-paper p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-ink-faint">
               {ACTION_LABELS[result.kind]}
             </p>
             <div className="flex gap-1">
