@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { Anchor, ArrowLeft, BookOpen, MapPin, Network, Plus, Search, Sparkles, User } from "lucide-react";
+import { Anchor, BookOpen, MapPin, Network, Plus, Search, Sparkles, User } from "lucide-react";
+
+import { Eyebrow } from "@/components/ui/eyebrow";
+import { usePageMeta } from "@/components/PageMeta";
 
 import {
   aiGenerateEntityDraft,
@@ -145,40 +148,55 @@ export default function UniversePage() {
     );
   }
 
-  return (
-    <div className="container mx-auto px-6 py-8 max-w-4xl flex flex-col gap-8">
-      <nav>
-        <Link
-          to="/"
-          className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-        >
-          <ArrowLeft className="size-3.5" aria-hidden /> Bibliothèque
-        </Link>
-      </nav>
+  // P8.3 — alimente la titlebar éditoriale.
+  const totalEntities =
+    (charactersQuery.data?.length ?? 0) +
+    (locationsQuery.data?.length ?? 0) +
+    (factionsQuery.data?.length ?? 0) +
+    (objectsQuery.data?.length ?? 0) +
+    (conceptsQuery.data?.length ?? 0);
+  const universeSlug =
+    universeQuery.data?.name.toLowerCase().replace(/\s+/g, "") ?? "univers";
+  usePageMeta({
+    breadcrumb: universeQuery.data
+      ? `${universeSlug}.romanesk · univers`
+      : "Romanesk · univers",
+    meta: universeQuery.data
+      ? `${totalEntities} fiches`
+      : null,
+  });
 
-      <header className="flex items-start justify-between gap-4">
-        <div>
+  return (
+    <div className="mx-auto flex max-w-[1440px] flex-col gap-6 px-4 py-4">
+      {/* Cartouche éditorial — Eyebrow méta + nom Cormorant + actions */}
+      <header className="flex flex-col gap-4 rounded-[4px] border border-rule bg-paper-deep p-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-2">
+          <Eyebrow>Univers · {totalEntities} fiches</Eyebrow>
           {universeQuery.isPending && (
-            <p className="text-sm text-muted-foreground">Chargement…</p>
+            <p className="font-body text-sm italic text-ink-faint">
+              Chargement…
+            </p>
           )}
           {universeQuery.data && (
             <>
-              <h1 className="text-2xl font-semibold">{universeQuery.data.name}</h1>
+              <h1 className="font-display text-[40px] font-medium leading-[1.05] tracking-[-0.014em] text-ink">
+                {universeQuery.data.name}
+              </h1>
               {universeQuery.data.description && (
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="max-w-[36em] font-body text-[15px] italic leading-[1.55] text-ink-soft">
                   {universeQuery.data.description}
                 </p>
               )}
             </>
           )}
           {universeQuery.data === null && (
-            <p className="text-destructive" role="alert">
+            <p className="font-body italic text-bordeaux" role="alert">
               Cet univers n'existe pas (ou a été supprimé).
             </p>
           )}
         </div>
         {universeQuery.data && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
               onClick={() =>

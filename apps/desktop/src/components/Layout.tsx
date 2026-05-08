@@ -109,6 +109,39 @@ function LayoutShell() {
       <main className="flex-1">
         <Outlet />
       </main>
+
+      {/* Footer global — légende des kinds + assertion local-first.
+       * Présent sur toutes les pages, scellé par un filet 1px.
+       * Charte § 05 — Filet de réassurance. */}
+      <footer className="mx-auto w-full max-w-[1440px] px-6 pb-4">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-rule pt-3 font-mono text-[11px] tracking-[0.04em] text-ink-faint">
+          <span className="inline-flex items-center gap-2">
+            <i
+              aria-hidden
+              className="inline-block size-2 rounded-full bg-bordeaux"
+            />
+            Personnages
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <i
+              aria-hidden
+              className="inline-block size-2 rounded-full bg-ivy"
+            />
+            Lieux
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <i
+              aria-hidden
+              className="inline-block size-2 rounded-full bg-ocre"
+            />
+            Factions
+          </span>
+          <span className="text-ink-soft">
+            — Objets · Concepts · Entités réelles
+          </span>
+          <span className="ml-auto">tout est local · rien ne sort</span>
+        </div>
+      </footer>
     </div>
   );
 }

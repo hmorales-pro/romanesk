@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { useParams } from "react-router-dom";
 
 import { entityGet, universeGet } from "@/lib/api";
 import { CharacterDetail } from "@/pages/details/CharacterDetail";
@@ -8,10 +7,17 @@ import { LocationDetail } from "@/pages/details/LocationDetail";
 import { FactionDetail } from "@/pages/details/FactionDetail";
 import { ObjectDetail } from "@/pages/details/ObjectDetail";
 import { ConceptDetail } from "@/pages/details/ConceptDetail";
+import { Glyph, glyphKindFromEntityKind } from "@/components/ui/glyph";
+import { Eyebrow } from "@/components/ui/eyebrow";
+import { usePageMeta } from "@/components/PageMeta";
 
 /**
  * Dispatcher : charge l'entity, dispatch sur `entity.type` vers le bon
- * composant de détail. Layout commun (nav breadcrumb) ici.
+ * composant de détail. Layout commun (cartouche éditorial) ici.
+ *
+ * P8.3 — la nav breadcrumb est remontée dans la titlebar du Layout via
+ * usePageMeta, et le header de fiche prend l'idiome papier (Glyph + nom
+ * Cormorant + Eyebrow type) comme la charte § 05.
  */
 export default function EntityPage() {
   const { universeId, entityId } = useParams<{
@@ -31,10 +37,24 @@ export default function EntityPage() {
     enabled: !!entityId,
   });
 
+  const universeSlug =
+    universeQuery.data?.name.toLowerCase().replace(/\s+/g, "") ?? "univers";
+  const entityName = entityQuery.data?.name ?? "";
+  const entityType = entityQuery.data?.type ?? "";
+  usePageMeta({
+    breadcrumb: entityQuery.data
+      ? `${universeSlug}.romanesk · ${entityName}`
+      : `${universeSlug}.romanesk · fiche`,
+    meta: entityType ? entityType.toLowerCase() : null,
+  });
+
   if (!universeId || !entityId) {
     return (
-      <div className="container mx-auto px-6 py-8 max-w-3xl">
-        <p className="text-destructive" role="alert">
+      <div className="mx-auto max-w-[1440px] px-4 py-4">
+        <p
+          className="rounded-[3px] border border-rule bg-paper-deep p-4 font-body italic text-bordeaux"
+          role="alert"
+        >
           Lien invalide (id d'univers ou de fiche manquant).
         </p>
       </div>
@@ -42,29 +62,45 @@ export default function EntityPage() {
   }
 
   return (
-    <div className="container mx-auto px-6 py-8 max-w-3xl flex flex-col gap-6">
-      <nav className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link to="/" className="hover:text-foreground inline-flex items-center gap-1">
-          <ArrowLeft className="size-3.5" aria-hidden /> Bibliothèque
-        </Link>
-        <span>·</span>
-        <Link to={`/u/${universeId}`} className="hover:text-foreground">
-          {universeQuery.data?.name ?? "Univers"}
-        </Link>
-      </nav>
+    <div className="mx-auto flex max-w-[1440px] flex-col gap-6 px-4 py-4">
+      {/* Cartouche éditorial — Glyph + Eyebrow + nom Cormorant */}
+      {entityQuery.data && (
+        <header className="flex flex-col gap-3 rounded-[4px] border border-rule bg-paper-deep p-6">
+          <div className="flex items-center gap-3">
+            <Glyph
+              kind={glyphKindFromEntityKind(entityQuery.data.type)}
+              className="size-6 text-[12px]"
+            />
+            <Eyebrow bullet={false}>
+              {kindLabel(entityQuery.data.type)} · {universeQuery.data?.name ?? "Univers"}
+            </Eyebrow>
+          </div>
+          <h1 className="font-display text-[40px] font-medium leading-[1.05] tracking-[-0.014em] text-ink">
+            {entityQuery.data.name}
+          </h1>
+        </header>
+      )}
 
       {entityQuery.isPending && (
-        <p className="text-sm text-muted-foreground">Chargement…</p>
+        <p className="font-body text-sm italic text-ink-faint">
+          Chargement…
+        </p>
       )}
 
       {entityQuery.isError && (
-        <p className="text-sm text-destructive" role="alert">
+        <p
+          className="rounded-[3px] border border-rule bg-paper-deep p-4 font-body italic text-bordeaux"
+          role="alert"
+        >
           Erreur : {String(entityQuery.error)}
         </p>
       )}
 
       {entityQuery.data === null && (
-        <p className="text-destructive" role="alert">
+        <p
+          className="rounded-[3px] border border-rule bg-paper-deep p-4 font-body italic text-bordeaux"
+          role="alert"
+        >
           Cette fiche n'existe pas (ou a été supprimée).
         </p>
       )}
@@ -90,11 +126,30 @@ export default function EntityPage() {
       )}
 
       {entityQuery.data?.type === "RealEntity" && (
-        <p className="text-sm text-muted-foreground italic">
+        <p className="rounded-[3px] border border-dashed border-rule bg-transparent p-4 font-body italic text-ink-faint">
           Les entités réelles (Anchor) ne sont pas encore éditables — elles
           seront gérées via la page d'ancrage en Phase 5+.
         </p>
       )}
     </div>
   );
+}
+
+function kindLabel(kind: string): string {
+  switch (kind) {
+    case "Character":
+      return "Personnage";
+    case "Location":
+      return "Lieu";
+    case "Faction":
+      return "Faction";
+    case "Object":
+      return "Objet";
+    case "Concept":
+      return "Concept";
+    case "RealEntity":
+      return "Entité réelle";
+    default:
+      return kind;
+  }
 }

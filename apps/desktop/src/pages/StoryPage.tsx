@@ -366,34 +366,8 @@ export default function StoryPage() {
         </div>
       </div>
 
-      {/* ─────────── Footer mince — légende des kinds ─────────── */}
-      <div className="mt-4 flex flex-wrap items-center gap-x-8 gap-y-2 px-2 font-mono text-[11px] tracking-[0.04em] text-ink-faint">
-        <span className="inline-flex items-center gap-2">
-          <i
-            aria-hidden
-            className="inline-block size-2 rounded-full bg-bordeaux"
-          />
-          Personnages
-        </span>
-        <span className="inline-flex items-center gap-2">
-          <i
-            aria-hidden
-            className="inline-block size-2 rounded-full bg-ivy"
-          />
-          Lieux
-        </span>
-        <span className="inline-flex items-center gap-2">
-          <i
-            aria-hidden
-            className="inline-block size-2 rounded-full bg-ocre"
-          />
-          Factions
-        </span>
-        <span className="text-ink-soft">
-          — Objets · Concepts · Entités réelles
-        </span>
-        <span className="ml-auto">tout est local · rien ne sort</span>
-      </div>
+      {/* Le footer mince légende des kinds est maintenant rendu globalement
+       * par Layout (P8.3-E) — toutes les pages en bénéficient. */}
     </div>
   );
 }

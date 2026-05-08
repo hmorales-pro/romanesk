@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { BookOpen, FileUp, Library, Plus } from "lucide-react";
+import { FileUp, Plus } from "lucide-react";
 
 import {
   universeCreate,
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Eyebrow } from "@/components/ui/eyebrow";
 import {
   Card,
   CardContent,
@@ -21,6 +22,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { usePageMeta } from "@/components/PageMeta";
 
 export default function LibraryPage() {
   const qc = useQueryClient();
@@ -59,27 +61,34 @@ export default function LibraryPage() {
     );
   };
 
+  const universeCount = universesQuery.data?.length ?? 0;
+  usePageMeta({
+    breadcrumb: "Romanesk · bibliothèque",
+    meta: universeCount > 0 ? `${universeCount} univers` : null,
+  });
+
   return (
-    <div className="container mx-auto px-6 py-8 max-w-4xl flex flex-col gap-8">
-      <header className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Library className="size-8 text-primary" aria-hidden />
-          <div>
-            <h1 className="text-2xl font-semibold">Bibliothèque</h1>
-            <p className="text-sm text-muted-foreground">
-              Tes univers fictionnels.
-            </p>
-          </div>
+    <div className="mx-auto flex max-w-[1440px] flex-col gap-6 px-4 py-4">
+      {/* Cartouche éditorial — Eyebrow + nom Cormorant + actions */}
+      <header className="flex flex-col gap-4 rounded-[4px] border border-rule bg-paper-deep p-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-2">
+          <Eyebrow>Bibliothèque · {universeCount} univers</Eyebrow>
+          <h1 className="font-display text-[40px] font-medium leading-[1.05] tracking-[-0.014em] text-ink">
+            Tes <em className="font-display italic font-normal text-bordeaux">univers fictionnels.</em>
+          </h1>
+          <p className="max-w-[36em] font-body text-[15px] italic leading-[1.55] text-ink-soft">
+            Construis, écris, garde — tout reste sur ta machine.
+          </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <AIStatusBadge />
           <Link to="/import">
-            <Button variant="outline">
+            <Button variant="outline" size="sm">
               <FileUp className="size-4" aria-hidden /> Importer un écrit
             </Button>
           </Link>
           {!showForm && (
-            <Button onClick={() => setShowForm(true)}>
+            <Button size="sm" onClick={() => setShowForm(true)}>
               <Plus className="size-4" aria-hidden />
               Nouvel univers
             </Button>
@@ -155,36 +164,37 @@ export default function LibraryPage() {
           </p>
         )}
         {universesQuery.data && universesQuery.data.length > 0 && (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {universesQuery.data.map((u) => (
-              <Card key={u.id} className="hover:border-primary/50 transition-colors">
-                <CardHeader>
-                  <CardTitle>
-                    <Link
-                      to={`/u/${u.id}`}
-                      className="hover:underline flex items-center gap-2"
-                    >
-                      <BookOpen
-                        className="size-4 text-muted-foreground"
-                        aria-hidden
-                      />
-                      {u.name}
-                    </Link>
-                  </CardTitle>
-                  {u.description && (
-                    <CardDescription>{u.description}</CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {universesQuery.data.map((u, idx) => (
+              <Card
+                key={u.id}
+                className="group flex flex-col gap-2 p-5 transition hover:border-bordeaux/40"
+              >
+                <span className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-faint">
+                  {String(idx + 1).padStart(2, "0")}
+                </span>
+                <CardTitle>
+                  <Link
+                    to={`/u/${u.id}`}
+                    className="font-display text-2xl font-medium leading-[1.05] tracking-[-0.014em] text-ink transition group-hover:text-bordeaux"
+                  >
+                    {u.name}
+                  </Link>
+                </CardTitle>
+                {u.description && (
+                  <CardDescription className="line-clamp-3">
+                    {u.description}
+                  </CardDescription>
+                )}
+                <div className="mt-auto flex items-center justify-between border-t border-dotted border-rule pt-3 font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-faint">
                   <span>
                     Créé le{" "}
                     {new Date(u.created_at).toLocaleDateString("fr-FR")}
                   </span>
                   <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-muted-foreground hover:text-foreground"
+                    <button
+                      type="button"
+                      className="hover:text-bordeaux"
                       onClick={async () => {
                         try {
                           const md = await universeExportMarkdown(u.id);
@@ -197,24 +207,22 @@ export default function LibraryPage() {
                         }
                       }}
                     >
-                      Exporter MD
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      Exporter
+                    </button>
+                    <span className="text-ink-faint/40">·</span>
+                    <button
+                      type="button"
+                      className="hover:text-bordeaux"
                       onClick={() => {
-                        // Confirm natif suffit pour Phase 0 ; à remplacer par
-                        // un Dialog shadcn en Phase 1 (UX plus propre).
                         if (window.confirm(`Supprimer "${u.name}" ?`)) {
                           deleteMutation.mutate(u.id);
                         }
                       }}
                     >
                       Supprimer
-                    </Button>
+                    </button>
                   </div>
-                </CardContent>
+                </div>
               </Card>
             ))}
           </div>

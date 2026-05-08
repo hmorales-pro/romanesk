@@ -208,13 +208,45 @@ h1 i, h2 i, h3 i {
   min-height: 160px;
   font-family: var(--serif-body);
   font-size: 17px;
-  line-height: 1.6;
+  line-height: 1.7;
   color: var(--ink);
 }
 
 .tiptap-content .ProseMirror p {
-  margin: 0.35em 0;
+  margin: 0 0 1em;
   text-indent: 0;
+  max-width: 36em;
+}
+
+/* P8.3 — répliques de dialogue. Tiptap ne marque pas les paragraphes
+ * commençant par un cadratin, donc on s'appuie sur le sélecteur
+ * de pseudo-classe :has() : un <p> dont le premier enfant text-node
+ * commence par "—" prend la couleur bordeaux-deep.
+ *
+ * Comme :has(:first-child) ne sait pas regarder le contenu textuel,
+ * on utilise une classe explicite `.dialogue` posée par le bouton
+ * « Dialogue » de la toolbar (cf. TiptapEditor.insertDialogue), et un
+ * fallback CSS qui détecte le caractère cadratin en ::first-letter
+ * (limité mais suffisant pour la majorité des cas). */
+.tiptap-content .ProseMirror p.dialogue,
+.tiptap-content .ProseMirror p[data-dialogue="true"] {
+  color: var(--bordeaux-deep);
+}
+
+/* Fond éditeur — feuille de cahier subtile. Une ligne horizontale
+ * tous les 1.7em (= line-height du body). Très peu opaque : on doit
+ * deviner la grille, pas la voir. Démarre après le titre + meta
+ * (background-position calé en haut). */
+.tiptap-content .ProseMirror {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(1.7em - 1px),
+    color-mix(in oklab, var(--rule) 35%, transparent) calc(1.7em - 1px),
+    color-mix(in oklab, var(--rule) 35%, transparent) 1.7em
+  );
+  background-position: 0 4em;
+  background-size: 100% calc(1.7em * 1);
 }
 
 .tiptap-content .ProseMirror h1,
