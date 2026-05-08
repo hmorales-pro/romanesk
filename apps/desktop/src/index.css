@@ -1,168 +1,250 @@
 @import "tailwindcss";
+@import "./fonts.css";
 
-/* P7.7.macos : font smoothing global pour WKWebView Apple Silicon.
- * Sans ces hints, le sub-pixel anti-aliasing par défaut peut donner
- * un rendu fragmenté sur les écrans Retina. */
+/*
+ * ===========================================================================
+ * Romanesk — design tokens (Phase 8.1)
+ * ===========================================================================
+ *
+ * On suit la charte graphique v0.4 : papier crème, encre profonde, accents
+ * bordeaux/ocre/lierre. Tout est défini en OKLCH pour rester perceptuellement
+ * homogène (et pour préparer un futur mode sombre).
+ *
+ * Trois familles, aucune négociable :
+ *   --serif-display  Cormorant Garamond · titres, chapitres, citations
+ *   --serif-body     Source Serif 4    · lecture, corps, fiches, éditeur
+ *   --mono           JetBrains Mono    · UI, méta, eyebrows, technique
+ *
+ * Le mapping `@theme inline` plus bas remappe les classes Tailwind shadcn
+ * existantes (bg-card, border-border, text-muted-foreground…) vers ces
+ * tokens : aucun composant n'a besoin de changer pour prendre l'apparence
+ * du charter.
+ *
+ * Mode sombre : pas activé en P8.1 (Hugo, on verra plus tard).
+ */
+
+/* P7.7.macos : font smoothing global pour WKWebView Apple Silicon. */
 html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
-/*
- * Romanesk — design tokens (Phase 0).
- *
- * On suit la convention shadcn/ui (variables CSS HSL dans :root et .dark).
- * Tailwind 4 expose ces tokens via @theme inline pour les classes utilitaires
- * comme `bg-background`, `text-foreground`, `border-border`, etc.
- *
- * Ces tokens sont *minimaux* en Phase 0. La palette définitive et la
- * typographie viendront avec la phase Design (post-Phase 0).
- */
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    /* — Familles typographiques — */
+    --serif-display: "Cormorant Garamond", "Cormorant", Cambria, "Times New Roman", serif;
+    --serif-body: "Source Serif 4", "Source Serif Pro", Cambria, Georgia, serif;
+    --mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    /* — Papier · neutres — */
+    --paper:        oklch(0.962 0.012 80);   /* fond principal */
+    --paper-deep:   oklch(0.928 0.018 78);   /* surfaces secondaires */
+    --paper-shade:  oklch(0.895 0.022 76);   /* éléments actifs */
+    --rule:         oklch(0.82  0.014 72);   /* filets, bordures */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    /* — Encre · texte — */
+    --ink:          oklch(0.185 0.018 60);   /* titres, manuscrit */
+    --ink-soft:     oklch(0.36  0.014 60);   /* lede, descriptions */
+    --ink-faint:    oklch(0.55  0.010 60);   /* méta, hints, mono UI */
 
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
+    /* — Accents · sémantiques — */
+    --bordeaux:      oklch(0.42 0.115 22);   /* protagonistes, CTA, focus */
+    --bordeaux-deep: oklch(0.32 0.105 22);   /* dialogues */
+    --ocre:          oklch(0.62 0.115 70);   /* factions, alertes douces */
+    --ivy:           oklch(0.40 0.060 145);  /* lieux, validations, succès */
 
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
+    /* — Layout — */
+    --container: 1240px;
+    --gutter: clamp(20px, 4vw, 56px);
+    --section-y: clamp(80px, 11vw, 160px);
 
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    /* — Radius (charte : 2/3/4 px max) — */
+    --radius: 0.25rem;     /* 4px : cards, inputs */
 
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    /* ---------------------------------------------------------------------
+     * Compat shadcn : ces variables alimentent @theme inline plus bas.
+     * Au lieu d'un wrapper hsl(var(--X)), on pointe directement vers les
+     * tokens OKLCH ci-dessus. Aucun composant n'a besoin de changer.
+     * ------------------------------------------------------------------- */
+    --background:           var(--paper);
+    --foreground:           var(--ink);
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --card:                 var(--paper-deep);
+    --card-foreground:      var(--ink);
 
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
+    --popover:              var(--paper);
+    --popover-foreground:   var(--ink);
 
-    --radius: 0.5rem;
-  }
+    --primary:              var(--bordeaux);
+    --primary-foreground:   var(--paper);
 
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    --secondary:            var(--paper-deep);
+    --secondary-foreground: var(--ink);
 
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
+    --muted:                var(--paper-shade);
+    --muted-foreground:     var(--ink-soft);
 
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --accent:               var(--paper-shade);
+    --accent-foreground:    var(--ink);
 
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
+    --destructive:          var(--bordeaux-deep);
+    --destructive-foreground: var(--paper);
 
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border:               var(--rule);
+    --input:                var(--rule);
+    --ring:                 var(--bordeaux);
   }
 }
 
+/*
+ * Bridge Tailwind 4 : les classes utilitaires (bg-background, text-foreground,
+ * border-border, ring, etc.) consomment ces variables. On passe en valeur
+ * directe (sans hsl()) parce que les tokens sont déjà des oklch().
+ */
 @theme inline {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
 
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
 
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
 
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
 
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
 
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
 
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
 
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
 
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Accents sémantiques exposés directement (utiles pour bg-bordeaux,
+   * text-ocre, border-ivy dans les composants signature). */
+  --color-paper: var(--paper);
+  --color-paper-deep: var(--paper-deep);
+  --color-paper-shade: var(--paper-shade);
+  --color-rule: var(--rule);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-bordeaux: var(--bordeaux);
+  --color-bordeaux-deep: var(--bordeaux-deep);
+  --color-ocre: var(--ocre);
+  --color-ivy: var(--ivy);
 
   --radius: var(--radius);
+
+  /* Familles typo exposées comme classes Tailwind : font-display, font-body,
+   * font-mono. Le sans-serif par défaut (font-sans) tape aussi sur le body
+   * serif — la charte interdit le sans, autant être cohérent. */
+  --font-display: var(--serif-display);
+  --font-body: var(--serif-body);
+  --font-mono: var(--mono);
+  --font-sans: var(--serif-body);
+  --font-serif: var(--serif-body);
 }
 
-/* Garde le repaint propre quand la fenêtre Tauri se redimensionne. */
-html,
-body,
-#root {
+/*
+ * Typo globale : body en Source Serif 4, lecture longue, ligatures activées.
+ */
+html, body, #root {
   height: 100%;
 }
 
-/*
- * Styles ProseMirror minimaux pour Tiptap.
- * Phase 0 : juste de quoi rendre les paragraphes, titres et listes lisibles.
- * Phase 1 : envisager `@tailwindcss/typography` (plugin `prose`) pour un
- * rendu polishé et accessible.
+body {
+  font-family: var(--serif-body);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.55;
+  font-feature-settings: "kern", "liga", "dlig", "calt";
+  color: var(--ink);
+  background: var(--paper);
+}
+
+/* Titres applicatifs (h1/h2/h3 hors Tiptap) en Cormorant Garamond.
+ * Le poids 500 et le letter-spacing -0.014em viennent de la charte. */
+h1, h2, h3 {
+  font-family: var(--serif-display);
+  font-weight: 500;
+  letter-spacing: -0.014em;
+  color: var(--ink);
+}
+
+/* Italique du serif display = accent expressif → bordeaux par défaut.
+ * (charte § 01 — « italique comme accent »). On peut overrider avec
+ * la classe `not-italic` ou en réécrivant la couleur. */
+h1 em, h2 em, h3 em,
+h1 i, h2 i, h3 i {
+  color: var(--bordeaux);
+  font-weight: 400;
+}
+
+/* Méta / labels / eyebrows : utiliser font-mono + uppercase + tracking
+ * 0.18em pour reprendre l'idiome charte. Pas appliqué automatiquement —
+ * les composants signature s'en chargeront en P8.3. */
+
+/* ===========================================================================
+ * ProseMirror / Tiptap — Phase 8.1
+ * ===========================================================================
+ * L'éditeur devient un velin : Source Serif 4 17/1.55, marges respirées,
+ * h1/h2/h3 en Cormorant 500 italique-bordeaux possible (mais on force le
+ * style serif partout pour la cohérence avec le manuscrit imprimé).
  */
 .tiptap-content .ProseMirror {
   outline: none;
   min-height: 160px;
-}
-
-.tiptap-content .ProseMirror p {
-  margin: 0.25em 0;
+  font-family: var(--serif-body);
+  font-size: 17px;
   line-height: 1.6;
+  color: var(--ink);
 }
 
-/* P7.0 : style spécial pour les répliques de dialogue (paragraphes
- * commençant par un tiret cadratin). On enlève l'indentation
- * naturelle et on isole la réplique avec un peu plus d'espace. */
-.tiptap-content .ProseMirror p:has(span:first-child:first-letter),
 .tiptap-content .ProseMirror p {
+  margin: 0.35em 0;
   text-indent: 0;
 }
 
+.tiptap-content .ProseMirror h1,
+.tiptap-content .ProseMirror h2,
+.tiptap-content .ProseMirror h3 {
+  font-family: var(--serif-display);
+  font-weight: 500;
+  letter-spacing: -0.014em;
+  color: var(--ink);
+}
+
 .tiptap-content .ProseMirror h1 {
-  font-size: 1.4rem;
-  font-weight: 600;
-  margin: 0.6em 0 0.3em;
+  font-size: 1.6rem;
+  margin: 0.7em 0 0.3em;
 }
 
 .tiptap-content .ProseMirror h2 {
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin: 0.5em 0 0.25em;
+  font-size: 1.3rem;
+  margin: 0.6em 0 0.25em;
 }
 
 .tiptap-content .ProseMirror h3 {
-  font-size: 1.05rem;
-  font-weight: 600;
-  margin: 0.4em 0 0.2em;
+  font-size: 1.1rem;
+  margin: 0.5em 0 0.2em;
+}
+
+.tiptap-content .ProseMirror em {
+  /* Italique = accent. Couleur tenue par défaut — pas de bordeaux dans
+   * le manuscrit lui-même (sinon le texte de l'auteur se met à crier).
+   * Bordeaux reste réservé aux titres-niveau-app. */
 }
 
 .tiptap-content .ProseMirror ul,
@@ -171,35 +253,32 @@ body,
   margin: 0.4em 0;
 }
 
-.tiptap-content .ProseMirror ul {
-  list-style: disc;
-}
-
-.tiptap-content .ProseMirror ol {
-  list-style: decimal;
-}
+.tiptap-content .ProseMirror ul { list-style: disc; }
+.tiptap-content .ProseMirror ol { list-style: decimal; }
 
 .tiptap-content .ProseMirror blockquote {
-  border-left: 3px solid hsl(var(--border));
-  padding-left: 0.75rem;
-  color: hsl(var(--muted-foreground));
-  margin: 0.5em 0;
+  border-left: 2px solid var(--bordeaux);
+  padding-left: 1rem;
+  color: var(--ink-soft);
+  font-style: italic;
+  margin: 0.6em 0;
 }
 
 .tiptap-content .ProseMirror code {
-  background: hsl(var(--muted));
+  background: var(--paper-shade);
   padding: 0.1em 0.3em;
   border-radius: 3px;
-  font-size: 0.9em;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92em;
+  font-family: var(--mono);
 }
 
 .tiptap-content .ProseMirror pre {
-  background: hsl(var(--muted));
+  background: var(--paper-shade);
   padding: 0.6em 0.8em;
-  border-radius: 5px;
+  border-radius: 3px;
   overflow-x: auto;
   margin: 0.5em 0;
+  font-family: var(--mono);
 }
 
 .tiptap-content .ProseMirror pre code {
@@ -207,72 +286,40 @@ body,
   padding: 0;
 }
 
-/* Placeholder Tiptap (extension Placeholder). */
+/* Placeholder Tiptap. */
 .tiptap-content .ProseMirror p.is-editor-empty:first-child::before {
-  color: hsl(var(--muted-foreground));
+  color: var(--ink-faint);
   content: attr(data-placeholder);
   float: left;
   height: 0;
   pointer-events: none;
+  font-style: italic;
 }
 
 /* ===========================================================================
  * Graphe nébuleux (P7.7.x) — animations float / pulse / hover
  * ========================================================================= */
 
-/* Flottement continu : oscillation sin sur 6-9s avec phase variable
- * (set par variable CSS --phase sur chaque node, valeur entre 0 et 1
- * convertie en délai négatif).
- * Le translate3d est en plus du transform xyflow (qui positionne le node).
- * On utilise un wrapper interne dans le node component pour ne pas
- * écraser le transform de xyflow. */
 @keyframes nebula-float {
-  0%, 100% {
-    transform: translate3d(0, 0, 0);
-  }
-  25% {
-    transform: translate3d(2px, -3px, 0);
-  }
-  50% {
-    transform: translate3d(-1px, -5px, 0);
-  }
-  75% {
-    transform: translate3d(-3px, -2px, 0);
-  }
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  25%      { transform: translate3d(2px, -3px, 0); }
+  50%      { transform: translate3d(-1px, -5px, 0); }
+  75%      { transform: translate3d(-3px, -2px, 0); }
 }
 
-/* Pulsation subtile du halo. */
 @keyframes nebula-pulse {
-  0%, 100% {
-    opacity: 0.5;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(1.08);
-  }
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%      { opacity: 0.7; transform: scale(1.08); }
 }
 
 .nebula-node-float {
   animation: nebula-float 8s ease-in-out infinite;
   animation-delay: var(--nebula-phase, 0s);
   transition: transform 0.25s ease-out, filter 0.25s ease-out;
-  /* P7.7.tauri : NE PAS mettre will-change ici. Sur certains webviews
-   * Tauri (WebKitGTK, WebView2 ancien), un layer GPU permanent fait
-   * que les radial-gradient sont re-samplés à une résolution
-   * intermédiaire (souvent ~1×) au lieu du DPR de l'écran. On préfère
-   * un rendu CPU de base, parfaitement net, et on ne déclenche le
-   * compositor GPU qu'au hover.
-   *
-   * P7.7.macos : `image-rendering: high-quality` demande à WKWebView
-   * d'utiliser le sampling Lanczos (meilleur sur Retina) plutôt que
-   * le bilinear par défaut. -webkit-optimize-contrast sur Safari
-   * bascule sur nearest-neighbor (très net mais brut) — on évite. */
   image-rendering: high-quality;
 }
 
 .nebula-node-float:hover {
-  /* Sur hover : compositor GPU temporaire pour l'animation fluide. */
   animation-play-state: paused;
   transform: scale(1.18);
   filter: brightness(1.15);
@@ -283,9 +330,5 @@ body,
 .nebula-halo {
   animation: nebula-pulse 4s ease-in-out infinite;
   animation-delay: var(--nebula-phase, 0s);
-  /* Halo en div HTML (P7.7.zzz) — origin par défaut = center, parfait. */
   transform-origin: center;
-  /* Pas de will-change non plus : le keyframe pulse est lent (4s) et
-   * peu coûteux, le browser peut le compositer correctement à la
-   * volée sans hint. */
 }
