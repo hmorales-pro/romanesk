@@ -111,6 +111,10 @@ export default function ImportPage() {
   const [targetMode, setTargetMode] = useState<"new" | "existing">("new");
   const [newUniverseName, setNewUniverseName] = useState("");
   const [newUniverseDesc, setNewUniverseDesc] = useState("");
+  // P13.4 — titre de l'histoire à créer (si analysis.isNarrative). Pré-rempli
+  // depuis analysis.storyTitle au succès de l'analyse, l'utilisateur peut
+  // l'éditer avant l'import.
+  const [storyTitleOverride, setStoryTitleOverride] = useState("");
   const [existingUniverseId, setExistingUniverseId] = useState("");
   const [forceDuplicates, setForceDuplicates] = useState(false);
 
@@ -151,6 +155,10 @@ export default function ImportPage() {
       if (a.universe.name && !newUniverseName) {
         setNewUniverseName(a.universe.name);
       }
+      // P13.4 — pré-remplit le titre proposé par l'IA pour l'histoire.
+      if (a.storyTitle && !storyTitleOverride) {
+        setStoryTitleOverride(a.storyTitle);
+      }
       if (a.universe.description && !newUniverseDesc) {
         setNewUniverseDesc(a.universe.description);
       }
@@ -178,7 +186,9 @@ export default function ImportPage() {
           eras: filterByIdx(analysis.eras, selections.eras),
           events: filterByIdx(analysis.events, selections.events),
           chapters: filterByIdx(analysis.chapters, selections.chapters),
-          storyTitle: analysis.storyTitle,
+          // P13.4 — l'utilisateur peut surcharger le titre proposé par l'IA.
+          storyTitle:
+            storyTitleOverride.trim() || analysis.storyTitle,
           isNarrative: analysis.isNarrative,
         },
         target,
@@ -453,6 +463,30 @@ export default function ImportPage() {
                       skippées.
                     </p>
                   )}
+                </div>
+              )}
+
+              {/* P13.4 — titre de l'histoire (commun aux deux modes,
+               * conditionné à isNarrative). Pré-rempli depuis
+               * analysis.storyTitle, librement éditable. */}
+              {analysis?.isNarrative && analysis.chapters.length > 0 && (
+                <div className="flex flex-col gap-1.5 border-t pt-4">
+                  <Label htmlFor="import-story-title">
+                    Titre de l'histoire
+                  </Label>
+                  <Input
+                    id="import-story-title"
+                    value={storyTitleOverride}
+                    onChange={(e) => setStoryTitleOverride(e.target.value)}
+                    placeholder={analysis.storyTitle ?? "Sans titre"}
+                    maxLength={120}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {analysis.chapters.length} chapitre
+                    {analysis.chapters.length > 1 ? "s" : ""} extrait
+                    {analysis.chapters.length > 1 ? "s" : ""} — ils
+                    seront regroupés sous ce titre.
+                  </p>
                 </div>
               )}
             </div>

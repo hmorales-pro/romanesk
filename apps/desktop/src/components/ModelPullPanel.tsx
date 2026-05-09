@@ -37,13 +37,56 @@ interface ModelPullPanelProps {
   baseUrl: string;
 }
 
-const SUGGESTIONS: { name: string; usage: string }[] = [
-  { name: "gemma3:4b", usage: "chat polyvalent · 3 GB" },
-  { name: "qwen2.5:3b", usage: "chat compact · 2 GB" },
-  { name: "llama3.2:3b", usage: "chat équilibré · 2 GB" },
-  { name: "nomic-embed-text:latest", usage: "embedding (RAG) · 270 MB" },
-  { name: "llava:7b", usage: "vision · 4.5 GB" },
+/**
+ * Recommandations Romanesk (P13.3) — modèles testés sur l'écriture
+ * fictionnelle française et les pipelines map-reduce. Le badge `tag`
+ * sert à étiqueter le rôle (chat / RAG / vision / analyse longue).
+ *
+ * Hugo : « Gemma 4 sorti en 2026 par exemple ». Quand le modèle officiel
+ * sortira chez Ollama, il suffira d'ajouter une entrée ici. En attendant
+ * Gemma 3 reste un excellent choix — 4 GB, multilingue, instruction-tuned.
+ */
+interface Suggestion {
+  name: string;
+  usage: string;
+  /** Étiquette courte qui colore le rôle. */
+  tag: "chat" | "rag" | "vision" | "long";
+}
+
+const SUGGESTIONS: Suggestion[] = [
+  {
+    name: "gemma3:4b",
+    usage: "chat polyvalent · 3 GB · rapide",
+    tag: "chat",
+  },
+  {
+    name: "qwen2.5:7b",
+    usage: "analyse longue · 4.5 GB · idéal pour l'import map-reduce",
+    tag: "long",
+  },
+  {
+    name: "llama3.2:3b",
+    usage: "chat équilibré · 2 GB",
+    tag: "chat",
+  },
+  {
+    name: "nomic-embed-text:latest",
+    usage: "embedding RAG · 270 MB · indispensable",
+    tag: "rag",
+  },
+  {
+    name: "llava:7b",
+    usage: "vision · atelier description · 4.5 GB",
+    tag: "vision",
+  },
 ];
+
+const TAG_LABEL: Record<Suggestion["tag"], string> = {
+  chat: "chat",
+  rag: "RAG",
+  vision: "vision",
+  long: "analyse longue",
+};
 
 export function ModelPullPanel({ baseUrl }: ModelPullPanelProps) {
   const qc = useQueryClient();
@@ -153,36 +196,76 @@ export function ModelPullPanel({ baseUrl }: ModelPullPanelProps) {
         </Button>
       </div>
 
-      {/* Suggestions cliquables */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-faint">
-          Suggestions
-        </span>
-        {SUGGESTIONS.map((s) => {
-          const isInstalled = installedNames.has(s.name);
-          return (
-            <button
-              key={s.name}
-              type="button"
-              onClick={() => {
-                setModelName(s.name);
-                if (!isInstalled) startPull(s.name);
-              }}
-              disabled={pullMutation.isPending}
-              title={`${s.name} — ${s.usage}${isInstalled ? " (déjà installé)" : ""}`}
-              className={[
-                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10.5px] transition",
-                isInstalled
-                  ? "border-ivy/50 text-ivy"
-                  : "border-rule text-ink-soft hover:border-bordeaux/40 hover:text-bordeaux",
-                pullMutation.isPending ? "opacity-50" : "",
-              ].join(" ")}
-            >
-              {isInstalled && <span aria-hidden>✓</span>}
-              {s.name}
-            </button>
-          );
-        })}
+      {/* P13.3 — Recommandations Romanesk : on liste les modèles testés
+       * (chat / RAG / vision / analyse longue) avec un descriptif court.
+       * Cliquer pré-remplit le champ + déclenche le pull si pas installé. */}
+      <div className="flex flex-col gap-2">
+        <Eyebrow bullet={false}>Recommandés pour Romanesk</Eyebrow>
+        <ul className="flex flex-col gap-1">
+          {SUGGESTIONS.map((s) => {
+            const isInstalled = installedNames.has(s.name);
+            return (
+              <li key={s.name}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModelName(s.name);
+                    if (!isInstalled) startPull(s.name);
+                  }}
+                  disabled={pullMutation.isPending || isInstalled}
+                  title={
+                    isInstalled
+                      ? `${s.name} — déjà installé`
+                      : `${s.name} — clic pour télécharger`
+                  }
+                  className={[
+                    "group flex w-full items-center gap-3 rounded-[3px] border px-3 py-2 text-left transition",
+                    isInstalled
+                      ? "border-ivy/40 bg-paper opacity-70"
+                      : "border-rule bg-paper hover:border-bordeaux/40",
+                    pullMutation.isPending ? "opacity-50" : "",
+                  ].join(" ")}
+                >
+                  <span className="font-mono text-[12px] text-ink">
+                    {s.name}
+                  </span>
+                  <span className="font-body text-[12px] italic text-ink-faint">
+                    {s.usage}
+                  </span>
+                  <span className="ml-auto inline-flex items-center gap-2">
+                    <span
+                      className={[
+                        "inline-flex items-center rounded-full border px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.08em]",
+                        s.tag === "chat"
+                          ? "border-bordeaux/50 text-bordeaux"
+                          : s.tag === "rag"
+                            ? "border-ivy/50 text-ivy"
+                            : s.tag === "vision"
+                              ? "border-ocre/50 text-ocre"
+                              : "border-bordeaux/50 text-bordeaux",
+                      ].join(" ")}
+                    >
+                      {TAG_LABEL[s.tag]}
+                    </span>
+                    {isInstalled && (
+                      <span
+                        aria-hidden
+                        className="font-mono text-[11px] text-ivy"
+                      >
+                        ✓
+                      </span>
+                    )}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="font-body text-[12px] italic text-ink-faint">
+          Note : Gemma 4 (annoncé par Google pour 2026) sera ajouté ici
+          dès qu'il sera disponible sur Ollama. C'est le candidat naturel
+          pour remplacer gemma3:4b en chat polyvalent.
+        </p>
       </div>
 
       {/* Barre de progression */}
