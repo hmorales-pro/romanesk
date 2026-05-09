@@ -22,8 +22,10 @@ import { ArrowLeft, Settings as SettingsIcon } from "lucide-react";
 
 import { Sigillum } from "@/components/ui/sigillum";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { Kbd } from "@/components/ui/kbd";
 import { AIStatusBadge } from "@/components/AIStatusBadge";
 import { OnboardingGate } from "@/components/OnboardingGate";
+import { CommandPalette } from "@/components/CommandPalette";
 import {
   PageMetaProvider,
   usePageMetaState,
@@ -48,6 +50,10 @@ function LayoutShell() {
       {/* Modale d'onboarding au premier lancement (P9.3) — détecte si
        * Ollama est joignable et propose les bonnes étapes le cas échéant. */}
       <OnboardingGate />
+
+      {/* Palette de commandes Cmd/Ctrl+K (P11.1) — recherche unifiée
+       * fiches/histoires/univers + actions de navigation. */}
+      <CommandPalette />
 
       {/*
         Wrapper sticky du header global : titlebar mono + nav restent
@@ -108,9 +114,29 @@ function LayoutShell() {
             <Eyebrow bullet={false} className="ml-2 text-ink-faint">
               v0.6.0 · pre-alpha
             </Eyebrow>
+            {/* Hint discret de la palette — déclenchable via Cmd/Ctrl+K
+             * (P11.1). On simule le keypress via dispatchEvent pour ne pas
+             * dupliquer la logique d'ouverture. */}
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(
+                  new KeyboardEvent("keydown", {
+                    key: "k",
+                    metaKey: true,
+                    bubbles: true,
+                  }),
+                );
+              }}
+              className="ml-auto inline-flex items-center gap-2 rounded-[3px] border border-rule px-2.5 py-1 font-mono text-[11px] tracking-[0.04em] text-ink-faint transition hover:border-bordeaux/40 hover:text-bordeaux"
+              title="Palette de commandes"
+            >
+              <span>Chercher…</span>
+              <Kbd>⌘K</Kbd>
+            </button>
             <Link
               to="/settings"
-              className="ml-auto inline-flex items-center gap-1 text-ink-faint transition hover:text-ink"
+              className="inline-flex items-center gap-1 text-ink-faint transition hover:text-ink"
               title="Paramètres"
             >
               <SettingsIcon className="size-4" aria-hidden />
