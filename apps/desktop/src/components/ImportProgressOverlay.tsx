@@ -17,7 +17,7 @@
  * `import-progress` que le backend émet. Le caller gère la mutation.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import {
   Coffee,
@@ -130,19 +130,15 @@ export function ImportProgressOverlay({
   const [totalChars, setTotalChars] = useState(0);
   const [feed, setFeed] = useState<FeedEntry[]>([]);
   const [quoteIdx, setQuoteIdx] = useState(0);
-  const dialogRef = useRef<HTMLDialogElement>(null);
 
-  // showModal/close
-  useEffect(() => {
-    const dlg = dialogRef.current;
-    if (!dlg) return;
-    if (active && !dlg.open) {
-      dlg.showModal();
-    }
-    if (!active && dlg.open) {
-      dlg.close();
-    }
-  }, [active]);
+  // P13.2 hotfix — pas de <dialog showModal>, qui est promu dans la top
+  // layer du browser et passe au-dessus de TOUT (y compris la titlebar
+  // Tauri custom avec data-tauri-drag-region). Du coup l'utilisateur ne
+  // peut plus déplacer la fenêtre pendant l'analyse, ce qui dure 5-10
+  // min — pas acceptable.
+  // À la place, overlay div fixed qui démarre à top: 38px (sous la
+  // titlebar). La fenêtre reste déplaçable pendant tout le pipeline.
+  // ESC est géré explicitement via un keydown listener si onCancel.
 
   // Reset à chaque (re)démarrage.
   useEffect(() => {
@@ -199,10 +195,11 @@ export function ImportProgressOverlay({
   }, [active]);
 
   const pct = useMemo(() => {
-    if (totalChunks === 0) return 0;
+    if (!totalChunks || !Number.isFinite(totalChunks)) return 0;
     if (stage === "done") return 100;
     if (stage === "reducing") return 95;
-    return Math.round((chunkIndex / totalChunks) * 90); // garde 5% pour reduce
+    const raw = Math.round((chunkIndex / totalChunks) * 90); // 5% gardés pour reduce
+    return Number.isFinite(raw) ? Math.max(0, Math.min(95, raw)) : 0;
   }, [stage, chunkIndex, totalChunks]);
 
   const stageLabel = (() => {
@@ -223,16 +220,40 @@ export function ImportProgressOverlay({
     }
   })();
 
+  // ESC = cancel (si onCancel est fourni) — comportement compatible avec
+  // l'expérience modale habituelle.
+  useEffect(() => {
+    if (!active || !onCancel) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onCancel();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [active, onCancel]);
+
+  if (!active) return null;
+
   return (
-    <dialog
-      ref={dialogRef}
-      className={[
-        "w-[min(840px,92vw)] max-h-[85vh] overflow-hidden rounded-[4px] border border-rule bg-paper p-0 text-ink",
-        "shadow-[0_24px_60px_-20px_color-mix(in_oklab,var(--ink)_25%,transparent)]",
-        "m-auto",
-        "backdrop:bg-[color-mix(in_oklab,var(--ink)_45%,transparent)]",
-      ].join(" ")}
+    <div
+      // Backdrop : fixed à top: 38px (sous la titlebar) pour ne pas
+      // intercepter les événements de drag sur la zone titlebar Tauri.
+      // z-40 < z-50 du header sticky, donc tout le header reste au-dessus
+      // (et draggable).
+      className="fixed bottom-0 left-0 right-0 top-[38px] z-40 flex items-center justify-center bg-[color-mix(in_oklab,var(--ink)_45%,transparent)] p-6"
+      // Click backdrop = cancel (si onCancel)
+      onClick={(e) => {
+        if (e.target === e.currentTarget && onCancel) onCancel();
+      }}
     >
+      <div
+        className={[
+          "w-[min(840px,92vw)] max-h-[80vh] overflow-hidden rounded-[4px] border border-rule bg-paper text-ink",
+          "shadow-[0_24px_60px_-20px_color-mix(in_oklab,var(--ink)_25%,transparent)]",
+        ].join(" ")}
+      >
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px]">
         {/* Colonne gauche — feed + progress */}
         <div className="flex flex-col gap-4 p-6">
@@ -328,7 +349,8 @@ export function ImportProgressOverlay({
           </div>
         </aside>
       </div>
-    </dialog>
+      </div>
+    </div>
   );
 }
 

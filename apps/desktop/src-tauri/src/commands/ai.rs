@@ -1041,7 +1041,11 @@ pub struct DiscoveredItem {
 }
 
 #[derive(Debug, Serialize, Clone)]
-#[serde(tag = "stage", rename_all = "camelCase")]
+#[serde(
+    tag = "stage",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
 pub enum ImportProgressEvent {
     Started {
         total_chunks: usize,
