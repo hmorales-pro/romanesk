@@ -1029,13 +1029,14 @@ Aucun texte autour du JSON."#,
 const IMPORT_CHUNK_CHARS: usize = 10_000;
 const IMPORT_CHUNK_OVERLAP: usize = 500;
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct DiscoveredItem {
     pub name: String,
     /// "character" | "location" | "faction" | "object" | "concept"
     pub kind: String,
     /// Court extrait de contexte (60-120 chars) pour faire vivre le feed.
+    #[serde(default)]
     pub mention: String,
 }
 
