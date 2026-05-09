@@ -10,6 +10,7 @@ import {
   universeList,
 } from "@/lib/api";
 import { alertDialog, confirmDialog } from "@/lib/dialog";
+import { writeToClipboard } from "@/lib/clipboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -197,7 +198,7 @@ export default function LibraryPage() {
                       onClick={async () => {
                         try {
                           const md = await universeExportMarkdown(u.id);
-                          await navigator.clipboard.writeText(md);
+                          await writeToClipboard(md);
                           void alertDialog(
                             `« ${u.name} » copié dans le presse-papier (${md.length} caractères).`,
                             { title: "Markdown exporté" },

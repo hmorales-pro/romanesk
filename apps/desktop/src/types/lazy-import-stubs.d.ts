@@ -27,3 +27,11 @@ declare module "pdfjs-dist/build/pdf.worker.min.mjs?url" {
   const src: string;
   export default src;
 }
+
+// Stub temporaire pour le plugin clipboard-manager Tauri tant que la
+// dep n'est pas installée localement (cf. package.json, sera résolue
+// au prochain pnpm install).
+declare module "@tauri-apps/plugin-clipboard-manager" {
+  export function writeText(text: string): Promise<void>;
+  export function readText(): Promise<string>;
+}

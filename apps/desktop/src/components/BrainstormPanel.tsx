@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 
 import { aiComplete, storyListInUniverse, universeGet } from "@/lib/api";
+import { writeToClipboard } from "@/lib/clipboard";
 import { useSettings } from "@/lib/use-settings";
 import { Button } from "@/components/ui/button";
 
@@ -80,7 +81,7 @@ export function BrainstormPanel({ universeId }: BrainstormPanelProps) {
   });
 
   const copy = () => {
-    if (result) void navigator.clipboard.writeText(result.text);
+    if (result) void writeToClipboard(result.text);
   };
 
   return (

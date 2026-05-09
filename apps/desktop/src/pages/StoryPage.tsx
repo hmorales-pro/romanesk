@@ -43,6 +43,7 @@ import { Eyebrow } from "@/components/ui/eyebrow";
 import { Glyph } from "@/components/ui/glyph";
 import { Pill } from "@/components/ui/pill";
 import { alertDialog, confirmDialog } from "@/lib/dialog";
+import { writeToClipboard } from "@/lib/clipboard";
 import { TiptapEditor, type TiptapDoc } from "@/components/TiptapEditor";
 import { AiContinuePanel } from "@/components/AiContinuePanel";
 import { AiActionsPanel } from "@/components/AiActionsPanel";
@@ -343,7 +344,7 @@ export default function StoryPage() {
                 onClick={async () => {
                   try {
                     const md = await storyExportMarkdown(storyId);
-                    await navigator.clipboard.writeText(md);
+                    await writeToClipboard(md);
                     void alertDialog(
                       `${md.length} caractères copiés dans le presse-papier.`,
                       { title: "Markdown exporté" },

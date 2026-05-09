@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 
 import { aiComplete, aiDescribeImage } from "@/lib/api";
+import { writeToClipboard } from "@/lib/clipboard";
 import { useSettings } from "@/lib/use-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -138,7 +139,7 @@ export function AiDescriptionPanel({
     setText(null);
   };
   const copy = () => {
-    if (text) void navigator.clipboard.writeText(text);
+    if (text) void writeToClipboard(text);
   };
 
   const targetLabel = TARGET_LABELS[targetKind];

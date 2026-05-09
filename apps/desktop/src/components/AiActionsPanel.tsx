@@ -30,6 +30,7 @@ import {
 
 import { aiComplete } from "@/lib/api";
 import { confirmDialog } from "@/lib/dialog";
+import { writeToClipboard } from "@/lib/clipboard";
 import type { Story } from "@/lib/types";
 import { useSettings } from "@/lib/use-settings";
 import { Button } from "@/components/ui/button";
@@ -102,7 +103,7 @@ export function AiActionsPanel({
   };
 
   const copy = () => {
-    if (result) void navigator.clipboard.writeText(result.text);
+    if (result) void writeToClipboard(result.text);
   };
 
   const replace = async () => {
