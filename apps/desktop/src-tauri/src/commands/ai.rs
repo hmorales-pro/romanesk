@@ -753,7 +753,7 @@ pub struct AnalyzeImportPayload {
     pub target_universe_name: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportCharacter {
     pub name: String,
@@ -767,7 +767,7 @@ pub struct ImportCharacter {
     pub biography_text: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportLocation {
     pub name: String,
@@ -783,7 +783,7 @@ pub struct ImportLocation {
     pub description_text: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportFaction {
     pub name: String,
@@ -801,7 +801,7 @@ pub struct ImportFaction {
     pub description_text: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportObject {
     pub name: String,
@@ -819,7 +819,7 @@ pub struct ImportObject {
     pub description_text: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportConcept {
     pub name: String,
@@ -833,7 +833,7 @@ pub struct ImportConcept {
     pub description_text: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportEra {
     pub name: String,
@@ -845,7 +845,7 @@ pub struct ImportEra {
     pub description: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportEvent {
     pub name: String,
@@ -857,14 +857,14 @@ pub struct ImportEvent {
     pub description: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportChapter {
     pub title: String,
     pub body_text: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportUniverseHeader {
     pub name: String,
@@ -876,7 +876,7 @@ pub struct ImportUniverseHeader {
     pub tone: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportAnalysis {
     pub universe: ImportUniverseHeader,
@@ -1010,6 +1010,329 @@ Aucun texte autour du JSON."#,
         ));
     }
     Ok(analysis)
+}
+
+// ---------------------------------------------------------------------------
+// Import map-reduce (P13.1) — pipeline streaming pour les longs textes
+// ---------------------------------------------------------------------------
+//
+// Découpe le texte en chunks de IMPORT_CHUNK_CHARS caractères (avec un
+// overlap léger pour ne pas couper une mention en plein milieu), analyse
+// chaque chunk en parallèle (map), puis agrège (reduce) :
+//   - dedup des entités par nom normalisé (lowercase + NFD)
+//   - méta-résumé à partir des résumés de chunks
+//   - seconde passe optionnelle pour structurer en ImportAnalysis complet
+//
+// Émet des events tauri "import-progress" tout au long pour que le front
+// affiche un feed live (cf. ImportProgressOverlay).
+
+const IMPORT_CHUNK_CHARS: usize = 10_000;
+const IMPORT_CHUNK_OVERLAP: usize = 500;
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct DiscoveredItem {
+    pub name: String,
+    /// "character" | "location" | "faction" | "object" | "concept"
+    pub kind: String,
+    /// Court extrait de contexte (60-120 chars) pour faire vivre le feed.
+    pub mention: String,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(tag = "stage", rename_all = "camelCase")]
+pub enum ImportProgressEvent {
+    Started {
+        total_chunks: usize,
+        total_chars: usize,
+    },
+    ChunkStarted {
+        index: usize,
+        total: usize,
+    },
+    ChunkAnalyzed {
+        index: usize,
+        total: usize,
+        discovered: Vec<DiscoveredItem>,
+        chunk_summary: String,
+    },
+    Reducing,
+    Done {
+        analysis: ImportAnalysis,
+    },
+    Error {
+        message: String,
+    },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnalyzeImportStreamPayload {
+    pub text: String,
+    #[serde(default)]
+    pub target_universe_name: Option<String>,
+}
+
+#[tauri::command]
+pub async fn ai_analyze_import_stream(
+    app: tauri::AppHandle,
+    provider: State<'_, AiProvider>,
+    payload: AnalyzeImportStreamPayload,
+) -> CommandResult<ImportAnalysis> {
+    use tauri::Emitter;
+
+    let provider = provider.snapshot().await;
+
+    let raw = payload.text.trim();
+    if raw.is_empty() {
+        return Err(CommandError::Other("text vide".into()));
+    }
+
+    // Split en chunks par chars (UTF-8 safe via .chars()).
+    let chars: Vec<char> = raw.chars().collect();
+    let total_chars = chars.len();
+    let mut chunks: Vec<String> = Vec::new();
+    let mut start = 0;
+    while start < total_chars {
+        let end = (start + IMPORT_CHUNK_CHARS).min(total_chars);
+        let chunk: String = chars[start..end].iter().collect();
+        chunks.push(chunk);
+        if end == total_chars {
+            break;
+        }
+        // Avance de chunk_chars - overlap, pour garder un peu de contexte
+        // entre chunks (évite de couper une phrase en plein milieu).
+        start = end - IMPORT_CHUNK_OVERLAP;
+    }
+    let total_chunks = chunks.len();
+
+    let _ = app.emit(
+        "import-progress",
+        ImportProgressEvent::Started {
+            total_chunks,
+            total_chars,
+        },
+    );
+
+    // ── Phase MAP ──────────────────────────────────────────────────────
+    // Pour chaque chunk : extraction d'entités + résumé court via prompt
+    // simplifié JSON-only. On stocke pour la phase reduce.
+
+    let chunk_system = r#"Tu analyses un fragment de récit ou d'écrit. Tu extrais STRICTEMENT en JSON les entités saillantes et un résumé très court du fragment. Pas de texte autour.
+
+{
+  "discovered": [
+    { "name": "...", "kind": "character|location|faction|object|concept", "mention": "<extrait court 60-120 chars de contexte>" }
+  ],
+  "chunkSummary": "<2-3 phrases qui résument ce fragment>"
+}
+
+Règles :
+- Reste fidèle au fragment, n'invente rien.
+- Une entité = une mention claire (un nom propre récurrent, un lieu nommé, une faction nommée, un objet ou concept clé).
+- mention = un extrait court qui montre où l'entité apparaît (utile pour la suite).
+- Pas de doublons dans `discovered` (un personnage = une seule entrée).
+- Pas plus de 15 items au total dans `discovered`.
+
+Aucun texte autour du JSON."#;
+
+    #[derive(Deserialize)]
+    struct ChunkResult {
+        #[serde(default)]
+        discovered: Vec<DiscoveredItem>,
+        #[serde(default)]
+        #[serde(rename = "chunkSummary")]
+        chunk_summary: String,
+    }
+
+    let mut all_discovered: Vec<DiscoveredItem> = Vec::new();
+    let mut chunk_summaries: Vec<String> = Vec::new();
+
+    for (idx, chunk) in chunks.iter().enumerate() {
+        let _ = app.emit(
+            "import-progress",
+            ImportProgressEvent::ChunkStarted {
+                index: idx,
+                total: total_chunks,
+            },
+        );
+
+        let req = CompletionRequest {
+            model: String::new(),
+            messages: vec![
+                Message {
+                    role: Role::System,
+                    content: chunk_system.to_string(),
+                },
+                Message {
+                    role: Role::User,
+                    content: format!("FRAGMENT {}/{} :\n\n{}", idx + 1, total_chunks, chunk),
+                },
+            ],
+            temperature: Some(0.3),
+            max_tokens: Some(2_048),
+            stop: Vec::new(),
+            json_schema: Some(json!({ "type": "object" })),
+        };
+
+        let chunk_text = match provider.complete(req).await {
+            Ok(r) => r.content,
+            Err(e) => {
+                // On n'arrête pas le pipeline pour un chunk raté ; on log
+                // et on passe au suivant. Mieux vaut une analyse partielle
+                // qu'un échec complet.
+                let _ = app.emit(
+                    "import-progress",
+                    ImportProgressEvent::Error {
+                        message: format!("chunk {} : {e}", idx + 1),
+                    },
+                );
+                continue;
+            }
+        };
+
+        let json_str = extract_json_object(&chunk_text);
+        let parsed: ChunkResult =
+            serde_json::from_str(&json_str).unwrap_or(ChunkResult {
+                discovered: Vec::new(),
+                chunk_summary: String::new(),
+            });
+
+        all_discovered.extend(parsed.discovered.clone());
+        if !parsed.chunk_summary.trim().is_empty() {
+            chunk_summaries.push(parsed.chunk_summary.clone());
+        }
+
+        let _ = app.emit(
+            "import-progress",
+            ImportProgressEvent::ChunkAnalyzed {
+                index: idx,
+                total: total_chunks,
+                discovered: parsed.discovered,
+                chunk_summary: parsed.chunk_summary,
+            },
+        );
+    }
+
+    // ── Phase REDUCE ───────────────────────────────────────────────────
+    // Dédup entités par nom normalisé (case-insensitive + NFD).
+
+    let _ = app.emit("import-progress", ImportProgressEvent::Reducing);
+
+    let mut seen_names: std::collections::HashSet<String> =
+        std::collections::HashSet::new();
+    let mut deduped: Vec<DiscoveredItem> = Vec::new();
+    for item in all_discovered.iter() {
+        let key = normalize_for_dedup(&item.name);
+        if seen_names.insert(key) {
+            deduped.push(item.clone());
+        }
+    }
+
+    // Construit un récap qu'on file au modèle pour produire l'ImportAnalysis
+    // structuré final. On ne lui repasse PAS le texte original (trop long) —
+    // on lui passe les résumés de chunks + la liste dédupliquée d'entités.
+    let target_block = payload
+        .target_universe_name
+        .filter(|s| !s.trim().is_empty())
+        .map(|n| format!("\nL'univers cible existant s'appelle « {n} ».", ))
+        .unwrap_or_default();
+
+    let entities_recap = deduped
+        .iter()
+        .map(|d| format!("- {} ({}) — {}", d.name, d.kind, d.mention))
+        .collect::<Vec<_>>()
+        .join("\n");
+    let summaries_block = chunk_summaries
+        .iter()
+        .enumerate()
+        .map(|(i, s)| format!("Fragment {}/{} : {}", i + 1, total_chunks, s))
+        .collect::<Vec<_>>()
+        .join("\n\n");
+
+    let final_system = format!(
+        r#"Tu reçois la synthèse de l'analyse fragmentée d'un texte long. À partir des entités déjà repérées et des résumés de fragments, tu produis l'objet JSON ImportAnalysis final pour Romanesk. Pas de texte autour.{target_block}
+
+Schéma : (mêmes règles que pour ai_analyze_import — si tu connais le format ImportAnalysis, conserve-le)
+
+{{
+  "universe": {{ "name": "...", "description": "...", "language": "fr", "tone": "literary" }},
+  "isNarrative": true | false,
+  "storyTitle": "...",
+  "characters": [{{ "name": "...", "summary": "...", "archetype": "...", "traits": [], "biographyText": "..." }}],
+  "locations": [{{ "name": "...", "summary": "...", "kind": "city|region|building|naturalFeature|celestial|other", "climate": "...", "population": "...", "descriptionText": "..." }}],
+  "factions": [{{ "name": "...", "summary": "...", "kind": "government|guild|sect|clan|company|other", "ideology": "...", "founded": "...", "leader": "...", "descriptionText": "..." }}],
+  "objects": [{{ "name": "...", "summary": "...", "kind": "artifact|weapon|armor|book|relic|tool|other", "origin": "...", "owner": "...", "properties": [], "descriptionText": "..." }}],
+  "concepts": [{{ "name": "...", "summary": "...", "kind": "magic|religion|technology|philosophy|language|other", "domain": "...", "descriptionText": "..." }}],
+  "eras": [{{ "name": "...", "startYear": -100, "endYear": 50, "description": "..." }}],
+  "events": [{{ "name": "...", "year": 312, "eraName": "...", "description": "..." }}],
+  "chapters": []
+}}
+
+Règles :
+- Pour les chapters, laisse [] dans cette commande (pipeline stream — les chapitres complets ne tiennent pas dans le contexte du reduce).
+- Fonde-toi sur les entités déjà repérées : ne réinventes pas, complète/détaille.
+- Reste sobre : 1-2 phrases par summary, 2-4 par descriptionText.
+
+Aucun texte autour du JSON."#,
+    );
+
+    let final_user = format!(
+        "ENTITÉS REPÉRÉES :\n{entities_recap}\n\nRÉSUMÉS DES FRAGMENTS :\n{summaries_block}"
+    );
+
+    let req = CompletionRequest {
+        model: String::new(),
+        messages: vec![
+            Message {
+                role: Role::System,
+                content: final_system,
+            },
+            Message {
+                role: Role::User,
+                content: final_user,
+            },
+        ],
+        temperature: Some(0.3),
+        max_tokens: Some(8_192),
+        stop: Vec::new(),
+        json_schema: Some(json!({ "type": "object" })),
+    };
+
+    let res = provider
+        .complete(req)
+        .await
+        .map_err(|e| CommandError::Other(format!("reduce phase: {e}")))?;
+
+    let analysis = parse_import_analysis(&res.content);
+
+    let _ = app.emit(
+        "import-progress",
+        ImportProgressEvent::Done {
+            analysis: ImportAnalysis {
+                universe: analysis.universe.clone(),
+                is_narrative: analysis.is_narrative,
+                story_title: analysis.story_title.clone(),
+                characters: analysis.characters.clone(),
+                locations: analysis.locations.clone(),
+                factions: analysis.factions.clone(),
+                objects: analysis.objects.clone(),
+                concepts: analysis.concepts.clone(),
+                eras: analysis.eras.clone(),
+                events: analysis.events.clone(),
+                chapters: analysis.chapters.clone(),
+                truncation_warning: None,
+                parse_warning: analysis.parse_warning.clone(),
+                raw_response: analysis.raw_response.clone(),
+            },
+        },
+    );
+
+    Ok(analysis)
+}
+
+fn normalize_for_dedup(s: &str) -> String {
+    s.trim().to_lowercase()
 }
 
 fn parse_import_analysis(raw: &str) -> ImportAnalysis {

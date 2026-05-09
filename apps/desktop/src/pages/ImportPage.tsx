@@ -27,8 +27,10 @@ import {
   Upload,
 } from "lucide-react";
 
+import { ImportProgressOverlay } from "@/components/ImportProgressOverlay";
 import {
   aiAnalyzeImport,
+  aiAnalyzeImportStream,
   aiRagQuery,
   importApply,
   universeList,
@@ -65,6 +67,13 @@ const CATEGORIES = [
   "chapters",
 ] as const;
 type Category = (typeof CATEGORIES)[number];
+
+/**
+ * Seuil au-delà duquel on bascule sur le pipeline map-reduce streaming
+ * (P13.1). En dessous, single-shot direct — c'est plus rapide et plus
+ * fiable parce que tout le contexte tient dans le modèle.
+ */
+const IMPORT_LONG_THRESHOLD = 8_000;
 
 const CATEGORY_LABELS: Record<Category, string> = {
   characters: "Personnages",
@@ -111,14 +120,21 @@ export default function ImportPage() {
   });
 
   const analyzeMutation = useMutation({
-    mutationFn: () =>
-      aiAnalyzeImport({
+    // P13.1 — au-delà de IMPORT_LONG_THRESHOLD on bascule sur le pipeline
+    // map-reduce streaming. En dessous (textes courts), single-shot — moins
+    // d'overhead, résultat plus fiable parce que tout le contexte tient.
+    mutationFn: () => {
+      const args = {
         text,
         targetUniverseName:
           targetMode === "existing"
             ? universesQuery.data?.find((u) => u.id === existingUniverseId)?.name
             : undefined,
-      }),
+      };
+      return text.length > IMPORT_LONG_THRESHOLD
+        ? aiAnalyzeImportStream(args)
+        : aiAnalyzeImport(args);
+    },
     onSuccess: (a) => {
       setAnalysis(a);
       // Re-init les sélections : tout coché par défaut.
@@ -215,7 +231,10 @@ export default function ImportPage() {
   };
 
   const charCount = text.length;
-  const overLimit = charCount > 24_000;
+  // P13.1 — au-delà de IMPORT_LONG_THRESHOLD chars, on bascule sur le
+  // pipeline streaming (map-reduce avec chunks de 10K). Plus de truncate
+  // à 24K — on couvre tout le texte par fragments.
+  const willStream = charCount > IMPORT_LONG_THRESHOLD;
   const canImport =
     !!analysis &&
     !applyMutation.isPending &&
@@ -305,13 +324,14 @@ export default function ImportPage() {
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <span
               className={
-                overLimit
-                  ? "text-xs text-amber-700"
+                willStream
+                  ? "text-xs text-bordeaux"
                   : "text-xs text-muted-foreground"
               }
             >
               {charCount.toLocaleString("fr-FR")} caractères
-              {overLimit && ` · sera tronqué à 24 000`}
+              {willStream &&
+                ` · texte long → analyse fragmentée (5–10 min selon le modèle)`}
             </span>
             <Button
               onClick={() => {
@@ -520,6 +540,12 @@ export default function ImportPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* P13.2 — overlay live pendant l'analyse streaming d'un long texte.
+       * S'auto-monte quand willStream && analyzeMutation.isPending. */}
+      <ImportProgressOverlay
+        active={willStream && analyzeMutation.isPending}
+      />
     </div>
   );
 }

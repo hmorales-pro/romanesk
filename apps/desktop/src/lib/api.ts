@@ -964,6 +964,53 @@ export function aiAnalyzeImport(args: {
   });
 }
 
+/**
+ * Variante streaming pour les longs textes (P13.1). Pipeline map-reduce :
+ * découpe en chunks, analyse chunk par chunk, agrégation finale. Émet des
+ * events `import-progress` au fil de l'eau — le caller doit s'y abonner
+ * via tauri.event.listen pour afficher un feed live (cf.
+ * ImportProgressOverlay). La promise résout quand toute la chaîne est
+ * terminée.
+ */
+export function aiAnalyzeImportStream(args: {
+  text: string;
+  targetUniverseName?: string;
+}): Promise<ImportAnalysis> {
+  return invoke<ImportAnalysis>("ai_analyze_import_stream", {
+    payload: {
+      text: args.text,
+      targetUniverseName: args.targetUniverseName ?? null,
+    },
+  });
+}
+
+/** Item découvert dans un chunk pendant le pipeline streaming. */
+export interface DiscoveredItem {
+  name: string;
+  /** "character" | "location" | "faction" | "object" | "concept" */
+  kind: string;
+  /** Court extrait de contexte (60-120 chars). */
+  mention: string;
+}
+
+/**
+ * Discriminated union pour l'event Tauri "import-progress".
+ * Stage est le tag (cf. backend ImportProgressEvent enum).
+ */
+export type ImportProgressEvent =
+  | { stage: "started"; totalChunks: number; totalChars: number }
+  | { stage: "chunkStarted"; index: number; total: number }
+  | {
+      stage: "chunkAnalyzed";
+      index: number;
+      total: number;
+      discovered: DiscoveredItem[];
+      chunkSummary: string;
+    }
+  | { stage: "reducing" }
+  | { stage: "done"; analysis: ImportAnalysis }
+  | { stage: "error"; message: string };
+
 // --- Import apply (P7.3) ----------------------------------------------------
 
 export type ImportTarget =
