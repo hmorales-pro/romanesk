@@ -84,10 +84,14 @@ function RomaneskDialog({
       ref={ref}
       onClick={handleBackdrop}
       className={[
-        // Reset du dialog natif + apparence Romanesk
+        // Apparence Romanesk
         "min-w-[320px] max-w-[480px] rounded-[4px] border border-rule bg-paper p-0",
         "text-ink shadow-[0_24px_60px_-20px_color-mix(in_oklab,var(--ink)_25%,transparent)]",
-        // Backdrop semi-transparent crème foncé
+        // Centrage : le browser pose un margin:auto sur dialog[open] mais
+        // le preflight Tailwind écrase la marge à 0. On le remet explicite
+        // pour bénéficier du centrage natif du <dialog>.
+        "m-auto",
+        // Backdrop semi-transparent encre
         "backdrop:bg-[color-mix(in_oklab,var(--ink)_35%,transparent)]",
       ].join(" ")}
     >

@@ -329,6 +329,8 @@ function ModalShell({
       className={[
         "min-w-[400px] max-w-[520px] rounded-[4px] border border-rule bg-paper p-0 text-ink",
         "shadow-[0_24px_60px_-20px_color-mix(in_oklab,var(--ink)_25%,transparent)]",
+        // Centrage natif du <dialog> — Tailwind preflight écrase margin:auto
+        "m-auto",
         "backdrop:bg-[color-mix(in_oklab,var(--ink)_35%,transparent)]",
       ].join(" ")}
     >
