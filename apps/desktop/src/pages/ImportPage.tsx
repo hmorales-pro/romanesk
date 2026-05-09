@@ -163,11 +163,11 @@ export default function ImportPage() {
       const target: ImportTarget =
         targetMode === "new"
           ? {
-              kind: "NewUniverse",
+              kind: "newUniverse",
               name: newUniverseName.trim() || analysis.universe.name,
               description: newUniverseDesc.trim() || undefined,
             }
-          : { kind: "ExistingUniverse", id: existingUniverseId };
+          : { kind: "existingUniverse", id: existingUniverseId };
       return importApply({
         analysis: {
           characters: filterByIdx(analysis.characters, selections.characters),

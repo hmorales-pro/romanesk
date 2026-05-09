@@ -1013,9 +1013,14 @@ export type ImportProgressEvent =
 
 // --- Import apply (P7.3) ----------------------------------------------------
 
+/**
+ * Cible d'import (P7.3 + hotfix). Le backend Rust utilise serde
+ * rename_all=camelCase sur l'enum tagged, donc kind doit être en
+ * camelCase ("newUniverse" / "existingUniverse"), pas en PascalCase.
+ */
 export type ImportTarget =
-  | { kind: "NewUniverse"; name: string; description?: string }
-  | { kind: "ExistingUniverse"; id: Uuid };
+  | { kind: "newUniverse"; name: string; description?: string }
+  | { kind: "existingUniverse"; id: Uuid };
 
 /**
  * Sous-ensemble de ImportAnalysis qu'on envoie à import_apply : juste
