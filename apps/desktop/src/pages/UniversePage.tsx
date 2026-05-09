@@ -277,6 +277,12 @@ export default function UniversePage() {
         </CardContent>
       </Card>
 
+      {/* P11.x — Histoires en haut. L'écriture des chapitres est plus
+       * fréquente que la création de fiches, on remonte le raccourci. */}
+      <div id="stories" className="scroll-mt-6">
+        <StoriesSection universeId={universeId!} />
+      </div>
+
       <CharacterSection
         universeId={universeId}
         items={filteredCharacters}
@@ -358,10 +364,6 @@ export default function UniversePage() {
       />
 
       <TimelineSection universeId={universeId} />
-
-      <div id="stories" className="scroll-mt-6">
-        <StoriesSection universeId={universeId!} />
-      </div>
 
       <BrainstormPanel universeId={universeId!} />
 
