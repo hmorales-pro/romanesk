@@ -42,7 +42,7 @@ export function FactionDetail({ entity, universeId }: Props) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [summary, setSummary] = useState("");
-  const [kind, setKind] = useState<FactionKind>("other");
+  const [kind, setKind] = useState<string>("other");
   const [ideology, setIdeology] = useState("");
   const [founded, setFounded] = useState("");
   const [leader, setLeader] = useState("");

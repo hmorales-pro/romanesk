@@ -14,16 +14,12 @@ import type {
   BriefSource,
   Chapter,
   ChapterStatus,
-  ConceptKind,
   DivergenceAxis,
   DivergencePoint,
   Entity,
   EntityType,
   Era,
   Event as TimelineEvent,
-  FactionKind,
-  LocationKind,
-  ObjectKind,
   RealityAnchor,
   RealityMode,
   Relation,
@@ -225,7 +221,7 @@ export interface CreateLocationArgs {
   universeId: Uuid;
   name: string;
   summary?: string;
-  kind?: LocationKind;
+  kind?: string;
   climate?: string;
   population?: string;
   /** Doc ProseMirror ou null. */
@@ -253,7 +249,7 @@ export interface UpdateLocationArgs {
   id: Uuid;
   name: string;
   summary?: string;
-  kind?: LocationKind;
+  kind?: string;
   climate?: string;
   population?: string;
   description?: unknown;
@@ -281,7 +277,7 @@ export interface CreateFactionArgs {
   universeId: Uuid;
   name: string;
   summary?: string;
-  kind?: FactionKind;
+  kind?: string;
   ideology?: string;
   founded?: string;
   leader?: string;
@@ -310,7 +306,7 @@ export interface UpdateFactionArgs {
   id: Uuid;
   name: string;
   summary?: string;
-  kind?: FactionKind;
+  kind?: string;
   ideology?: string;
   founded?: string;
   leader?: string;
@@ -340,7 +336,7 @@ export interface CreateObjectArgs {
   universeId: Uuid;
   name: string;
   summary?: string;
-  kind?: ObjectKind;
+  kind?: string;
   origin?: string;
   owner?: string;
   properties?: string[];
@@ -369,7 +365,7 @@ export interface UpdateObjectArgs {
   id: Uuid;
   name: string;
   summary?: string;
-  kind?: ObjectKind;
+  kind?: string;
   origin?: string;
   owner?: string;
   properties?: string[];
@@ -399,7 +395,7 @@ export interface CreateConceptArgs {
   universeId: Uuid;
   name: string;
   summary?: string;
-  kind?: ConceptKind;
+  kind?: string;
   domain?: string;
   description?: unknown;
 }
@@ -424,7 +420,7 @@ export interface UpdateConceptArgs {
   id: Uuid;
   name: string;
   summary?: string;
-  kind?: ConceptKind;
+  kind?: string;
   domain?: string;
   description?: unknown;
 }

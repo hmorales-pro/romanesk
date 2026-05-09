@@ -45,7 +45,7 @@ export function LocationDetail({ entity, universeId }: Props) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [summary, setSummary] = useState("");
-  const [kind, setKind] = useState<LocationKind>("other");
+  const [kind, setKind] = useState<string>("other");
   const [climate, setClimate] = useState("");
   const [population, setPopulation] = useState("");
   const [description, setDescription] = useState<TiptapDoc | string | null>(null);

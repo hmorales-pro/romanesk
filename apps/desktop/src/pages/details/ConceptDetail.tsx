@@ -45,7 +45,7 @@ export function ConceptDetail({ entity, universeId }: Props) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [summary, setSummary] = useState("");
-  const [kind, setKind] = useState<ConceptKind>("other");
+  const [kind, setKind] = useState<string>("other");
   const [domain, setDomain] = useState("");
   const [description, setDescription] = useState<TiptapDoc | string | null>(null);
 

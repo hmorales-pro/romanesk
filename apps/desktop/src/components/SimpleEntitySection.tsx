@@ -2,14 +2,13 @@
  * Section minimale pour les EntityType qui n'ont pas leur propre form
  * complet sur UniversePage : Faction, Object, Concept (Phase 5).
  *
- * Création : juste le nom + un select de sous-type. L'utilisateur peut
- * compléter le détail (idéologie, propriétés, description Tiptap, etc.)
- * en ouvrant la fiche depuis la liste.
+ * Création : juste le nom + un type (combobox texte libre + suggestions
+ * par défaut + types déjà utilisés dans l'univers — P12.1).
  *
  * Liste : grille de cards cliquables vers `/u/:id/e/:entityId`.
  */
 
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Plus, X } from "lucide-react";
@@ -18,13 +17,14 @@ import type { Entity } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { KindCombobox } from "@/components/ui/kind-combobox";
 
-export interface KindOption<K extends string> {
-  value: K;
+export interface KindOption {
+  value: string;
   label: string;
 }
 
-interface Props<K extends string> {
+interface Props {
   /** Titre H2 de la section. */
   title: string;
   /** Bouton de création (« Nouvelle faction », « Nouvel objet »…). */
@@ -35,19 +35,19 @@ interface Props<K extends string> {
   items: Entity[];
   loading: boolean;
   error: unknown;
-  /** Sous-types disponibles dans le select de création. */
-  kinds: KindOption<K>[];
+  /** Sous-types proposés par défaut (suggestions du combobox). */
+  kinds: KindOption[];
   /** Sous-type par défaut sélectionné dans le form. */
-  defaultKind: K;
+  defaultKind: string;
   /** Crée une fiche minimaliste (nom + kind). */
-  onCreate: (args: { name: string; kind: K }) => Promise<Entity>;
+  onCreate: (args: { name: string; kind: string }) => Promise<Entity>;
   onCreated: () => void;
   /** Donne le sous-type d'une entity pour l'afficher en chip. */
-  getKind: (entity: Entity) => K;
-  kindLabel: (k: K) => string;
+  getKind: (entity: Entity) => string;
+  kindLabel: (k: string) => string;
 }
 
-export function SimpleEntitySection<K extends string>({
+export function SimpleEntitySection({
   title,
   createLabel,
   icon,
@@ -61,10 +61,10 @@ export function SimpleEntitySection<K extends string>({
   onCreated,
   getKind,
   kindLabel,
-}: Props<K>) {
+}: Props) {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
-  const [kind, setKind] = useState<K>(defaultKind);
+  const [kind, setKind] = useState<string>(defaultKind);
 
   const mutation = useMutation({
     mutationFn: onCreate,
@@ -75,6 +75,18 @@ export function SimpleEntitySection<K extends string>({
       setShowForm(false);
     },
   });
+
+  // P12.1 — types déjà créés dans cet univers, dérivés des items existants.
+  // Permet à l'utilisateur de retomber sur ses types custom au lieu de
+  // les retaper.
+  const learnedKinds = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of items) {
+      const k = getKind(e);
+      if (k && k.trim()) set.add(k);
+    }
+    return Array.from(set).sort();
+  }, [items, getKind]);
 
   return (
     <section className="flex flex-col gap-3">
@@ -105,18 +117,13 @@ export function SimpleEntitySection<K extends string>({
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor={`new-${title}-kind`}>Type</Label>
-              <select
+              <KindCombobox
                 id={`new-${title}-kind`}
                 value={kind}
-                onChange={(e) => setKind(e.target.value as K)}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-              >
-                {kinds.map((k) => (
-                  <option key={k.value} value={k.value}>
-                    {k.label}
-                  </option>
-                ))}
-              </select>
+                onChange={setKind}
+                defaults={kinds}
+                learned={learnedKinds}
+              />
             </div>
           </div>
           <div className="flex gap-2 justify-end">
@@ -134,7 +141,11 @@ export function SimpleEntitySection<K extends string>({
             <Button
               size="sm"
               onClick={() =>
-                name.trim() && mutation.mutate({ name: name.trim(), kind })
+                name.trim() &&
+                mutation.mutate({
+                  name: name.trim(),
+                  kind: kind.trim() || defaultKind,
+                })
               }
               disabled={!name.trim() || mutation.isPending}
             >
@@ -142,8 +153,10 @@ export function SimpleEntitySection<K extends string>({
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Tu pourras éditer la description, les relations, les tags et
-            le détail en ouvrant la fiche.
+            Tu peux choisir un type proposé ou taper le tien — il sera
+            réutilisable la prochaine fois. Tu pourras éditer la
+            description, les relations, les tags et le détail en ouvrant
+            la fiche.
           </p>
           {mutation.isError && (
             <p className="text-sm text-destructive" role="alert">

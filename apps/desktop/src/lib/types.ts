@@ -71,9 +71,13 @@ export type LocationKind =
 /**
  * Contenu typé d'un Lieu. Stocké dans `lore_entities.content_json`.
  * `description` est un doc Tiptap (riche) ou `null`.
+ *
+ * P12.1 — `kind` accepte n'importe quelle string (les valeurs
+ * `LocationKind` restent les suggestions par défaut, mais l'utilisateur
+ * peut taper « Hôpital désaffecté », « Forteresse volante »…).
  */
 export interface LocationContent {
-  kind: LocationKind;
+  kind: string;
   climate: string | null;
   population: string | null;
   description: unknown;
@@ -94,21 +98,10 @@ export function characterContent(entity: Entity): CharacterContent {
   };
 }
 
-const VALID_LOCATION_KINDS: LocationKind[] = [
-  "city",
-  "region",
-  "building",
-  "naturalFeature",
-  "celestial",
-  "other",
-];
-
 export function locationContent(entity: Entity): LocationContent {
   const c = entity.content as Partial<LocationContent>;
-  const kind: LocationKind =
-    typeof c.kind === "string" && (VALID_LOCATION_KINDS as string[]).includes(c.kind)
-      ? (c.kind as LocationKind)
-      : "other";
+  const kind =
+    typeof c.kind === "string" && c.kind.trim() ? c.kind.trim() : "other";
   return {
     kind,
     climate: typeof c.climate === "string" ? c.climate : null,
@@ -156,7 +149,7 @@ export const FACTION_KINDS: FactionKind[] = [
   "other",
 ];
 
-export function factionKindLabel(k: FactionKind): string {
+export function factionKindLabel(k: string): string {
   switch (k) {
     case "government":
       return "Gouvernement";
@@ -170,11 +163,20 @@ export function factionKindLabel(k: FactionKind): string {
       return "Compagnie / entreprise";
     case "other":
       return "Autre";
+    default:
+      // P12.1 — type custom : on retourne la valeur telle quelle (capitalize
+      // light pour la présentation).
+      return k.charAt(0).toUpperCase() + k.slice(1);
   }
 }
 
 export interface FactionContent {
-  kind: FactionKind;
+  /**
+   * P12.1 — types personnalisés autorisés. Les valeurs `FactionKind`
+   * restent les suggestions par défaut, mais l'utilisateur peut taper
+   * n'importe quelle string (ex. « Confrérie », « Cellule clandestine »).
+   */
+  kind: string;
   ideology: string | null;
   founded: string | null;
   leader: string | null;
@@ -182,15 +184,10 @@ export interface FactionContent {
   description: unknown;
 }
 
-const VALID_FACTION_KINDS: FactionKind[] = [...FACTION_KINDS];
-
 export function factionContent(entity: Entity): FactionContent {
   const c = entity.content as Partial<FactionContent>;
-  const kind: FactionKind =
-    typeof c.kind === "string" &&
-    (VALID_FACTION_KINDS as string[]).includes(c.kind)
-      ? (c.kind as FactionKind)
-      : "other";
+  const kind =
+    typeof c.kind === "string" && c.kind.trim() ? c.kind.trim() : "other";
   return {
     kind,
     ideology: typeof c.ideology === "string" ? c.ideology : null,
@@ -223,7 +220,7 @@ export const OBJECT_KINDS: ObjectKind[] = [
   "other",
 ];
 
-export function objectKindLabel(k: ObjectKind): string {
+export function objectKindLabel(k: string): string {
   switch (k) {
     case "artifact":
       return "Artefact";
@@ -239,11 +236,14 @@ export function objectKindLabel(k: ObjectKind): string {
       return "Outil";
     case "other":
       return "Autre";
+    default:
+      return k.charAt(0).toUpperCase() + k.slice(1);
   }
 }
 
 export interface ObjectContent {
-  kind: ObjectKind;
+  /** P12.1 — type personnalisé autorisé (cf. FactionContent.kind). */
+  kind: string;
   origin: string | null;
   owner: string | null;
   properties: string[];
@@ -251,15 +251,10 @@ export interface ObjectContent {
   description: unknown;
 }
 
-const VALID_OBJECT_KINDS: ObjectKind[] = [...OBJECT_KINDS];
-
 export function objectContent(entity: Entity): ObjectContent {
   const c = entity.content as Partial<ObjectContent>;
-  const kind: ObjectKind =
-    typeof c.kind === "string" &&
-    (VALID_OBJECT_KINDS as string[]).includes(c.kind)
-      ? (c.kind as ObjectKind)
-      : "other";
+  const kind =
+    typeof c.kind === "string" && c.kind.trim() ? c.kind.trim() : "other";
   return {
     kind,
     origin: typeof c.origin === "string" ? c.origin : null,
@@ -292,7 +287,7 @@ export const CONCEPT_KINDS: ConceptKind[] = [
   "other",
 ];
 
-export function conceptKindLabel(k: ConceptKind): string {
+export function conceptKindLabel(k: string): string {
   switch (k) {
     case "magic":
       return "Magie / système";
@@ -306,25 +301,23 @@ export function conceptKindLabel(k: ConceptKind): string {
       return "Langue / culture";
     case "other":
       return "Autre";
+    default:
+      return k.charAt(0).toUpperCase() + k.slice(1);
   }
 }
 
 export interface ConceptContent {
-  kind: ConceptKind;
+  /** P12.1 — type personnalisé autorisé (cf. FactionContent.kind). */
+  kind: string;
   domain: string | null;
   /** Doc Tiptap riche ou null. */
   description: unknown;
 }
 
-const VALID_CONCEPT_KINDS: ConceptKind[] = [...CONCEPT_KINDS];
-
 export function conceptContent(entity: Entity): ConceptContent {
   const c = entity.content as Partial<ConceptContent>;
-  const kind: ConceptKind =
-    typeof c.kind === "string" &&
-    (VALID_CONCEPT_KINDS as string[]).includes(c.kind)
-      ? (c.kind as ConceptKind)
-      : "other";
+  const kind =
+    typeof c.kind === "string" && c.kind.trim() ? c.kind.trim() : "other";
   return {
     kind,
     domain: typeof c.domain === "string" ? c.domain : null,
@@ -333,7 +326,7 @@ export function conceptContent(entity: Entity): ConceptContent {
 }
 
 /** Libellé humain pour un sous-type de Lieu. */
-export function locationKindLabel(kind: LocationKind): string {
+export function locationKindLabel(kind: string): string {
   switch (kind) {
     case "city":
       return "Ville";
@@ -347,6 +340,9 @@ export function locationKindLabel(kind: LocationKind): string {
       return "Corps céleste";
     case "other":
       return "Autre";
+    default:
+      // P12.1 — type custom : on retourne la valeur telle quelle (capitalize).
+      return kind.charAt(0).toUpperCase() + kind.slice(1);
   }
 }
 

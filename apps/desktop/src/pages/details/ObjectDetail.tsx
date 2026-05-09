@@ -46,7 +46,7 @@ export function ObjectDetail({ entity, universeId }: Props) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [summary, setSummary] = useState("");
-  const [kind, setKind] = useState<ObjectKind>("other");
+  const [kind, setKind] = useState<string>("other");
   const [origin, setOrigin] = useState("");
   const [owner, setOwner] = useState("");
   const [propertiesRaw, setPropertiesRaw] = useState("");

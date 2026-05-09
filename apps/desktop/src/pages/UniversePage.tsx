@@ -39,18 +39,15 @@ import {
 } from "@/components/ui/card";
 import {
   CONCEPT_KINDS,
-  type ConceptKind,
   conceptContent,
   conceptKindLabel,
   type Entity,
   FACTION_KINDS,
-  type FactionKind,
   factionContent,
   factionKindLabel,
   type LocationKind,
   locationKindLabel,
   OBJECT_KINDS,
-  type ObjectKind,
   objectContent,
   objectKindLabel,
 } from "@/lib/types";
@@ -303,7 +300,7 @@ export default function UniversePage() {
         }
       />
 
-      <SimpleEntitySection<FactionKind>
+      <SimpleEntitySection
         title="Factions"
         createLabel="Faction"
         icon={<Users className="size-4" aria-hidden />}
@@ -323,7 +320,7 @@ export default function UniversePage() {
         kindLabel={factionKindLabel}
       />
 
-      <SimpleEntitySection<ObjectKind>
+      <SimpleEntitySection
         title="Objets"
         createLabel="Objet"
         icon={<Package className="size-4" aria-hidden />}
@@ -343,7 +340,7 @@ export default function UniversePage() {
         kindLabel={objectKindLabel}
       />
 
-      <SimpleEntitySection<ConceptKind>
+      <SimpleEntitySection
         title="Concepts"
         createLabel="Concept"
         icon={<Sparkles className="size-4" aria-hidden />}
