@@ -371,8 +371,13 @@ export default function StoryPage() {
               </div>
             )}
             {activeChapter && storyQuery.data && (
+              // P11.y (hotfix freeze) — pas de `key={activeChapter.id}` ici.
+              // Avec une key qui change à chaque switch de chapitre, on
+              // démontait/remontait ChapterWorkspace + Tiptap + les 3
+              // panels IA d'un coup, ce qui pouvait freezer pendant
+              // plusieurs secondes. ChapterWorkspace gère désormais le
+              // resync de son state local via un useEffect[chapter.id].
               <ChapterWorkspace
-                key={activeChapter.id}
                 universeId={universeId}
                 chapter={activeChapter}
                 story={storyQuery.data}
@@ -433,6 +438,23 @@ function ChapterWorkspace({
     status: chapter.status,
   });
   const [savedFlash, setSavedFlash] = useState(false);
+
+  // P11.y — resync explicite quand on change de chapitre. Plus rapide
+  // qu'un démontage/remontage complet (ancien pattern via key prop) :
+  // Tiptap garde son instance, on lui passe juste le nouveau body via
+  // sa prop value (TiptapEditor a déjà un useEffect qui detect le
+  // changement de prop et fait setContent sans re-déclencher onChange).
+  useEffect(() => {
+    setTitle(chapter.title ?? "");
+    setBody(chapter.body_json as TiptapDoc);
+    setStatus(chapter.status);
+    initialRef.current = {
+      title: chapter.title ?? "",
+      bodyJson: JSON.stringify(chapter.body_json),
+      status: chapter.status,
+    };
+    setSavedFlash(false);
+  }, [chapter.id, chapter.title, chapter.body_json, chapter.status]);
 
   const wordCount = useMemo(() => countWordsInTiptap(body), [body]);
   const dirty = useMemo(() => {
@@ -542,13 +564,15 @@ function ChapterWorkspace({
           </div>
         </div>
 
-        {/* Éditeur Tiptap */}
+        {/* Éditeur Tiptap — P11.y : pleine hauteur via min-h-[60vh].
+         * S'adapte à la taille du viewport, donne ~60% d'écran à
+         * l'écriture quoiqu'il arrive. */}
         <div className="px-1 pb-4">
           <TiptapEditor
             value={body}
             onChange={setBody}
             placeholder="Écris ton chapitre…"
-            className="min-h-[400px]"
+            className="min-h-[60vh]"
             toolbar
             frenchTypography
           />

@@ -184,39 +184,15 @@ export function TiptapEditor({
     return () => dom.removeEventListener("keydown", handler, true);
   }, [editor, frenchTypography]);
 
-  // P8.3 — détection auto des répliques de dialogue. Tout <p> dont le
-  // texte commence par un cadratin (—) ou tiret demi-cadratin (–) reçoit
-  // la classe `.dialogue` (teinte bordeaux-deep, cf. index.css).
-  // Plutôt qu'étendre la node Paragraph (qui demande une dep externe),
-  // on observe le DOM ProseMirror : à chaque mutation textuelle, on
-  // re-classifie. Coût négligeable, marche pour le bouton « Dialogue »
-  // ET pour la frappe manuelle « — ... ».
-  useEffect(() => {
-    if (!editor) return;
-    const dom = editor.view.dom as HTMLElement;
-    const isDialogue = (txt: string) => {
-      const t = txt.trimStart();
-      return t.startsWith("—") || t.startsWith("–");
-    };
-    const sync = () => {
-      const ps = dom.querySelectorAll("p");
-      for (const p of Array.from(ps)) {
-        if (isDialogue(p.textContent ?? "")) {
-          p.classList.add("dialogue");
-        } else {
-          p.classList.remove("dialogue");
-        }
-      }
-    };
-    sync();
-    const observer = new MutationObserver(sync);
-    observer.observe(dom, {
-      childList: true,
-      characterData: true,
-      subtree: true,
-    });
-    return () => observer.disconnect();
-  }, [editor]);
+  // P11.y (hotfix freeze) — le MutationObserver pour teinter les
+  // répliques de dialogue (P8.3) a été retiré. Suspect dans le freeze
+  // observé au switch de chapitre : le combo MutationObserver +
+  // ProseMirror peut entrer en cycle si Tiptap re-render à chaque
+  // mutation DOM, et le démontage rapide ne cleanup pas toujours
+  // correctement (l'observer peut tirer sur un editor.view détruit).
+  // Si on veut récupérer la teinte dialogue plus tard, l'approche
+  // canonique est un plugin ProseMirror Decoration qui pose la classe
+  // au render sans modifier le DOM directement (zéro cycle possible).
 
   return (
     <div
