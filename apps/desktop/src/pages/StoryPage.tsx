@@ -85,7 +85,18 @@ export default function StoryPage() {
   const createMutation = useMutation({
     mutationFn: chapterCreate,
     onSuccess: (created) => {
-      invalidateChapters();
+      // Hotfix freeze : on pousse le nouveau chapitre dans la cache
+      // *avant* setActiveId. Sinon, entre `invalidateChapters` (refetch
+      // async) et l'arrivée des données, le useEffect L111 qui valide
+      // activeId voit que `created.id` n'est pas dans `chapters` et le
+      // réécrit en `chapters[0].id` — l'user se retrouve coincé sur le
+      // chapitre précédent et l'éditeur Tiptap se démonte/remonte en
+      // cascade (= freeze visible).
+      qc.setQueryData<Chapter[]>(["chapters", storyId], (old) =>
+        old ? [...old, created] : [created],
+      );
+      // Le refetch en background sync les champs serveur (created_at, …).
+      void invalidateChapters();
       setActiveId(created.id);
     },
   });
@@ -95,7 +106,14 @@ export default function StoryPage() {
   });
   const deleteMutation = useMutation({
     mutationFn: chapterDelete,
-    onSuccess: invalidateChapters,
+    onSuccess: (_void, deletedId) => {
+      // Idem au create : on retire de la cache immédiatement pour éviter
+      // que activeChapter pointe sur un fantôme pendant le refetch.
+      qc.setQueryData<Chapter[]>(["chapters", storyId], (old) =>
+        old ? old.filter((c) => c.id !== deletedId) : [],
+      );
+      void invalidateChapters();
+    },
   });
   const reorderMutation = useMutation({
     mutationFn: chapterReorder,
