@@ -19,6 +19,7 @@ pub mod error;
 pub mod event;
 pub mod import;
 pub mod relation;
+pub mod rename;
 pub mod settings;
 pub mod snapshot;
 pub mod story;

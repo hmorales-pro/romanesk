@@ -131,6 +131,62 @@ export function entityGet(id: Uuid): Promise<Entity | null> {
   return invoke<Entity | null>("entity_get", { id });
 }
 
+// ---------------------------------------------------------------------------
+// Rename propagé d'une entité dans tout l'univers (P14.1)
+// ---------------------------------------------------------------------------
+
+/** Identifie une location de mention pour le rename. Mirror de l'enum
+ * Rust commands::rename::MentionLocationKey (camelCase tagged). */
+export type MentionLocationKey =
+  | { kind: "chapter"; chapterId: Uuid }
+  | { kind: "entitySummary"; entityId: Uuid }
+  | { kind: "entityField"; entityId: Uuid; field: string };
+
+export interface Mention {
+  key: MentionLocationKey;
+  /** Label humain de l'emplacement (ex. « Le Survivant Z · Chapitre 5 »). */
+  label: string;
+  /** Court extrait avec [...] autour de la première occurrence. */
+  excerpt: string;
+  /** Nombre d'occurrences dans cette location. */
+  count: number;
+}
+
+export interface FindMentionsResult {
+  currentName: string;
+  mentions: Mention[];
+}
+
+/** Scanne tout l'univers pour les occurrences du nom de l'entité.
+ * Retourne la liste structurée pour preview avant rename. */
+export function entityFindMentions(
+  entityId: Uuid,
+): Promise<FindMentionsResult> {
+  return invoke<FindMentionsResult>("entity_find_mentions", { entityId });
+}
+
+export interface RenameResult {
+  renamedEntity: Entity;
+  chaptersUpdated: number;
+  entitiesUpdated: number;
+}
+
+/** Applique le rename : update du name de l'entité + remplacement
+ * word-boundary dans les locations choisies. */
+export function entityRenameInUniverse(args: {
+  entityId: Uuid;
+  newName: string;
+  locations: MentionLocationKey[];
+}): Promise<RenameResult> {
+  return invoke<RenameResult>("entity_rename_in_universe", {
+    payload: {
+      entityId: args.entityId,
+      newName: args.newName,
+      locations: args.locations,
+    },
+  });
+}
+
 export function entityDelete(id: Uuid): Promise<void> {
   return invoke<void>("entity_delete", { id });
 }

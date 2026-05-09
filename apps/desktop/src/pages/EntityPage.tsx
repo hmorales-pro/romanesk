@@ -1,5 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
+import { Pencil } from "lucide-react";
 
 import { entityGet, universeGet } from "@/lib/api";
 import { CharacterDetail } from "@/pages/details/CharacterDetail";
@@ -9,6 +11,8 @@ import { ObjectDetail } from "@/pages/details/ObjectDetail";
 import { ConceptDetail } from "@/pages/details/ConceptDetail";
 import { Glyph, glyphKindFromEntityKind } from "@/components/ui/glyph";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { Button } from "@/components/ui/button";
+import { EntityRenameDialog } from "@/components/EntityRenameDialog";
 import { usePageMeta } from "@/components/PageMeta";
 
 /**
@@ -24,6 +28,8 @@ export default function EntityPage() {
     universeId: string;
     entityId: string;
   }>();
+  const qc = useQueryClient();
+  const [renameOpen, setRenameOpen] = useState(false);
 
   const universeQuery = useQuery({
     queryKey: ["universe", universeId],
@@ -63,22 +69,50 @@ export default function EntityPage() {
 
   return (
     <div className="mx-auto flex max-w-[1440px] flex-col gap-6 px-4 py-4">
-      {/* Cartouche éditorial — Glyph + Eyebrow + nom Cormorant */}
+      {/* Cartouche éditorial — Glyph + Eyebrow + nom Cormorant + bouton Renommer */}
       {entityQuery.data && (
-        <header className="flex flex-col gap-3 rounded-[4px] border border-rule bg-paper-deep p-6">
-          <div className="flex items-center gap-3">
-            <Glyph
-              kind={glyphKindFromEntityKind(entityQuery.data.type)}
-              className="size-6 text-[12px]"
-            />
-            <Eyebrow bullet={false}>
-              {kindLabel(entityQuery.data.type)} · {universeQuery.data?.name ?? "Univers"}
-            </Eyebrow>
+        <header className="flex flex-col gap-3 rounded-[4px] border border-rule bg-paper-deep p-6 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <Glyph
+                kind={glyphKindFromEntityKind(entityQuery.data.type)}
+                className="size-6 text-[12px]"
+              />
+              <Eyebrow bullet={false}>
+                {kindLabel(entityQuery.data.type)} · {universeQuery.data?.name ?? "Univers"}
+              </Eyebrow>
+            </div>
+            <h1 className="font-display text-[40px] font-medium leading-[1.05] tracking-[-0.014em] text-ink">
+              {entityQuery.data.name}
+            </h1>
           </div>
-          <h1 className="font-display text-[40px] font-medium leading-[1.05] tracking-[-0.014em] text-ink">
-            {entityQuery.data.name}
-          </h1>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setRenameOpen(true)}
+              title="Renommer dans tout l'univers (chapitres + autres fiches)"
+            >
+              <Pencil className="size-4" aria-hidden /> Renommer dans l'univers
+            </Button>
+          </div>
         </header>
+      )}
+
+      {/* Modale rename propagé (P14.1c) */}
+      {entityQuery.data && (
+        <EntityRenameDialog
+          open={renameOpen}
+          entityId={entityQuery.data.id}
+          currentName={entityQuery.data.name}
+          onClose={() => setRenameOpen(false)}
+          onRenamed={() => {
+            // Resync de la fiche courante + de toutes les listes liées.
+            void qc.invalidateQueries({ queryKey: ["entity", entityId] });
+            void qc.invalidateQueries({ queryKey: ["entities"] });
+            void qc.invalidateQueries({ queryKey: ["chapters"] });
+          }}
+        />
       )}
 
       {entityQuery.isPending && (

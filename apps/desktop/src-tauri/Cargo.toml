@@ -41,6 +41,8 @@ tokio = { version = "1", features = ["sync"] }
 # côté src-tauri pour ne pas dépendre d'un re-export.
 reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
 futures-util = "0.3"
+# regex pour le scan word-boundary dans le rename propagé (P14.1)
+regex = "1"
 
 # Notre logique métier réutilisable (Phase 0 — J3+).
 romanesk-core = { path = "../../../crates/core" }
