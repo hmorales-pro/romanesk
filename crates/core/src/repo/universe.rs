@@ -76,6 +76,62 @@ impl<'a> UniverseRepo<'a> {
         rows.into_iter().map(row_to_universe).collect()
     }
 
+    /// Met à jour les champs éditables (`name`, `description`).
+    /// Les champs `None` ne sont pas touchés.
+    /// Pour `description`, une chaîne vide (après trim) est traitée comme
+    /// "effacer" (NULL en base) — le caller front utilise `""` pour clear.
+    pub async fn update(
+        &self,
+        id: Uuid,
+        name: Option<String>,
+        description: Option<String>,
+    ) -> RepoResult<Universe> {
+        if name.is_none() && description.is_none() {
+            return self.get(id).await?.ok_or(RepoError::NotFound);
+        }
+
+        if let Some(ref n) = name {
+            if n.trim().is_empty() {
+                return Err(RepoError::Invalid("name must not be empty".into()));
+            }
+        }
+
+        let mut sets: Vec<&'static str> = Vec::new();
+        if name.is_some() {
+            sets.push("name = ?");
+        }
+        if description.is_some() {
+            sets.push("description = ?");
+        }
+        sets.push("updated_at = datetime('now')");
+
+        let sql = format!(
+            "UPDATE universes SET {} WHERE id = ? AND deleted_at IS NULL",
+            sets.join(", ")
+        );
+
+        let mut q = sqlx::query(&sql);
+        if let Some(n) = name.as_ref() {
+            q = q.bind(n.trim().to_string());
+        }
+        if let Some(d) = description.as_ref() {
+            // "" / whitespace-only = clear (NULL en base).
+            let trimmed = d.trim();
+            q = q.bind(if trimmed.is_empty() {
+                None::<String>
+            } else {
+                Some(trimmed.to_string())
+            });
+        }
+        q = q.bind(id.to_string());
+
+        let res = q.execute(self.db.pool()).await?;
+        if res.rows_affected() == 0 {
+            return Err(RepoError::NotFound);
+        }
+        self.get(id).await?.ok_or(RepoError::NotFound)
+    }
+
     /// Suppression **hard** : supprime physiquement la ligne.
     /// Le `ON DELETE CASCADE` des FK efface en cascade tout le contenu
     /// rattaché (entities, relations, snapshots, briefs, etc.).

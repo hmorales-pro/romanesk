@@ -170,6 +170,7 @@ pub fn run() {
             ping,
             commands::universe::universe_list,
             commands::universe::universe_create,
+            commands::universe::universe_update,
             commands::universe::universe_get,
             commands::universe::universe_delete,
             commands::universe::universe_export_markdown,

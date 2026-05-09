@@ -59,6 +59,25 @@ export function universeGet(id: Uuid): Promise<Universe | null> {
   return invoke<Universe | null>("universe_get", { id });
 }
 
+/**
+ * Met à jour les champs éditables d'un univers (P10.1).
+ * - `name === undefined` : on ne touche pas au nom
+ * - `description === undefined` : on ne touche pas à la description
+ * - `description === ""` ou whitespace : efface (backend met NULL en base)
+ * - `description === "texte"` : remplace
+ */
+export function universeUpdate(args: {
+  id: Uuid;
+  name?: string;
+  description?: string;
+}): Promise<Universe> {
+  return invoke<Universe>("universe_update", {
+    id: args.id,
+    name: args.name ?? null,
+    description: args.description ?? null,
+  });
+}
+
 export function universeDelete(id: Uuid): Promise<void> {
   return invoke<void>("universe_delete", { id });
 }

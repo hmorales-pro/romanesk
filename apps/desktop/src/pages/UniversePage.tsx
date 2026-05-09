@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { Anchor, BookOpen, MapPin, Network, Plus, Search, Sparkles, User } from "lucide-react";
+import { Anchor, BookOpen, MapPin, Network, Pencil, Plus, Search, Sparkles, User } from "lucide-react";
 
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { usePageMeta } from "@/components/PageMeta";
@@ -17,6 +17,7 @@ import {
   tagAssociationsInUniverse,
   tagListInUniverse,
   universeGet,
+  universeUpdate,
 } from "@/lib/api";
 import { TagChip } from "@/components/TagsSection";
 import { TimelineSection } from "@/components/TimelineSection";
@@ -208,6 +209,12 @@ export default function UniversePage() {
             >
               <BookOpen className="size-4" aria-hidden /> Écrire
             </Button>
+            <UniverseEditButton
+              universe={universeQuery.data}
+              onSaved={() =>
+                qc.invalidateQueries({ queryKey: ["universe", universeId] })
+              }
+            />
             <Link to={`/u/${universeId}/anchor`}>
               <Button variant="outline" size="sm">
                 <Anchor className="size-4" aria-hidden /> Ancrage
@@ -360,6 +367,144 @@ export default function UniversePage() {
 
       <RagChatPanel universeId={universeId} />
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Édition d'univers — bouton + modale (P10.1)
+// ---------------------------------------------------------------------------
+
+interface UniverseEditButtonProps {
+  universe: { id: string; name: string; description: string | null };
+  onSaved: () => void;
+}
+
+function UniverseEditButton({ universe, onSaved }: UniverseEditButtonProps) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(universe.name);
+  const [description, setDescription] = useState(universe.description ?? "");
+  const dialogRef = useRef<HTMLDialogElement | null>(null);
+
+  // Resync depuis la prop si l'univers est rechargé.
+  useEffect(() => {
+    setName(universe.name);
+    setDescription(universe.description ?? "");
+  }, [universe.id, universe.name, universe.description]);
+
+  // showModal/close + ESC = cancel
+  useEffect(() => {
+    const dlg = dialogRef.current;
+    if (!dlg) return;
+    if (open && !dlg.open) dlg.showModal();
+    if (!open && dlg.open) dlg.close();
+    const cancel = (e: Event) => {
+      e.preventDefault();
+      setOpen(false);
+    };
+    dlg.addEventListener("cancel", cancel);
+    return () => dlg.removeEventListener("cancel", cancel);
+  }, [open]);
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      universeUpdate({
+        id: universe.id,
+        name: name.trim(),
+        description,
+      }),
+    onSuccess: () => {
+      onSaved();
+      setOpen(false);
+    },
+  });
+
+  const dirty =
+    name.trim() !== universe.name ||
+    (description.trim() || "") !== (universe.description ?? "");
+
+  return (
+    <>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => setOpen(true)}
+        title="Modifier le nom et la description"
+      >
+        <Pencil className="size-4" aria-hidden /> Modifier
+      </Button>
+      <dialog
+        ref={dialogRef}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setOpen(false);
+        }}
+        className={[
+          "min-w-[420px] max-w-[520px] rounded-[4px] border border-rule bg-paper p-0 text-ink",
+          "shadow-[0_24px_60px_-20px_color-mix(in_oklab,var(--ink)_25%,transparent)]",
+          "m-auto",
+          "backdrop:bg-[color-mix(in_oklab,var(--ink)_35%,transparent)]",
+        ].join(" ")}
+      >
+        <form
+          className="flex flex-col gap-4 p-6"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!name.trim() || !dirty || mutation.isPending) return;
+            mutation.mutate();
+          }}
+        >
+          <Eyebrow>Univers · édition</Eyebrow>
+          <h2 className="font-display text-[22px] font-medium leading-[1.1] tracking-[-0.014em] text-ink">
+            Modifier l'univers
+          </h2>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-univ-name">Nom *</Label>
+            <Input
+              id="edit-univ-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              autoFocus
+              maxLength={120}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-univ-desc">Description</Label>
+            <Textarea
+              id="edit-univ-desc"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Une phrase pour situer le ton, l'époque, l'enjeu…"
+              rows={4}
+            />
+            <p className="font-body text-[12px] italic text-ink-faint">
+              Laisser vide pour effacer la description.
+            </p>
+          </div>
+          {mutation.isError && (
+            <p className="font-body text-[13px] italic text-bordeaux">
+              {String(mutation.error)}
+            </p>
+          )}
+          <div className="flex justify-end gap-2 pt-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setOpen(false)}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!name.trim() || !dirty || mutation.isPending}
+            >
+              {mutation.isPending ? "Enregistrement…" : "Enregistrer"}
+            </Button>
+          </div>
+        </form>
+      </dialog>
+    </>
   );
 }
 

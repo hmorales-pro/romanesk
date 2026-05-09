@@ -37,6 +37,21 @@ pub async fn universe_create(
 }
 
 #[tauri::command]
+pub async fn universe_update(
+    db: State<'_, Database>,
+    id: String,
+    name: Option<String>,
+    description: Option<String>,
+) -> CommandResult<Universe> {
+    let id = Uuid::parse_str(&id)?;
+    let updated = Repo::new(db.inner().clone())
+        .universes()
+        .update(id, name, description)
+        .await?;
+    Ok(updated)
+}
+
+#[tauri::command]
 pub async fn universe_get(
     db: State<'_, Database>,
     id: String,
