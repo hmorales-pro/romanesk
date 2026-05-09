@@ -408,19 +408,39 @@ pub async fn import_apply(
             // rattache trouve son lien.
             continue;
         }
+
+        // Hotfix : l'IA peut générer end_year < start_year (inversion).
+        // Plutôt que de planter tout l'import, on swap silencieusement
+        // si les deux sont fournis et inversés. Si un seul est fourni,
+        // on garde tel quel (le repo accepte).
+        let (start, end) = match (era.start_year, era.end_year) {
+            (Some(s), Some(e)) if e < s => (Some(e), Some(s)),
+            (s, e) => (s, e),
+        };
+
         let new_era = NewEra {
             universe_id,
             name: era.name.clone(),
-            start_year: era.start_year,
-            end_year: era.end_year,
+            start_year: start,
+            end_year: end,
             description: era.description,
             color: None,
             sort_order: idx as i64,
         };
-        let created = repo.eras().create(new_era).await?;
-        era_by_name.insert(era.name.to_lowercase(), created.id);
-        existing_era_names.insert(era.name.to_lowercase());
-        created_eras += 1;
+        // Tolérant : si la création échoue (ex. invariant non géré par
+        // notre auto-swap), on skip cette era au lieu d'avorter tout
+        // l'import. L'utilisateur peut toujours re-créer manuellement.
+        match repo.eras().create(new_era).await {
+            Ok(created) => {
+                era_by_name.insert(era.name.to_lowercase(), created.id);
+                existing_era_names.insert(era.name.to_lowercase());
+                created_eras += 1;
+            }
+            Err(e) => {
+                tracing::warn!("import: skip era invalide « {} » : {e}", era.name);
+                skipped.push(format!("Époque (invalide) : {}", era.name));
+            }
+        }
     }
 
     // 5) Événements (rattachés à l'era par nom si possible).
