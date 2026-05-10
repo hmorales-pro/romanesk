@@ -18,6 +18,7 @@ pub mod era;
 pub mod error;
 pub mod event;
 pub mod import;
+pub mod merge;
 pub mod relation;
 pub mod rename;
 pub mod settings;

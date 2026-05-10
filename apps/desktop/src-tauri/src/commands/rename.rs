@@ -386,6 +386,16 @@ fn build_word_regex(name: &str) -> Regex {
     Regex::new(&pattern).expect("valid regex from escaped name")
 }
 
+/// Versions publiques pour réutilisation par d'autres modules
+/// (cf. commands::merge qui mutualise la logique de rename).
+pub fn collect_text_nodes_pub(node: &Value, out: &mut Vec<String>) {
+    collect_text_nodes(node, out);
+}
+
+pub fn rename_in_text_nodes_pub(node: &mut Value, re: &Regex, replacement: &str) -> bool {
+    rename_in_text_nodes(node, re, replacement)
+}
+
 /// Visiteur récursif qui collecte tous les `text` strings dans un node
 /// Tiptap/ProseMirror sérialisé en JSON.
 fn collect_text_nodes(node: &Value, out: &mut Vec<String>) {

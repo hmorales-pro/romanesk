@@ -185,6 +185,7 @@ pub fn run() {
             commands::entity::entity_clear_cover_image,
             commands::rename::entity_find_mentions,
             commands::rename::entity_rename_in_universe,
+            commands::merge::entity_merge,
             commands::relation::relation_create,
             commands::relation::relation_list_for_entity,
             commands::relation::relation_list_in_universe,
