@@ -191,6 +191,58 @@ export function entityDelete(id: Uuid): Promise<void> {
   return invoke<void>("entity_delete", { id });
 }
 
+// ---------------------------------------------------------------------------
+// Fusion de deux fiches (P14.2)
+// ---------------------------------------------------------------------------
+
+/** Stratégie de fusion par champ. Mirror de l'enum Rust
+ * commands::merge::MergeStrategy (camelCase serde). */
+export type MergeStrategy = "keepTarget" | "keepSource" | "concat";
+
+export interface MergePayload {
+  /** Fiche absorbée (sera soft-deleted). */
+  sourceId: Uuid;
+  /** Fiche qui survit (les références sont redirigées vers elle). */
+  targetId: Uuid;
+  /** Stratégie pour le résumé (`keepTarget` par défaut). */
+  summaryStrategy?: MergeStrategy;
+  /** Stratégie pour le contenu (`concat` retombe sur `keepTarget`). */
+  contentStrategy?: MergeStrategy;
+  /** Stratégie pour la cover image. `concat` = target sinon source. */
+  coverStrategy?: MergeStrategy;
+}
+
+export interface MergeResult {
+  mergedEntity: Entity;
+  /** Nombre de chapitres modifiés (substitution du nom). */
+  chaptersRenamed: number;
+  /** Nombre d'autres entités modifiées (substitution du nom). */
+  entitiesRenamed: number;
+  /** Nombre de relations redirigées vers la target. */
+  relationsMigrated: number;
+  /** Nombre de tags fusionnés (sans doublon). */
+  tagsMigrated: number;
+  /** Nombre de snapshots redirigés. */
+  snapshotsMigrated: number;
+}
+
+/**
+ * Fusionne deux fiches du même type dans le même univers.
+ * La target survit, la source est soft-deleted, et le nom de la
+ * source est propagé dans tout l'univers (chapitres + autres fiches).
+ */
+export function entityMerge(payload: MergePayload): Promise<MergeResult> {
+  return invoke<MergeResult>("entity_merge", {
+    payload: {
+      sourceId: payload.sourceId,
+      targetId: payload.targetId,
+      summaryStrategy: payload.summaryStrategy ?? "keepTarget",
+      contentStrategy: payload.contentStrategy ?? "keepTarget",
+      coverStrategy: payload.coverStrategy ?? "keepTarget",
+    },
+  });
+}
+
 // --- Cover image ------------------------------------------------------------
 
 export interface CoverImageData {

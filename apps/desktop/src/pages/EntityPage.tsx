@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
-import { Pencil } from "lucide-react";
+import { GitMerge, Pencil } from "lucide-react";
 
 import { entityGet, universeGet } from "@/lib/api";
 import { CharacterDetail } from "@/pages/details/CharacterDetail";
@@ -13,6 +13,7 @@ import { Glyph, glyphKindFromEntityKind } from "@/components/ui/glyph";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Button } from "@/components/ui/button";
 import { EntityRenameDialog } from "@/components/EntityRenameDialog";
+import { EntityMergeDialog } from "@/components/EntityMergeDialog";
 import { usePageMeta } from "@/components/PageMeta";
 
 /**
@@ -30,6 +31,7 @@ export default function EntityPage() {
   }>();
   const qc = useQueryClient();
   const [renameOpen, setRenameOpen] = useState(false);
+  const [mergeOpen, setMergeOpen] = useState(false);
 
   const universeQuery = useQuery({
     queryKey: ["universe", universeId],
@@ -95,6 +97,14 @@ export default function EntityPage() {
             >
               <Pencil className="size-4" aria-hidden /> Renommer dans l'univers
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setMergeOpen(true)}
+              title="Fusionner avec une autre fiche du même type (la source sera absorbée)"
+            >
+              <GitMerge className="size-4" aria-hidden /> Fusionner avec une autre
+            </Button>
           </div>
         </header>
       )}
@@ -111,6 +121,26 @@ export default function EntityPage() {
             void qc.invalidateQueries({ queryKey: ["entity", entityId] });
             void qc.invalidateQueries({ queryKey: ["entities"] });
             void qc.invalidateQueries({ queryKey: ["chapters"] });
+          }}
+        />
+      )}
+
+      {/* Modale fusion de fiches (P14.2b) */}
+      {entityQuery.data && (
+        <EntityMergeDialog
+          open={mergeOpen}
+          target={entityQuery.data}
+          universeId={universeId}
+          onClose={() => setMergeOpen(false)}
+          onMerged={() => {
+            // Resync large : la target a évolué, la source est soft-deleted,
+            // les chapitres et autres fiches ont peut-être été modifiés.
+            void qc.invalidateQueries({ queryKey: ["entity", entityId] });
+            void qc.invalidateQueries({ queryKey: ["entities"] });
+            void qc.invalidateQueries({ queryKey: ["entity-list"] });
+            void qc.invalidateQueries({ queryKey: ["chapters"] });
+            void qc.invalidateQueries({ queryKey: ["relations"] });
+            void qc.invalidateQueries({ queryKey: ["tags"] });
           }}
         />
       )}
