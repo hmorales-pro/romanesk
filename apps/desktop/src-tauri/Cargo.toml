@@ -43,6 +43,11 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "str
 futures-util = "0.3"
 # regex pour le scan word-boundary dans le rename propagé (P14.1)
 regex = "1"
+# sqlx — accès direct au pool pour les opérations cross-tables qui ne
+# tiennent pas dans une seule méthode du Repo (P14.2 fusion de fiches :
+# transaction atomique sur 6 tables avec dedup PK composites).
+# Aligné avec la version utilisée par romanesk-core.
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "macros"] }
 
 # Notre logique métier réutilisable (Phase 0 — J3+).
 romanesk-core = { path = "../../../crates/core" }

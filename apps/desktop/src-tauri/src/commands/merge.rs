@@ -127,10 +127,10 @@ pub async fn entity_merge(
             "fusion impossible : univers différents".into(),
         ));
     }
-    if target.r#type != source.r#type {
+    if target.kind != source.kind {
         return Err(CommandError::Other(format!(
             "fusion impossible : types différents ({:?} vs {:?})",
-            target.r#type, source.r#type
+            target.kind, source.kind
         )));
     }
 
