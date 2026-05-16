@@ -31,6 +31,7 @@ Et trois engagements :
 - [`PRD.md`](./PRD.md) — Product Requirements Document complet (vision, modèle de données, architecture, phasing).
 - [`PHASE-0-PLAN.md`](./PHASE-0-PLAN.md) — Plan détaillé de la phase de fondations (2 semaines).
 - [`docs/LICENSE-CHOICE.md`](./docs/LICENSE-CHOICE.md) — Note de décision sur la licence (Elastic License 2.0).
+- [`docs/SIGNING.md`](./docs/SIGNING.md) — Guide opérationnel pour signer les bundles (Apple Developer, Windows, Tauri Updater).
 - [`docs/ADR/`](./docs/ADR/) — Architecture Decision Records.
 
 ---
