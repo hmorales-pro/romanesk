@@ -29,12 +29,19 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self' ipc: http://ipc.localhost; img-src 'self' data: blob: asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; connect-src 'self' ipc: http://ipc.localhost http://localhost:11434 http://127.0.0.1:11434"
     }
   },
   "bundle": {
-    "active": false,
-    "targets": "all",
+    "active": true,
+    "targets": ["dmg", "app", "msi", "nsis", "appimage", "deb"],
+    "category": "Productivity",
+    "shortDescription": "Romanesk — atelier d'écriture local-first pour univers fictionnels.",
+    "longDescription": "Romanesk est un environnement d'écriture local-first qui traite l'univers fictionnel comme un objet de premier rang : personnages, lieux, factions, époques sont indexés, interrogeables et versionnés dans le temps narratif. La fiction se déploie ensuite par-dessus, et l'IA navigue ce socle plutôt que d'inventer à chaque prompt. Vos données vivent sur votre machine, en SQLite lisible par n'importe quel outil — aucun cloud par défaut.",
+    "homepage": "https://romanesk.fr",
+    "publisher": "Hugo Morales",
+    "copyright": "Copyright © 2026 Hugo Morales",
+    "licenseFile": "../../../LICENSE",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -43,7 +50,22 @@
       "icons/icon.ico"
     ],
     "macOS": {
-      "minimumSystemVersion": "13.0"
+      "minimumSystemVersion": "13.0",
+      "dmg": {
+        "windowSize": {
+          "width": 660,
+          "height": 400
+        }
+      }
+    },
+    "windows": {
+      "wix": {
+        "language": ["fr-FR", "en-US"]
+      },
+      "nsis": {
+        "languages": ["French", "English"],
+        "displayLanguageSelector": true
+      }
     }
   }
 }

@@ -70,6 +70,20 @@ pnpm install
 pnpm tauri dev
 ```
 
+### Construire un bundle local (.dmg, .msi, .AppImage, .deb)
+```bash
+# Une seule fois — génère .icns macOS + Square*.png Windows à partir
+# de apps/desktop/src-tauri/icons/icon.png (1024×1024).
+pnpm --filter @romanesk/desktop tauri icon apps/desktop/src-tauri/icons/icon.png
+
+# Bundle pour l'OS courant
+pnpm tauri build
+```
+
+Les bundles sortent dans `apps/desktop/src-tauri/target/release/bundle/`.
+Les releases publiques sont produites par le workflow `release.yml` sur
+push d'un tag `v*`.
+
 ### Tester
 ```bash
 cargo test --workspace

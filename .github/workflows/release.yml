@@ -1,0 +1,175 @@
+name: Release
+
+# Déclenché sur push d'un tag `v*` (ex. `v0.6.1`, `v0.7.0-rc1`).
+# Build les bundles Tauri pour macOS (Intel + Apple Silicon), Windows
+# et Linux, puis upload sur la GitHub Release créée pour le tag.
+#
+# Pour activer le code signing :
+#   - macOS (Apple Developer ID + notarization) : poser les secrets
+#     APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
+#     APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID. tauri-action les détectera
+#     automatiquement.
+#   - Windows (cert OV / EV) : poser TAURI_SIGNING_PRIVATE_KEY et
+#     TAURI_SIGNING_PRIVATE_KEY_PASSWORD (workflow Tauri updater) ou
+#     configurer windowsCertificateThumbprint dans tauri.conf.json.
+#
+# Sans secrets, les bundles sortent non signés — utilisable en bêta interne,
+# mais Gatekeeper/SmartScreen avertira l'utilisateur final.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag à releaser (ex. v0.6.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Crée (ou récupère) la GitHub Release en mode draft, puis collecte
+  # son upload_url pour les jobs OS.
+  # ---------------------------------------------------------------------------
+  create-release:
+    name: Create draft release
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create.outputs.result }}
+      tag_name: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/github-script@v7
+        id: create
+        with:
+          script: |
+            const tag = "${{ steps.tag.outputs.tag }}";
+            const { data } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tag,
+              name: `Romanesk ${tag}`,
+              body: `## Romanesk ${tag}\n\nVoir [CHANGELOG.md](./CHANGELOG.md) pour le détail.\n\n### Téléchargements\n\n- **macOS** (Apple Silicon) : \`Romanesk_${tag.replace(/^v/, '')}_aarch64.dmg\`\n- **macOS** (Intel) : \`Romanesk_${tag.replace(/^v/, '')}_x64.dmg\`\n- **Windows** : \`Romanesk_${tag.replace(/^v/, '')}_x64-setup.exe\` (NSIS) ou \`.msi\` (WiX)\n- **Linux** : \`.AppImage\` ou \`.deb\`\n\n### Première installation\n\n- macOS : ouvrir le \`.dmg\`, glisser Romanesk dans Applications. Si Gatekeeper avertit, Réglages Système → Sécurité → "Ouvrir quand même".\n- Windows : SmartScreen peut afficher "Éditeur inconnu" sur les versions non signées — cliquer "Plus d'infos" → "Exécuter quand même".\n- Linux : rendre le \`.AppImage\` exécutable (\`chmod +x\`) puis lancer.\n\n### IA locale\n\nRomanesk recommande [Ollama](https://ollama.com). À la première ouverture, l'onboarding intégré télécharge automatiquement \`gemma3:latest\` (chat) et \`nomic-embed-text\` (embeddings) si Ollama tourne.`,
+              draft: true,
+              prerelease: tag.includes("-rc") || tag.includes("-beta") || tag.includes("-alpha"),
+            });
+            return data.id;
+
+  # ---------------------------------------------------------------------------
+  # Build Tauri sur chaque OS cible.
+  # tauri-action prend en charge le build front + back + bundle + upload.
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build · ${{ matrix.platform.name }}
+    needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - name: macOS Apple Silicon
+            os: macos-14
+            target: aarch64-apple-darwin
+          - name: macOS Intel
+            os: macos-13
+            target: x86_64-apple-darwin
+          - name: Windows x86_64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - name: Linux x86_64
+            os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+    runs-on: ${{ matrix.platform.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Tauri Linux deps
+        if: matrix.platform.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            libxdo-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            pkg-config \
+            build-essential \
+            curl \
+            libssl-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "./crates/core -> target\n./apps/desktop/src-tauri -> target"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install front deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build + bundle (Tauri)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Code signing macOS — actifs seulement si les secrets existent.
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # Tauri updater (à activer plus tard pour les MAJ automatiques).
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+          projectPath: apps/desktop
+          args: --target ${{ matrix.platform.target }}
+
+  # ---------------------------------------------------------------------------
+  # Publie la release (sort de draft) une fois que tous les OS ont uploadé
+  # leurs assets avec succès. Si un OS échoue, on garde la release en draft
+  # pour intervention manuelle.
+  # ---------------------------------------------------------------------------
+  publish-release:
+    name: Publish release
+    needs: [create-release, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: ${{ needs.create-release.outputs.release_id }},
+              draft: false,
+            });
