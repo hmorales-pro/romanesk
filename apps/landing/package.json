@@ -1,0 +1,10 @@
+{
+  "name": "@romanesk/landing",
+  "private": true,
+  "version": "0.6.0",
+  "description": "Landing page romanesk.fr — HTML statique, pas de build.",
+  "scripts": {
+    "dev": "npx --yes serve -p 4173 .",
+    "preview": "npx --yes serve -p 4173 ."
+  }
+}

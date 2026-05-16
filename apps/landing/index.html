@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Romanesk — l'atelier d'écriture qui pense avec toi</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="styles.css">
+
+<template id="__bundler_thumbnail" data-bg-color="#f3ecdf">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#f3ecdf"/>
+    <g transform="translate(600 400)" fill="none" stroke="#3a1f1d" stroke-width="6">
+      <circle r="180"/>
+      <line x1="0" y1="-180" x2="0" y2="180" stroke-width="3" opacity="0.35"/>
+      <line x1="-180" y1="0" x2="180" y2="0" stroke-width="3" opacity="0.35"/>
+      <line x1="-127" y1="-127" x2="127" y2="127" stroke-width="3" opacity="0.35"/>
+      <line x1="127" y1="-127" x2="-127" y2="127" stroke-width="3" opacity="0.35"/>
+      <circle r="50" fill="#7a1f2b" stroke="none"/>
+    </g>
+    <text x="600" y="660" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="48" fill="#3a1f1d">Romanesk</text>
+  </svg>
+</template>
+</head>
+<body>
+
+<!-- ───────── NAV ───────── -->
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top">
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 2 V 22 M2 12 H 22 M5 5 L 19 19 M19 5 L 5 19" stroke-width="0.6" opacity="0.4"></path>
+          <circle cx="12" cy="12" r="3.2" fill="currentColor"></circle>
+        </svg>
+      </span>
+      <span>Romanesk</span>
+    </a>
+      <nav class="nav-links">
+      <a href="#fonctionnalites">Fonctionnalités</a>
+      <a href="#import">Import</a>
+      <a href="#valeurs">Philosophie</a>
+      <a href="#horizons">Horizons</a>
+      <a href="#rejoindre">Rejoindre</a>
+      <a href="#telecharger">Télécharger</a>
+    </nav>
+    <div class="nav-actions">
+      <a href="#soutenir" class="nav-coffee" aria-label="Offrir un café à l'atelier" title="Offrir un café">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 9 h 13 v 6 a 4 4 0 0 1 -4 4 H 8 a 4 4 0 0 1 -4 -4 z"></path>
+          <path d="M17 11 h 2 a 2.5 2.5 0 0 1 0 5 h -2"></path>
+          <path d="M8 3 c 0 1.5 -1.5 2 -1.5 3.5 S 8 7.5 8 9" stroke-width="1.2" opacity="0.7"></path>
+          <path d="M12 3 c 0 1.5 -1.5 2 -1.5 3.5 S 12 7.5 12 9" stroke-width="1.2" opacity="0.7"></path>
+        </svg>
+      </a>
+      <a href="#telecharger" class="nav-cta">Télécharger</a>
+    </div>
+  </div>
+</header>
+
+<!-- ───────── HERO ───────── -->
+<section class="hero" id="top" data-screen-label="01 Hero">
+  <div class="wrap hero-grid">
+    <div class="hero-text">
+      <div class="hero-eyebrow eyebrow"><span class="bullet"></span>v0.4 — atelier d'écriture local</div>
+      <h1 id="hero-tagline">
+        L'atelier d'écriture <span class="em">qui pense avec toi.</span>
+      </h1>
+      <p class="hero-sub" id="hero-sub">
+        Construis un univers, écris-le sur des centaines de pages,
+        dialogue avec une IA qui connaît ton lore — sans qu'une seule ligne
+        ne quitte ta machine.
+      </p>
+      <div class="hero-actions">
+        <a href="#telecharger" class="btn btn-primary">
+          Télécharger&nbsp;<span class="arr">↓</span>
+        </a>
+        <a href="#demo" class="btn btn-secondary">Voir les captures</a>
+      </div>
+      <div class="hero-meta">
+        <span>macOS · Windows · Linux</span>
+        <span>~ 28 Mo</span>
+        <span>Elastic 2.0</span>
+      </div>
+    </div>
+
+    <!-- Hero visual: graphe nébuleux -->
+    <div class="hero-visual">
+      <svg id="hero-graph" viewBox="0 0 600 720" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <!-- defs -->
+        <defs>
+          <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"  stop-color="currentColor" stop-opacity="0.18"/>
+            <stop offset="60%" stop-color="currentColor" stop-opacity="0.04"/>
+            <stop offset="100%" stop-color="currentColor" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="grain"><feTurbulence baseFrequency="0.9" numOctaves="2" seed="3"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.05 0"/></filter>
+        </defs>
+        <!-- halo background -->
+        <circle class="halo" cx="300" cy="360" r="280" fill="url(#halo)" style="color: var(--bordeaux)"/>
+
+        <!-- edges -->
+        <g stroke="currentColor" stroke-opacity="0.22" stroke-width="1" fill="none" style="color: var(--ink-soft)">
+          <line x1="300" y1="200" x2="180" y2="350"/>
+          <line x1="300" y1="200" x2="430" y2="320"/>
+          <line x1="300" y1="200" x2="300" y2="360"/>
+          <line x1="180" y1="350" x2="300" y2="360"/>
+          <line x1="430" y1="320" x2="300" y2="360"/>
+          <line x1="180" y1="350" x2="240" y2="520"/>
+          <line x1="300" y1="360" x2="240" y2="520"/>
+          <line x1="300" y1="360" x2="380" y2="500"/>
+          <line x1="430" y1="320" x2="380" y2="500"/>
+          <line x1="240" y1="520" x2="380" y2="500"/>
+          <line x1="380" y1="500" x2="470" y2="600"/>
+          <line x1="240" y1="520" x2="160" y2="600"/>
+          <line x1="300" y1="360" x2="100" y2="180" stroke-dasharray="3 4"/>
+          <line x1="430" y1="320" x2="520" y2="180" stroke-dasharray="3 4"/>
+        </g>
+
+        <!-- nodes -->
+        <g>
+          <circle cx="300" cy="200" r="26" fill="var(--paper-deep)" stroke="var(--bordeaux)" stroke-width="1.5"/>
+          <text x="300" y="205" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="var(--bordeaux)" letter-spacing="1">PER</text>
+          <text x="300" y="170" text-anchor="middle" font-family="Cormorant Garamond" font-style="italic" font-size="15" fill="var(--ink)">Aldwen</text>
+        </g>
+        <g>
+          <circle cx="180" cy="350" r="22" fill="var(--paper-deep)" stroke="var(--ivy)" stroke-width="1.5"/>
+          <text x="180" y="355" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="var(--ivy)">LIE</text>
+          <text x="180" y="395" text-anchor="middle" font-family="Cormorant Garamond" font-style="italic" font-size="14" fill="var(--ink)">Vélanyr</text>
+        </g>
+        <g>
+          <circle cx="430" cy="320" r="24" fill="var(--paper-deep)" stroke="var(--ocre)" stroke-width="1.5"/>
+          <text x="430" y="325" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="var(--ocre)">FAC</text>
+          <text x="430" y="285" text-anchor="middle" font-family="Cormorant Garamond" font-style="italic" font-size="14" fill="var(--ink)">Cercle d'Ambre</text>
+        </g>
+        <!-- protagonist (no pulse — halo carries the motion) -->
+        <g>
+          <circle cx="300" cy="360" r="32" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.5"/>
+          <text x="300" y="364" text-anchor="middle" font-family="Cormorant Garamond" font-style="italic" font-size="16" fill="var(--ink)">Maeren</text>
+          <text x="300" y="408" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="var(--ink-faint)" letter-spacing="1">PROTAGONISTE</text>
+        </g>
+        <g>
+          <circle cx="240" cy="520" r="20" fill="var(--paper-deep)" stroke="var(--ink-soft)" stroke-width="1.2"/>
+          <text x="240" y="525" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="var(--ink-soft)">OBJ</text>
+          <text x="240" y="555" text-anchor="middle" font-family="Cormorant Garamond" font-style="italic" font-size="13" fill="var(--ink-soft)">Lame de Sel</text>
+        </g>
+        <g>
+          <circle cx="380" cy="500" r="20" fill="var(--paper-deep)" stroke="var(--ink-soft)" stroke-width="1.2"/>
+          <text x="380" y="505" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="var(--ink-soft)">CON</text>
+          <text x="380" y="535" text-anchor="middle" font-family="Cormorant Garamond" font-style="italic" font-size="13" fill="var(--ink-soft)">Le Souffle</text>
+        </g>
+        <g>
+          <circle cx="470" cy="600" r="16" fill="var(--paper-deep)" stroke="var(--ocre)" stroke-width="1.2"/>
+          <text x="470" y="604" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="var(--ocre)">FAC</text>
+        </g>
+        <g>
+          <circle cx="160" cy="600" r="18" fill="var(--paper-deep)" stroke="var(--ivy)" stroke-width="1.2"/>
+          <text x="160" y="604" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="var(--ivy)">LIE</text>
+        </g>
+
+        <!-- ghost / unresolved -->
+        <g opacity="0.55">
+          <circle cx="100" cy="180" r="14" fill="none" stroke="currentColor" stroke-dasharray="2 3" stroke-width="1" style="color: var(--ink-faint)"/>
+          <text x="100" y="184" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="var(--ink-faint)">?</text>
+        </g>
+        <g opacity="0.55">
+          <circle cx="520" cy="180" r="14" fill="none" stroke="currentColor" stroke-dasharray="2 3" stroke-width="1" style="color: var(--ink-faint)"/>
+          <text x="520" y="184" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="var(--ink-faint)">?</text>
+        </g>
+
+        <!-- side caption -->
+        <text x="36" y="700" font-family="JetBrains Mono" font-size="10" fill="var(--ink-faint)" letter-spacing="1">graphe.lore — 11 fiches · 14 relations</text>
+        <text x="564" y="700" text-anchor="end" font-family="Cormorant Garamond" font-style="italic" font-size="13" fill="var(--ink-faint)">Univers · Cendrelune</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── RÉASSURANCE ───────── -->
+<section class="reassure" data-screen-label="02 Réassurance">
+  <div class="wrap reassure-inner">
+    <span class="reassure-item"><span class="mark"></span>Local-first <small>— ta machine, point.</small></span>
+    <span class="reassure-item"><span class="mark ivy"></span>Aucun cloud <small>— rien ne sort.</small></span>
+    <span class="reassure-item"><span class="mark ocre"></span>Free-use <small>— Elastic 2.0.</small></span>
+  </div>
+</section>
+
+<!-- ───────── DÉMONSTRATION VISUELLE ───────── -->
+<section class="section-pad" id="demo" data-screen-label="03 Démonstration">
+  <div class="wrap-wide">
+    <div class="section-head">
+      <div>
+        <span class="section-num">§ 01 — Démonstration</span>
+        <h2>Un seul outil pour <span class="em">le monde</span> et le <span class="em">manuscrit.</span></h2>
+      </div>
+      <p class="lede">À gauche, tes fiches. Au centre, ton chapitre dans un éditeur qui parle français correctement. À droite, l'IA qui répond en citant ton lore. Le tout, sans connexion.</p>
+    </div>
+
+    <div class="demo-wrap">
+      <div class="demo-titlebar">
+        <div class="demo-dots"><span></span><span></span><span></span></div>
+        <span>Cendrelune.romanesk · Chapitre 7 — La frontière de Vélanyr</span>
+        <span>14 327 mots · sauvegardé</span>
+      </div>
+
+      <div class="demo-grid">
+        <!-- Sidebar fiches -->
+        <aside class="demo-side">
+          <div class="fiche-list-head">Univers · 11 fiches</div>
+          <div class="fiche-list">
+            <div class="fiche active"><span class="glyph perso">P</span>Maeren <em class="tag">14</em></div>
+            <div class="fiche"><span class="glyph perso">P</span>Aldwen <em class="tag">7</em></div>
+            <div class="fiche"><span class="glyph perso">P</span>Sœur Ilve <em class="tag">3</em></div>
+            <div class="fiche"><span class="glyph lieu">L</span>Vélanyr <em class="tag">9</em></div>
+            <div class="fiche"><span class="glyph lieu">L</span>Cendrelune <em class="tag">22</em></div>
+            <div class="fiche"><span class="glyph faction">F</span>Cercle d'Ambre <em class="tag">5</em></div>
+            <div class="fiche"><span class="glyph faction">F</span>Maison du Chant <em class="tag">2</em></div>
+            <div class="fiche"><span class="glyph objet">O</span>Lame de Sel <em class="tag">4</em></div>
+            <div class="fiche"><span class="glyph concept">C</span>Le Souffle <em class="tag">8</em></div>
+            <div class="fiche"><span class="glyph concept">C</span>Pacte d'Ambre <em class="tag">6</em></div>
+            <div class="fiche"><span class="glyph">+</span>Nouvelle fiche</div>
+          </div>
+        </aside>
+
+        <!-- Éditeur central -->
+        <div class="demo-stage">
+          <div class="ed-toolbar" id="ed-toolbar">
+            <button class="ed-tool is-active" data-act="para" title="Paragraphe">¶ Texte</button>
+            <button class="ed-tool" data-act="bold" title="Gras (⌘B)"><b>B</b></button>
+            <button class="ed-tool" data-act="italic" title="Italique (⌘I)"><i>I</i></button>
+            <span class="ed-sep"></span>
+            <button class="ed-tool" data-act="quotes" title="Guillemets français autour de la sélection">«&nbsp;»</button>
+            <button class="ed-tool" data-act="dialogue" title="Insérer un cadratin de dialogue">— dialogue <kbd>⌘⏎</kbd></button>
+            <span class="ed-sep"></span>
+            <button class="ed-tool" data-act="continue" title="L'IA propose une suite">↻ Continuer</button>
+            <button class="ed-tool" data-act="rewrite" title="Réécrire la sélection">✎ Réécrire</button>
+            <span class="ed-sep" style="margin-left:auto"></span>
+            <button class="ed-tool" id="ed-save-state" disabled>Sauvegardé</button>
+          </div>
+          <div class="ed-hint" id="ed-hint">Démo en ligne — clique dans le texte et écris. Les guillemets <em>«&nbsp;»</em>, espaces insécables, cadratins et apostrophes typographiques se posent tout seuls.</div>
+          <div class="editor" id="editor" contenteditable="true" spellcheck="false">
+            <h3 contenteditable="true">Chapitre 7</h3>
+            <div class="ch-meta" contenteditable="false">La frontière de Vélanyr · <span id="word-count">… mots</span></div>
+            <p>La pluie, à Vélanyr, n'a jamais le bon goût. Maeren l'avait su dès le premier matin&nbsp;: un goût d'ambre froid qui colle aux lèvres et qu'on emporte, malgré soi, jusque dans le sommeil.</p>
+            <p class="dialogue">—&nbsp;Tu n'aurais pas dû venir, dit Aldwen sans la regarder. —&nbsp;Personne ne devrait venir ici.</p>
+            <p>Elle posa la Lame de Sel sur la table, lame contre bois, et le Souffle parut un instant retenir son geste. Au-dehors, la cloche du Cercle d'Ambre marquait la troisième heure&nbsp;; quelque part, plus loin, on chantait — la Maison</p>
+          </div>
+        </div>
+
+        <!-- Panneau IA -->
+        <aside class="demo-side right ai-panel" id="ai-panel">
+          <div class="ai-head">
+            <span>Sparring partner</span>
+            <span class="ai-pill">Modèle créatif</span>
+          </div>
+          <div class="ai-card you" id="ai-prompt">
+            <div class="role">Toi</div>
+            <span id="ai-prompt-text">Clique sur <em>↻&nbsp;Continuer</em> dans la barre pour qu'Ollama propose une suite à ton paragraphe.</span>
+          </div>
+          <div class="ai-card" id="ai-suggestion" hidden>
+            <div class="role"><span id="ai-suggestion-role">IA · suggestion</span><span class="ai-status" id="ai-status"></span></div>
+            <div id="ai-suggestion-text"></div>
+            <div class="ai-cite" id="ai-cite">
+              <span>Lu&nbsp;:</span>
+              <a>Maeren</a>
+              <a>Vélanyr</a>
+              <a>Le Souffle</a>
+            </div>
+            <div class="ai-actions" id="ai-actions" hidden>
+              <button class="ai-btn ai-btn-accept" data-act="accept">Accepter</button>
+              <button class="ai-btn" data-act="reject">Refuser</button>
+            </div>
+          </div>
+          <div class="ai-card you" id="ai-coh">
+            <div class="role">Cohérence</div>
+            <span style="color: var(--ivy)">✓</span> Compatible avec le lore. <em>« Pacte d'Ambre »</em> mentionne explicitement les « enfants sans souffle ».
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- Graphe legend / quick stats -->
+    <div style="margin-top: 24px; display: flex; gap: 32px; flex-wrap: wrap; font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint); letter-spacing: 0.04em;">
+      <span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--bordeaux);margin-right:8px;vertical-align:middle"></i>Personnages</span>
+      <span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ivy);margin-right:8px;vertical-align:middle"></i>Lieux</span>
+      <span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ocre);margin-right:8px;vertical-align:middle"></i>Factions</span>
+      <span style="color: var(--ink-soft)">— Objets · Concepts · Entités réelles</span>
+      <span style="margin-left:auto">tout est local · rien ne sort</span>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── 3 CARTES FONCTIONNALITÉS ───────── -->
+<section class="section-pad" id="fonctionnalites" data-screen-label="04 Fonctionnalités">
+  <div class="wrap-wide">
+    <div class="section-head">
+      <div>
+        <span class="section-num">§ 02 — Fonctionnalités-clés</span>
+        <h2>Trois gestes <span class="em">qui suffisent</span> à écrire un livre.</h2>
+      </div>
+      <p class="lede">Construire l'univers. L'écrire chapitre après chapitre.
+      Demander de l'aide quand la page se vide. Le reste — recherche,
+      cohérence, mise en forme — n'a plus à t'interrompre.</p>
+    </div>
+
+    <div class="cards">
+      <article class="card">
+        <span class="num">01</span>
+        <svg class="card-orn" viewBox="0 0 36 36" stroke="var(--bordeaux)" fill="none" stroke-width="1.2">
+          <circle cx="18" cy="18" r="14"/>
+          <circle cx="18" cy="18" r="3" fill="var(--bordeaux)"/>
+          <path d="M18 4 v 28 M4 18 h 28" stroke-opacity="0.4"/>
+        </svg>
+        <h3>Construis <span class="em">ton univers.</span></h3>
+        <p>Six types de fiches polymorphes — Personnage, Lieu, Faction,
+        Objet, Concept, Entité réelle — reliées par des tags transversaux
+        et un graphe nébuleux qui se redessine quand tu écris.</p>
+        <div class="specs">
+          <span>6 types de fiches</span>
+          <span>Graphe de relations</span>
+          <span>Ancrage historique optionnel</span>
+        </div>
+      </article>
+
+      <article class="card">
+        <span class="num">02</span>
+        <svg class="card-orn" viewBox="0 0 36 36" stroke="var(--ink)" fill="none" stroke-width="1.2">
+          <path d="M6 8 h 24 M6 14 h 24 M6 20 h 18 M6 26 h 22"/>
+          <path d="M28 22 l -3 4 l -3 -3 l 6 -7 l 3 3 z" fill="var(--ocre)" stroke="var(--ocre)" stroke-width="0.6"/>
+        </svg>
+        <h3>Écris <span class="em">des récits</span> multi-chapitres.</h3>
+        <p>Éditeur riche, typographie française automatique — espaces
+        insécables, cadratins, guillemets « ». Drag-and-drop des chapitres,
+        auto-save trois secondes, export Markdown propre.</p>
+        <div class="specs">
+          <span>Typo française auto</span>
+          <span>Bouton dialogue</span>
+          <span>Export Markdown</span>
+        </div>
+      </article>
+
+      <article class="card">
+        <span class="num">03</span>
+        <svg class="card-orn" viewBox="0 0 36 36" stroke="var(--ocre)" fill="none" stroke-width="1.2">
+          <path d="M10 6 l 0 24 M6 10 l 8 -4 M6 26 l 8 4"/>
+          <circle cx="26" cy="14" r="5" stroke="var(--bordeaux)"/>
+          <circle cx="26" cy="22" r="3" stroke="var(--bordeaux)" stroke-dasharray="1.5 2"/>
+        </svg>
+        <h3>L'IA <span class="em">en sparring partner.</span></h3>
+        <p>Continuation, réécriture, résumé, brainstorm, vérification de
+        cohérence avec le lore, atelier de description par texte ou image.
+        Cinq modèles configurables&nbsp;: créatif, littéral, embedding,
+        vision, défaut.</p>
+        <div class="specs">
+          <span>5 modèles configurables</span>
+          <span>Validation manuelle obligatoire</span>
+          <span>Tourne sur Ollama</span>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── IMPORT INTELLIGENT ───────── -->
+<section class="section-pad import-bg" id="import" data-screen-label="05 Import">
+  <div class="wrap import-grid">
+    <div class="import-text">
+      <span class="section-num">§ 03 — Import intelligent</span>
+      <h2>Tu as déjà <span class="em">commencé</span> ailleurs&nbsp;?</h2>
+      <p>Glisse un Word, un PDF, un Markdown, ou colle directement ton
+      texte. Romanesk lit, isole les personnages, lieux, factions,
+      époques, chapitres — et te demande s'il faut créer un nouvel
+      univers ou enrichir un existant. Au passage, il signale les
+      incohérences qu'il croise.</p>
+      <ul>
+        <li>.docx · .pdf · .md · texte collé</li>
+        <li>Détection des chapitres et des actes</li>
+        <li>Fiches pré-remplies, tu valides</li>
+        <li>Diff sur les incohérences trouvées</li>
+      </ul>
+    </div>
+
+    <div class="dropzone is-active" id="dropzone">
+      <div class="dz-head"><span>import.analyse</span><span>~ 2 min</span></div>
+      <div class="dz-body">
+        <span class="dz-glyph"></span>
+        <div class="dz-text">
+          <strong>cendrelune-tome-1-v3.docx</strong>
+          <p>284 pages · 87 412 mots · 23 chapitres détectés</p>
+        </div>
+      </div>
+      <div class="dz-progress">
+        <div class="row done"><span>Découpage en chapitres</span><span class="check">✓</span></div>
+        <div class="bar"><i style="width: 100%; background: var(--ivy)"></i></div>
+        <div class="row done"><span>Identification des entités</span><span class="check">✓</span></div>
+        <div class="bar"><i style="width: 100%; background: var(--ivy)"></i></div>
+        <div class="row"><span>Recherche de cohérence</span><span>en cours…</span></div>
+        <div class="bar"><i style="width: 62%"></i></div>
+      </div>
+      <div>
+        <div class="dz-head" style="margin-bottom: 8px">Détecté · 18 entités</div>
+        <div class="dz-detected">
+          <span class="detected-chip new">+ Maeren</span>
+          <span class="detected-chip new">+ Aldwen</span>
+          <span class="detected-chip">Vélanyr</span>
+          <span class="detected-chip">Cercle d'Ambre</span>
+          <span class="detected-chip new">+ Maison du Chant</span>
+          <span class="detected-chip">Lame de Sel</span>
+          <span class="detected-chip warn">⚠ Cendrelune (2 graphies)</span>
+          <span class="detected-chip">Pacte d'Ambre</span>
+          <span class="detected-chip">Le Souffle</span>
+          <span class="detected-chip">+ 9 autres</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── MÉMOIRE VIVANTE DU LORE ───────── -->
+<section class="section-pad" data-screen-label="06 Mémoire lore">
+  <div class="wrap lore-grid">
+    <div class="lore-text">
+      <span class="section-num">§ 04 — Mémoire vivante</span>
+      <h2>Pose une <span class="em">question</span> à ton univers.</h2>
+      <p>Indexation par embeddings, RAG local. Tu écris en langage
+      naturel, l'IA cherche dans tes fiches et tes chapitres, te répond
+      en citant ses sources. Plus besoin de relire trois cents pages
+      pour vérifier une couleur de cape.</p>
+      <p style="margin-top: 18px; font-style: italic; font-family: var(--serif-display); font-size: 22px; color: var(--ink); max-width: 22em">
+        — La cape d'Aldwen est-elle ocre ou cendre ?
+      </p>
+    </div>
+
+    <div class="rag">
+      <div class="rag-head">requête.lore · embedding · 11 fiches indexées</div>
+      <div class="rag-q">La cape d'Aldwen est-elle ocre ou cendre ?</div>
+      <div class="rag-a">
+        Ocre — explicitement, dans la fiche d'Aldwen<sup>[1]</sup> et au
+        chapitre 3<sup>[2]</sup>. Le mot « cendre » revient deux fois,
+        mais à propos de la cape de Sœur Ilve<sup>[3]</sup>. Si tu
+        veux, je peux pointer un risque de confusion au chapitre&nbsp;7.
+      </div>
+      <div class="rag-cites">
+        <div class="rag-cite"><span class="ref">[1]</span><span class="src">Fiche · Aldwen — apparence, paragraphe 2</span><span class="score">0.91</span></div>
+        <div class="rag-cite"><span class="ref">[2]</span><span class="src">Cendrelune · Chapitre 3 — l'arrivée</span><span class="score">0.87</span></div>
+        <div class="rag-cite"><span class="ref">[3]</span><span class="src">Fiche · Sœur Ilve — silhouette</span><span class="score">0.74</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── VALEURS / PHILOSOPHIE ───────── -->
+<section class="values section-pad" id="valeurs" data-screen-label="07 Valeurs">
+  <div class="wrap-wide">
+    <div class="section-head">
+      <div>
+        <span class="section-num">§ 05 — Philosophie</span>
+        <h2>Quatre <span class="em">principes</span>, et on ne bouge pas.</h2>
+      </div>
+      <p class="lede">Romanesk est un outil d'auteur — pas un service en ligne, pas
+      une plateforme, pas un dataset. Voilà ce que ça veut dire concrètement.</p>
+    </div>
+
+    <div class="values-grid">
+      <div class="value">
+        <span class="num">i.</span>
+        <h3>Local-first.</h3>
+        <p>Tes données restent sur ta machine. SQLite local, modèles
+        Ollama locaux. Aucun compte, aucun serveur, aucune télémétrie.</p>
+        <span class="meta">~/Library/Application Support/Romanesk/</span>
+      </div>
+      <div class="value">
+        <span class="num">ii.</span>
+        <h3>Pas de lock-in.</h3>
+        <p>Export Markdown à tout moment. Le format de stockage est
+        lisible — SQLite + Tiptap JSON — tu peux migrer sans nous.</p>
+        <span class="meta">.md · .docx · .sqlite · Tiptap JSON</span>
+      </div>
+      <div class="value">
+        <span class="num">iii.</span>
+        <h3>L'IA ne décide pas.</h3>
+        <p>Toute suggestion de l'IA passe par ton validation manuelle.
+        Elle n'écrit jamais directement en base, elle propose — tu
+        acceptes, modifies, refuses.</p>
+        <span class="meta">accepter · modifier · refuser</span>
+      </div>
+      <div class="value">
+        <span class="num">iv.</span>
+        <h3>Free-use, code lisible.</h3>
+        <p>Licence Elastic 2.0&nbsp;: utilisation libre sans redevance,
+        code source consultable, contributions bienvenues. Pas de
+        version « pro » payante en embuscade.</p>
+        <span class="meta">github.com/hmorales-pro/romanesk · Elastic 2.0</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── BANDEAU TECHNIQUE ───────── -->
+<section class="tech" data-screen-label="08 Tech">
+  <div class="wrap tech-inner">
+    <span class="label">Construit avec —</span>
+    <span class="tech-stack">
+      <span>Tauri</span>
+      <span>Rust</span>
+      <span>React</span>
+      <span>Tiptap</span>
+      <span>Ollama</span>
+      <span>SQLite</span>
+    </span>
+  </div>
+</section>
+
+<!-- ───────── HORIZONS / ROADMAP ───────── -->
+<section class="section-pad horizons" id="horizons" data-screen-label="09 Horizons">
+  <div class="wrap-wide">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow"><span class="bullet"></span>§ 09 — Horizons</span>
+        <h2>Ce que <span class="em">l'atelier</span> regarde au loin.</h2>
+      </div>
+      <p class="section-lede">
+        Romanesk est un outil patient. Voici ce qui mijote pour les versions
+        suivantes — chacune fidèle au principe&nbsp;: <em>tu décides où tes
+        mots dorment</em>. Aucune de ces fonctionnalités ne te sera imposée,
+        et aucune ne quittera la philosophie local-first par défaut.
+      </p>
+    </div>
+
+    <ol class="horizon-list">
+      <li class="horizon">
+        <div class="horizon-meta">
+          <span class="horizon-num">i.</span>
+          <span class="horizon-status status-soon">Bientôt</span>
+        </div>
+        <div class="horizon-body">
+          <h3>Romanesk <span class="em">de poche.</span></h3>
+          <p>Une application mobile pour noter une scène dans le métro, dicter
+            une réplique en marchant, glisser une idée de personnage avant
+            qu'elle ne s'évapore. L'atelier continue de tourner sur ton
+            ordinateur&nbsp;; le mobile devient son carnet de chevet.</p>
+          <span class="horizon-tags">iOS · Android · capture rapide</span>
+        </div>
+      </li>
+
+      <li class="horizon">
+        <div class="horizon-meta">
+          <span class="horizon-num">ii.</span>
+          <span class="horizon-status status-soon">En chantier</span>
+        </div>
+        <div class="horizon-body">
+          <h3>Synchronisation <span class="em">entre tes machines.</span></h3>
+          <p>Chiffrée de bout en bout, optionnelle, transparente. Tu choisis
+            les appareils qui parlent entre eux&nbsp;; rien ne transite sans
+            ton aval. L'univers que tu écris le matin sur ton portable
+            t'attend le soir sur ton fixe — sans serveur intermédiaire qui
+            t'observe.</p>
+          <span class="horizon-tags">E2EE · pair-à-pair · opt-in</span>
+        </div>
+      </li>
+
+      <li class="horizon">
+        <div class="horizon-meta">
+          <span class="horizon-num">iii.</span>
+          <span class="horizon-status status-study">À l'étude</span>
+        </div>
+        <div class="horizon-body">
+          <h3>Modèles <span class="em">plus puissants,</span> au choix.</h3>
+          <p>Pour les passages où Ollama atteint ses limites, un crochet
+            optionnel vers un modèle plus capable. Deux pavillons au choix —
+            <em>serveur dédié français</em> ou <em>infrastructure US</em> —
+            que tu actives à la demande, requête par requête. Le mode local
+            reste celui par défaut, sans exception.</p>
+          <span class="horizon-tags">FR souverain · US · à la requête</span>
+        </div>
+      </li>
+
+      <li class="horizon">
+        <div class="horizon-meta">
+          <span class="horizon-num">iv.</span>
+          <span class="horizon-status status-far">Un jour</span>
+        </div>
+        <div class="horizon-body">
+          <h3>Du texte <span class="em">à l'image,</span> au son, à la voix.</h3>
+          <p>Générer un portrait du personnage que tu viens de fixer. Entendre
+            la voix d'Aldwen prononcer sa réplique. Composer l'ambiance sonore
+            d'une scène. Romanesk ne fera jamais de film — mais il pourra
+            t'aider à <em>esquisser</em> ce que ton roman fait entendre et
+            voir, pour mieux le réécrire ensuite.</p>
+          <span class="horizon-tags">portraits · ambiance · voix · esquisse</span>
+        </div>
+      </li>
+    </ol>
+
+    <p class="horizon-foot">
+      <span class="bullet"></span>
+      Une idée que tu aimerais voir sur cette liste ?
+      <a href="#newsletter">Glisse-la dans le carnet de l'atelier.</a>
+    </p>
+  </div>
+</section>
+
+<!-- ───────── NOTE SUR LE MODÈLE ───────── -->
+<section class="postscript" id="modele" data-screen-label="10 Modèle">
+  <div class="wrap postscript-inner">
+    <div class="postscript-mark">P.-S.</div>
+    <div class="postscript-body">
+      <h3>Au sujet <span class="em">du modèle.</span></h3>
+      <p>
+        Romanesk restera <em>utilisable au quotidien sans rien payer, sans
+        compte, sans connexion</em> — c'est la ligne. Avec le temps, et
+        seulement quand le besoin se fera sentir, nous proposerons sans
+        doute des services <em>en sus</em>&nbsp;: synchronisation cloud
+        avec un compte facultatif, accès à des modèles d'IA distants
+        facturés au token, peut-être d'autres choses qu'on dessinera
+        ensemble. Aucun ne sera nécessaire pour écrire&nbsp;; chacun
+        s'activera à la demande, par requête, et restera désactivable
+        d'un clic.
+      </p>
+      <ul class="postscript-list">
+        <li><span class="psl-dot"></span><b>Le local reste gratuit.</b> Toujours. Aucune fonctionnalité d'écriture ne passera derrière un péage.</li>
+        <li><span class="psl-dot ocre"></span><b>Le cloud sera optionnel.</b> Sync chiffrée, IA distante, partages — uniquement si tu en veux, à l'usage.</li>
+        <li><span class="psl-dot ivy"></span><b>Le tarif sera lisible.</b> Pas d'abonnement caché, pas de limite artificielle sur la version locale.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── REJOINDRE L'ATELIER ───────── -->
+<section class="section-pad join" id="rejoindre" data-screen-label="10 Rejoindre">
+  <div class="wrap-wide">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow"><span class="bullet"></span>§ 10 — Rejoindre l'atelier</span>
+        <h2>Quelques <span class="em">places à l'établi.</span></h2>
+      </div>
+      <p class="section-lede">
+        Romanesk est petit, et le restera. Mais il y a plus à faire qu'une
+        seule paire de mains — et le code est consultable, lisible, fait
+        pour être augmenté à plusieurs. Si l'une de ces tables te
+        ressemble, écris-nous une lettre&nbsp;: en deux paragraphes, dis
+        qui tu es et ce que tu aimerais ajouter au cahier.
+      </p>
+    </div>
+
+    <div class="join-grid">
+      <article class="join-card">
+        <div class="join-meta">
+          <span class="join-num">i.</span>
+          <span class="join-tag">Code</span>
+        </div>
+        <h3>Développer <span class="em">Romanesk.</span></h3>
+        <p>Tu lis du Rust sans grimacer, tu as déjà bricolé une intégration
+          Tauri, ou tu connais Tiptap mieux que ton voisin. Il y a des
+          chantiers&nbsp;: synchronisation chiffrée, version mobile,
+          lecteurs de formats, optimisation de l'index RAG.</p>
+        <span class="join-tools">Tauri · Rust · React · Tiptap · Ollama</span>
+      </article>
+
+      <article class="join-card">
+        <div class="join-meta">
+          <span class="join-num">ii.</span>
+          <span class="join-tag">Plume</span>
+        </div>
+        <h3>Lire <span class="em">en avant-première.</span></h3>
+        <p>Tu écris, tu jongles avec un univers depuis des années, tu
+          repères une incohérence à dix lignes. Les beta-lecteurs et
+          beta-écrivains testent les versions à venir sur leurs propres
+          manuscrits, et nous disent où le bois grince.</p>
+        <span class="join-tools">romancier·ères · GM · auteurs SF/fantasy</span>
+      </article>
+
+      <article class="join-card">
+        <div class="join-meta">
+          <span class="join-num">iii.</span>
+          <span class="join-tag">Traduction</span>
+        </div>
+        <h3>Porter <span class="em">la typographie.</span></h3>
+        <p>Romanesk respecte la typographie française à la lettre — guillemets,
+          insécables, cadratins. On aimerait faire de même en anglais, en
+          espagnol, en allemand. Si les règles d'une langue te tiennent à
+          cœur, on a besoin de ton œil.</p>
+        <span class="join-tools">EN · ES · DE · IT · PT — d'autres aussi</span>
+      </article>
+
+      <article class="join-card">
+        <div class="join-meta">
+          <span class="join-num">iv.</span>
+          <span class="join-tag">Voix</span>
+        </div>
+        <h3>Faire <span class="em">connaître</span> l'atelier.</h3>
+        <p>Romanesk n'a ni budget pub, ni pavillon Twitter. Si tu sais
+          raconter un outil sans le travestir — mots, images, vidéos
+          courtes, fils sociaux, rencontres en festival d'écriture — on
+          aimerait écrire la suite ensemble. Tu décides du ton&nbsp;; on
+          tient à ce qu'il reste littéraire.</p>
+        <span class="join-tools">comm · réseaux · vidéo · communauté · presse</span>
+      </article>
+
+      <article class="join-card join-card-wide">
+        <div class="join-meta">
+          <span class="join-num">v.</span>
+          <span class="join-tag">Édition</span>
+        </div>
+        <h3>Maisons <span class="em">d'édition,</span> parlons-nous.</h3>
+        <p>Vérification de cohérence sur un manuscrit de huit-cents pages,
+          correction grammaticale assistée, lecture de continuité entre
+          chapitres, espace partagé pour qu'un·e éditeur·rice consulte
+          régulièrement l'avancée d'un·e auteur·rice — ce sont des
+          chantiers que Romanesk peut ouvrir, mais qu'il faut dessiner
+          avec vous. Si une maison cherche un outil qui respecte le
+          manuscrit autant que ses auteur·rices, on prend le café.</p>
+        <span class="join-tools">cohérence · relecture · espace partagé · sur-mesure</span>
+      </article>
+    </div>
+
+    <div class="join-foot">
+      <div class="join-foot-text">
+        <span class="bullet"></span>
+        <span>Pas de CV, pas de formulaire — un courriel suffit.</span>
+      </div>
+      <div class="join-foot-actions">
+        <a href="mailto:atelier@romanesk.fr?subject=Rejoindre%20l'atelier" class="btn btn-primary">
+          Écrire à l'atelier&nbsp;<span class="arr">→</span>
+        </a>
+        <a href="https://github.com/hmorales-pro/romanesk" rel="noopener" class="btn btn-secondary">
+          Lire le code sur GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── CTA FINAL ───────── -->
+<section class="cta" id="telecharger" data-screen-label="09 Téléchargement">
+  <div class="wrap">
+    <h2>Ton univers. Ton manuscrit.<br><span class="em">Ta machine.</span></h2>
+    <p class="ledebig">28 Mo. Trois plateformes. Aucune inscription.
+    Tu installes, tu ouvres, tu écris — comme on ouvrait un cahier.</p>
+    <div class="cta-actions">
+      <a
+        href="https://github.com/hmorales-pro/romanesk/releases/latest"
+        rel="noopener"
+        class="btn btn-primary"
+        data-dl-primary
+      >Télécharger pour macOS&nbsp;<span class="arr">↓</span></a>
+      <a
+        href="https://github.com/hmorales-pro/romanesk/releases/latest"
+        rel="noopener"
+        class="btn btn-secondary"
+        data-dl-secondary
+      >Windows · Linux</a>
+    </div>
+    <div class="small">
+      <span data-release-line>v0.6.0 — bêta · code consultable</span>
+      &nbsp;·&nbsp;
+      <a
+        href="https://github.com/hmorales-pro/romanesk/blob/main/CHANGELOG.md"
+        rel="noopener"
+      >changelog</a>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── NEWSLETTER ───────── -->
+<section class="news" id="newsletter" data-screen-label="11 Carnet">
+  <div class="wrap news-grid">
+    <div class="news-text">
+      <span class="eyebrow"><span class="bullet"></span>§ 10 — Le carnet de l'atelier</span>
+      <h2>Une <span class="em">lettre rare,</span> quand l'encre sèche.</h2>
+      <p>Une fois par mois, parfois moins — jamais plus. Les avancées de
+        Romanesk, les essais qui ont raté, les chapitres lus en cours
+        d'écriture, et les versions à venir avant tout le monde. Pas de
+        tracker, pas d'image distante, désinscription d'un clic.</p>
+    </div>
+    <form class="news-form" id="news-form" novalidate>
+      <label class="news-label" for="news-email">
+        <span class="news-label-text">Ton adresse</span>
+        <span class="news-label-hint">— restera entre nous</span>
+      </label>
+      <div class="news-row">
+        <input
+          id="news-email"
+          name="email"
+          type="email"
+          required
+          autocomplete="email"
+          placeholder="prenom@chez-toi.fr"
+          spellcheck="false"
+        />
+        <button type="submit" class="btn btn-primary news-submit">
+          S'abonner&nbsp;<span class="arr">→</span>
+        </button>
+      </div>
+      <div class="news-foot">
+        <label class="news-check">
+          <input type="checkbox" id="news-beta" />
+          <span>M'inviter aussi aux tests des prochaines versions (mobile, sync, modèles distants).</span>
+        </label>
+      </div>
+      <div class="news-status" id="news-status" hidden></div>
+    </form>
+  </div>
+</section>
+
+<!-- ───────── SOUTENIR / CAFÉ ───────── -->
+<section class="cafe" id="soutenir" data-screen-label="12 Soutenir">
+  <div class="wrap cafe-grid">
+    <div class="cafe-text">
+      <span class="eyebrow"><span class="bullet"></span>§ 11 — Soutenir l'atelier</span>
+      <h2>Un <span class="em">café</span> pour qui tient la plume.</h2>
+      <p>Romanesk reste gratuit et le restera. Mais chaque version a un
+        coût discret&nbsp;: la signature des binaires sur macOS et Windows,
+        l'hébergement modeste de la newsletter et du site, les heures
+        d'écriture du code en dehors du salariat. Si l'outil te rend
+        service, tu peux poser un café sur la table.</p>
+    </div>
+
+    <div class="cafe-card">
+      <div class="cafe-tiers">
+        <div class="cafe-tier">
+          <span class="cafe-amount">3<small>&nbsp;€</small></span>
+          <span class="cafe-what">Un expresso</span>
+          <span class="cafe-funds">— couvre une heure de relecture du code.</span>
+        </div>
+        <div class="cafe-tier is-highlight">
+          <span class="cafe-amount">8<small>&nbsp;€</small></span>
+          <span class="cafe-what">Un café crème</span>
+          <span class="cafe-funds">— une fraction de signature mensuelle macOS.</span>
+        </div>
+        <div class="cafe-tier">
+          <span class="cafe-amount">25<small>&nbsp;€</small></span>
+          <span class="cafe-what">Une tournée</span>
+          <span class="cafe-funds">— un mois d'hébergement de la sync à venir.</span>
+        </div>
+      </div>
+      <div class="cafe-actions">
+        <a
+          href="https://buymeacoffee.com/romanesk"
+          rel="noopener"
+          class="btn btn-primary"
+        >
+          Offrir un café&nbsp;<span class="arr">☕</span>
+        </a>
+        <a
+          href="https://github.com/sponsors/hmorales-pro"
+          rel="noopener"
+          class="btn btn-secondary"
+        >
+          Sponsoriser sur GitHub
+        </a>
+      </div>
+      <p class="cafe-note">
+        Aucun « tier premium », aucune fonctionnalité réservée aux
+        donateurs. Le code est sous Elastic 2.0 — ton geste finance
+        l'atelier, pas un avantage privé.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── FOOTER ───────── -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-thin">
+      <div class="footer-left">
+        <div class="footer-brand">Romanesk</div>
+        <p class="footer-tag">L'atelier d'écriture qui pense avec toi — et seulement avec toi.</p>
+      </div>
+      <nav class="footer-links">
+        <a href="#fonctionnalites">Fonctionnalités</a>
+        <a href="#horizons">Horizons</a>
+        <a href="#rejoindre">Rejoindre</a>
+        <a href="#newsletter">Carnet</a>
+        <a href="#soutenir">Soutenir</a>
+        <a href="#telecharger">Télécharger</a>
+        <a href="https://github.com/hmorales-pro/romanesk" rel="noopener">GitHub</a>
+        <a href="mailto:atelier@romanesk.fr">Écrire à l'atelier</a>
+      </nav>
+    </div>
+    <div class="footer-rule">
+      <span>© 2026 — Romanesk · Elastic 2.0 · code consultable, pas de tracking, pas de cookies</span>
+      <span>Fait à la main · En Alsace</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ───────── Smart download (OS detection + GitHub release fetch) ───────── -->
+<script src="download.js" defer></script>
+
+<!-- ───────── React + Tweaks ───────── -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<script>
+  // Newsletter — feedback uniquement, pas d'envoi (pas encore de back).
+  (function () {
+    const form = document.getElementById('news-form');
+    if (!form) return;
+    const status = document.getElementById('news-status');
+    const email = document.getElementById('news-email');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const v = (email.value || '').trim();
+      if (!v || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+        status.hidden = false;
+        status.classList.add('is-error');
+        status.textContent = "Cette adresse n'a pas l'air complète — vérifie.";
+        return;
+      }
+      status.hidden = false;
+      status.classList.remove('is-error');
+      status.textContent = "Noté. Tu recevras la première lettre quand l'encre sèche.";
+      email.value = '';
+    });
+  })();
+</script>
+<div id="tweaks-root"></div>
+<script type="text/babel" src="app.jsx"></script>
+<script>
+/* Romanesk — démo éditeur en ligne (inlined) */
+(() => {
+  const editor   = document.getElementById('editor');
+  if (!editor) return;
+  const saveBtn  = document.getElementById('ed-save-state');
+  const wcEl     = document.getElementById('word-count');
+  const toolbar  = document.getElementById('ed-toolbar');
+  const NBSP = '\u00A0';
+
+  function countWords() {
+    const text = editor.innerText.replace(/\s+/g, ' ').trim();
+    const n = text ? text.split(' ').length : 0;
+    wcEl.textContent = n.toLocaleString('fr-FR') + ' mots';
+  }
+  countWords();
+
+  let saveTimer = null;
+  function markDirty() {
+    saveBtn.textContent = 'Écrit…';
+    saveBtn.classList.add('dirty');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      saveBtn.textContent = 'Sauvegardé · à l\u2019instant';
+      saveBtn.classList.remove('dirty');
+    }, 900);
+  }
+
+  function getRange() {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return null;
+    const r = sel.getRangeAt(0);
+    if (!editor.contains(r.commonAncestorContainer)) return null;
+    return r;
+  }
+  function insertTextAtCaret(text) {
+    const r = getRange(); if (!r) return;
+    r.deleteContents();
+    const node = document.createTextNode(text);
+    r.insertNode(node);
+    r.setStartAfter(node); r.setEndAfter(node);
+    const sel = window.getSelection();
+    sel.removeAllRanges(); sel.addRange(r);
+  }
+  function precedingChar() {
+    const r = getRange(); if (!r) return '';
+    const c = r.startContainer;
+    if (c.nodeType === Node.TEXT_NODE && r.startOffset > 0) return c.nodeValue.charAt(r.startOffset - 1);
+    return ' ';
+  }
+  function deletePrecedingChars(n) {
+    const r = getRange(); if (!r) return false;
+    const c = r.startContainer;
+    if (c.nodeType !== Node.TEXT_NODE) return false;
+    if (r.startOffset < n) return false;
+    c.nodeValue = c.nodeValue.slice(0, r.startOffset - n) + c.nodeValue.slice(r.startOffset);
+    const off = r.startOffset - n;
+    r.setStart(c, off); r.setEnd(c, off);
+    return true;
+  }
+
+  editor.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        document.execCommand('insertHTML', false, '<p class="dialogue">\u2014' + NBSP + '</p>');
+        markDirty(); countWords();
+      }
+      return;
+    }
+    const k = e.key;
+    if (k === ';' || k === ':' || k === '!' || k === '?') {
+      e.preventDefault();
+      if (precedingChar() === ' ') deletePrecedingChars(1);
+      insertTextAtCaret(NBSP + k); markDirty(); return;
+    }
+    if (k === '"') {
+      e.preventDefault();
+      const prev = precedingChar();
+      const opening = !prev || /[\s\u00A0(\[«—\-]/.test(prev);
+      insertTextAtCaret(opening ? '\u00AB' + NBSP : NBSP + '\u00BB');
+      markDirty(); return;
+    }
+    if (k === "'") { e.preventDefault(); insertTextAtCaret('\u2019'); markDirty(); return; }
+    if (k === '-' && precedingChar() === '-') {
+      e.preventDefault(); deletePrecedingChars(1); insertTextAtCaret('\u2014'); markDirty(); return;
+    }
+    if (k === '.') {
+      const r = getRange();
+      if (r && r.startContainer.nodeType === Node.TEXT_NODE && r.startOffset >= 2) {
+        const v = r.startContainer.nodeValue;
+        if (v.slice(r.startOffset - 2, r.startOffset) === '..') {
+          e.preventDefault(); deletePrecedingChars(2); insertTextAtCaret('\u2026'); markDirty(); return;
+        }
+      }
+    }
+  });
+  editor.addEventListener('input', () => { markDirty(); countWords(); });
+
+  toolbar.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-act]'); if (!btn) return;
+    const act = btn.dataset.act;
+    editor.focus();
+    if (act === 'bold') document.execCommand('bold');
+    else if (act === 'italic') document.execCommand('italic');
+    else if (act === 'quotes') {
+      const sel = window.getSelection();
+      const t = sel && sel.toString();
+      if (t) document.execCommand('insertText', false, '\u00AB' + NBSP + t + NBSP + '\u00BB');
+      else {
+        insertTextAtCaret('\u00AB' + NBSP + NBSP + '\u00BB');
+        const r = getRange();
+        if (r) { r.setStart(r.startContainer, r.startOffset - 2); r.collapse(true);
+                 const s = window.getSelection(); s.removeAllRanges(); s.addRange(r); }
+      }
+      markDirty();
+    }
+    else if (act === 'dialogue') {
+      document.execCommand('insertHTML', false, '<p class="dialogue">\u2014' + NBSP + '</p>');
+      markDirty();
+    }
+    else if (act === 'continue') askContinuation();
+    else if (act === 'rewrite')  askRewrite();
+    countWords();
+  });
+
+  const ai = {
+    promptText: document.getElementById('ai-prompt-text'),
+    card: document.getElementById('ai-suggestion'),
+    role: document.getElementById('ai-suggestion-role'),
+    text: document.getElementById('ai-suggestion-text'),
+    status: document.getElementById('ai-status'),
+    actions: document.getElementById('ai-actions'),
+    cite: document.getElementById('ai-cite')
+  };
+
+  const LORE = `Univers : Cendrelune.
+- Maeren : protagoniste, étrangère arrivée à Vélanyr.
+- Aldwen : éclaireur du Cercle d'Ambre, cape ocre.
+- Sœur Ilve : prêtresse de la Maison du Chant, cape cendre.
+- Vélanyr : cité-frontière. La pluie y a un goût d'ambre froid.
+- Cercle d'Ambre : faction marchande qui régit la cité.
+- Maison du Chant : ordre qui veille sur "les enfants nés sans souffle".
+- Pacte d'Ambre : accord ancien entre Cercle d'Ambre et Maison du Chant.
+- Lame de Sel : objet rituel de Maeren. Le Souffle : phénomène atmosphérique.`;
+
+  function lastParagraphsText(n=3) {
+    const ps = [...editor.querySelectorAll('p')].slice(-n);
+    return ps.map(p => p.innerText.trim()).filter(Boolean).join('\n\n');
+  }
+  function showAi(role, text, cites, withActions) {
+    ai.card.hidden = false;
+    ai.role.textContent = role;
+    ai.text.textContent = text;
+    ai.status.textContent = '';
+    ai.cite.innerHTML = '<span>Lu\u00A0:</span>' + cites.map(c => `<a>${c}</a>`).join('');
+    ai.actions.hidden = !withActions;
+  }
+  function setLoading(role, label) {
+    ai.card.hidden = false;
+    ai.role.textContent = role;
+    ai.text.textContent = '';
+    ai.status.innerHTML = '<span class="ai-spin"></span> ' + label;
+    ai.actions.hidden = true;
+  }
+
+  const FALLBACKS = [
+    "\u00A0du Chant qui veillait, comme chaque nuit depuis le pacte, sur les enfants n\u00e9s sans souffle. Maeren ferma les yeux. Elle connaissait ce chant\u00A0; il lui avait appris \u00e0 mourir poliment.",
+    "\u00A0— quelque part entre l'h\u00f4tellerie haute et le quai d'ambre. Aldwen ne bougeait plus. La Lame de Sel, sur le bois, semblait \u00e9couter elle aussi."
+  ];
+  let fbIdx = 0;
+  let pendingSuggestion = null;
+  let pendingReplaceSelection = false;
+
+  async function askContinuation() {
+    const tail = lastParagraphsText(3);
+    ai.promptText.innerHTML = '\u00ABContinue ce paragraphe — m\u00eame ton, en respectant le lore.\u00BB';
+    setLoading('IA · r\u00e9flexion', 'Lecture du lore et du chapitre\u2026');
+    let out = null;
+    try {
+      if (window.claude && window.claude.complete) {
+        out = await window.claude.complete(
+`Tu es l'IA d'un atelier d'\u00e9criture nomm\u00e9 Romanesk. Tu \u00e9cris en fran\u00e7ais litt\u00e9raire mesur\u00e9.\n${LORE}\nFin du chapitre :\n"""\n${tail}\n"""\n\u00c9cris UN paragraphe de continuation (3 \u00e0 5 phrases). Pas de m\u00e9ta-commentaire, pas de guillemets autour.`);
+      }
+    } catch (e) {}
+    if (!out) { out = FALLBACKS[fbIdx % FALLBACKS.length]; fbIdx++; }
+    pendingSuggestion = out;
+    pendingReplaceSelection = false;
+    showAi('IA · suggestion', out, ['Maeren', 'Maison du Chant', 'Pacte d\u2019Ambre'], true);
+  }
+
+  async function askRewrite() {
+    const sel = window.getSelection();
+    const selText = sel && sel.toString().trim();
+    if (!selText) {
+      ai.promptText.textContent = 'S\u00e9lectionne d\u2019abord un passage \u00e0 r\u00e9\u00e9crire.';
+      return;
+    }
+    ai.promptText.innerHTML = '\u00ABR\u00e9\u00e9cris ce passage — plus serr\u00e9, m\u00eame ton.\u00BB';
+    setLoading('IA · r\u00e9\u00e9criture', 'En cours\u2026');
+    let out = null;
+    try {
+      if (window.claude && window.claude.complete) {
+        out = await window.claude.complete(
+`R\u00e9\u00e9cris ce passage en fran\u00e7ais litt\u00e9raire, plus serr\u00e9, m\u00eame ton et m\u00eame sens.\n${LORE}\nPassage :\n"""\n${selText}\n"""`);
+      }
+    } catch (e) {}
+    if (!out) out = selText.replace(/\s+/g, ' ').trim();
+    pendingSuggestion = out;
+    pendingReplaceSelection = true;
+    showAi('IA · r\u00e9\u00e9criture', out, ['Style maison'], true);
+  }
+
+  ai.actions.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-act]'); if (!btn) return;
+    if (btn.dataset.act === 'accept' && pendingSuggestion) {
+      editor.focus();
+      if (pendingReplaceSelection) {
+        document.execCommand('insertText', false, pendingSuggestion);
+      } else {
+        const ps = editor.querySelectorAll('p');
+        const last = ps[ps.length - 1];
+        if (last) {
+          last.appendChild(document.createTextNode(pendingSuggestion));
+          const r = document.createRange();
+          r.selectNodeContents(last); r.collapse(false);
+          const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        }
+      }
+      ai.status.innerHTML = '<span style="color: var(--ivy)">\u2713</span> ins\u00e9r\u00e9';
+      ai.actions.hidden = true;
+      pendingSuggestion = null; pendingReplaceSelection = false;
+      markDirty(); countWords();
+    } else if (btn.dataset.act === 'reject') {
+      ai.card.hidden = true;
+      pendingSuggestion = null; pendingReplaceSelection = false;
+    }
+  });
+
+  document.querySelectorAll('.fiche').forEach(f => {
+    f.addEventListener('click', () => {
+      document.querySelectorAll('.fiche.active').forEach(a => a.classList.remove('active'));
+      f.classList.add('active');
+    });
+  });
+
+  const dz = document.getElementById('dropzone');
+  if (dz) {
+    dz.addEventListener('click', () => {
+      const bars = dz.querySelectorAll('.bar i');
+      bars.forEach((b, i) => {
+        b.style.width = '0%'; b.style.background = '';
+        setTimeout(() => {
+          b.style.width = (i === 2 ? '62%' : '100%');
+          if (i < 2) b.style.background = 'var(--ivy)';
+        }, 80 + i * 220);
+      });
+    });
+  }
+})();
+</script>
+
+</body>
+</html>

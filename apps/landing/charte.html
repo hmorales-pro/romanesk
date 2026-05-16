@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Romanesk — Charte graphique</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  body { padding-bottom: 120px; }
+  .ch-wrap { max-width: 1100px; margin: 0 auto; padding-inline: clamp(20px, 4vw, 56px); }
+  .ch-hero { padding-block: 80px 60px; border-bottom: 1px solid var(--rule); }
+  .ch-hero h1 {
+    font-family: var(--serif-display);
+    font-size: clamp(48px, 6vw, 80px);
+    font-weight: 500;
+    letter-spacing: -0.018em;
+    line-height: 1.04;
+    margin-bottom: 16px;
+  }
+  .ch-hero h1 .em { font-style: italic; color: var(--bordeaux); font-weight: 400; }
+  .ch-hero p.lede { font-size: 19px; line-height: 1.55; color: var(--ink-soft); max-width: 36em; }
+
+  .ch-sec { padding-block: 72px; border-bottom: 1px solid var(--rule); }
+  .ch-sec > h2 {
+    font-family: var(--serif-display);
+    font-size: clamp(34px, 4vw, 48px);
+    font-weight: 500;
+    letter-spacing: -0.014em;
+    line-height: 1.05;
+    margin-bottom: 8px;
+  }
+  .ch-sec > h2 .em { font-style: italic; color: var(--bordeaux); font-weight: 400; }
+  .ch-sec > p.intro {
+    color: var(--ink-soft); font-size: 17px; max-width: 38em;
+    margin-bottom: 36px; line-height: 1.55;
+  }
+  .ch-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    display: block; margin-bottom: 14px;
+  }
+
+  /* Color cards */
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+  .sw { background: var(--paper); padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .sw .chip { aspect-ratio: 4/3; border-radius: 3px; border: 1px solid color-mix(in oklab, var(--ink) 8%, transparent); }
+  .sw .name { font-family: var(--serif-display); font-style: italic; font-size: 18px; line-height: 1; }
+  .sw .var  { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); letter-spacing: 0.04em; }
+  .sw .val  { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); word-break: break-all; }
+  .sw .role { font-size: 13px; color: var(--ink-soft); font-style: italic; font-family: var(--serif-body); }
+
+  /* Type specimens */
+  .spec-row { display: grid; grid-template-columns: 200px 1fr; gap: 28px; padding-block: 28px; border-bottom: 1px dotted var(--rule); align-items: baseline; }
+  .spec-row:last-child { border-bottom: 0; }
+  .spec-meta { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); letter-spacing: 0.04em; }
+  .spec-meta b { display: block; color: var(--ink); font-weight: 500; margin-bottom: 4px; }
+  .specimen-display { font-family: var(--serif-display); font-weight: 500; line-height: 1.04; letter-spacing: -0.018em; }
+  .specimen-display .em { font-style: italic; color: var(--bordeaux); font-weight: 400; }
+  .specimen-body { font-family: var(--serif-body); line-height: 1.55; color: var(--ink); max-width: 38em; }
+  .specimen-mono { font-family: var(--mono); color: var(--ink-soft); letter-spacing: 0.04em; }
+
+  /* Scale grid */
+  .scale-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; }
+  .scale { padding: 16px 18px; border: 1px solid var(--rule); border-radius: 3px; background: var(--paper-deep); }
+  .scale b { font-family: var(--serif-display); font-size: 28px; font-weight: 500; display: block; }
+  .scale span { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); letter-spacing: 0.04em; }
+
+  /* Components row */
+  .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  @media (max-width: 800px) { .comp-grid { grid-template-columns: 1fr; } }
+  .comp { border: 1px solid var(--rule); border-radius: 4px; padding: 28px; background: var(--paper-deep); display: flex; flex-direction: column; gap: 18px; }
+  .comp h3 { font-family: var(--serif-display); font-style: italic; font-size: 22px; font-weight: 500; margin-bottom: -4px; color: var(--ink); }
+  .comp .note { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); letter-spacing: 0.04em; }
+
+  /* Buttons demo */
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  /* Eyebrow demo */
+  .eb-demo .eyebrow { display: block; }
+
+  /* Card mini */
+  .mini-card {
+    border: 1px solid var(--rule); border-radius: 3px; padding: 18px 20px;
+    background: var(--paper); display: flex; flex-direction: column; gap: 8px;
+  }
+  .mini-card .num-label { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); letter-spacing: 0.16em; }
+  .mini-card h4 { font-family: var(--serif-display); font-size: 24px; font-weight: 500; line-height: 1.05; }
+  .mini-card h4 .em { font-style: italic; color: var(--bordeaux); font-weight: 400; }
+  .mini-card p { font-size: 14.5px; color: var(--ink-soft); line-height: 1.5; }
+
+  /* Ornaments */
+  .orn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 14px; }
+  .orn { aspect-ratio: 1; border: 1px solid var(--rule); border-radius: 3px; display: flex; align-items: center; justify-content: center; background: var(--paper); padding: 16px; }
+  .orn svg { width: 100%; height: 100%; }
+
+  /* Voice rules */
+  .voice { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+  @media (max-width: 760px) { .voice { grid-template-columns: 1fr; } }
+  .voice > div { padding: 24px 26px; }
+  .voice .yes { border-right: 1px solid var(--rule); background: color-mix(in oklab, var(--ivy) 5%, var(--paper-deep)); }
+  .voice .no  { background: color-mix(in oklab, var(--bordeaux) 6%, var(--paper-deep)); }
+  @media (max-width: 760px) { .voice .yes { border-right: 0; border-bottom: 1px solid var(--rule); } }
+  .voice h4 { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 14px; }
+  .voice ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; font-family: var(--serif-display); font-style: italic; font-size: 18px; line-height: 1.4; color: var(--ink); }
+  .voice .yes li::before { content: "→ "; color: var(--ivy); font-style: normal; }
+  .voice .no  li::before { content: "× "; color: var(--bordeaux); font-style: normal; }
+
+  /* Token table */
+  .tok-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; }
+  .tok-table th, .tok-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--rule); }
+  .tok-table th { color: var(--ink-faint); letter-spacing: 0.06em; text-transform: uppercase; font-size: 10.5px; font-weight: 500; }
+  .tok-table td .nameish { font-family: var(--serif-display); font-style: italic; font-size: 16px; color: var(--ink); }
+  .tok-table td .desc { color: var(--ink-soft); font-family: var(--serif-body); font-size: 13.5px; letter-spacing: 0; }
+
+  /* Logo demo */
+  .logo-row { display: flex; align-items: center; gap: 32px; flex-wrap: wrap; padding: 28px; border: 1px solid var(--rule); border-radius: 4px; background: var(--paper-deep); }
+  .logo-mono {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-family: var(--serif-display); font-weight: 500; letter-spacing: -0.005em;
+  }
+  .logo-mono svg { width: 1em; height: 1em; }
+
+  .pull { font-family: var(--serif-display); font-style: italic; font-size: clamp(22px, 2.4vw, 28px); color: var(--ink); max-width: 28em; line-height: 1.35; padding-left: 24px; border-left: 2px solid var(--bordeaux); }
+
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 2 V 22 M2 12 H 22 M5 5 L 19 19 M19 5 L 5 19" stroke-width="0.6" opacity="0.4"></path>
+          <circle cx="12" cy="12" r="3.2" fill="currentColor"></circle>
+        </svg>
+      </span>
+      <span>Romanesk</span>
+    </a>
+    <nav class="nav-links">
+      <a href="index.html">Site</a>
+      <a href="#couleurs">Couleurs</a>
+      <a href="#typo">Typo</a>
+      <a href="#composants">Composants</a>
+      <a href="#voix">Voix</a>
+    </nav>
+    <a href="index.html" class="nav-cta">Voir le site</a>
+  </div>
+</header>
+
+<!-- ──────── HERO ──────── -->
+<section class="ch-hero">
+  <div class="ch-wrap">
+    <span class="ch-num">§ 00 — Charte graphique · v0.4</span>
+    <h1>Une <span class="em">grammaire visuelle</span> pour Romanesk.</h1>
+    <p class="lede">L'app et le site partagent un même atelier&nbsp;: papier crème, encre profonde, accents bordeaux et ocre, deux serifs et un monospace pour la machinerie. Cette charte rassemble les règles utilisées sur la landing pour que tu puisses les reporter dans l'app, à la couleur près.</p>
+  </div>
+</section>
+
+<!-- ──────── PRINCIPES ──────── -->
+<section class="ch-sec">
+  <div class="ch-wrap">
+    <span class="ch-num">§ 01 — Principes</span>
+    <h2>Un atelier, <span class="em">pas une plateforme.</span></h2>
+    <p class="intro">Quatre lignes de conduite qui décident à notre place quand on hésite.</p>
+    <div class="comp-grid" style="grid-template-columns: repeat(2, 1fr);">
+      <div class="mini-card">
+        <span class="num-label">i.</span>
+        <h4>Papier <span class="em">avant écran.</span></h4>
+        <p>Crème, encre, marges. Pas de surfaces vitrées, pas de gradients, pas de glassmorphism. Le fond est un velin, pas un dashboard.</p>
+      </div>
+      <div class="mini-card">
+        <span class="num-label">ii.</span>
+        <h4>Italique <span class="em">comme accent.</span></h4>
+        <p>L'italique du serif display sert d'accent expressif&nbsp;; il est presque toujours en bordeaux. Le reste reste droit, sobre, lisible.</p>
+      </div>
+      <div class="mini-card">
+        <span class="num-label">iii.</span>
+        <h4>Monospace <span class="em">pour la mécanique.</span></h4>
+        <p>Tout ce qui est métadonnée, technique, état système ou raccourci passe en JetBrains Mono à 11–12 px. Jamais pour le contenu.</p>
+      </div>
+      <div class="mini-card">
+        <span class="num-label">iv.</span>
+        <h4>Filets <span class="em">et points.</span></h4>
+        <p>On structure par traits horizontaux, pointillés, et un seul ornement&nbsp;: le point bordeaux (•) en eyebrow ou en césure.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────── COULEURS ──────── -->
+<section class="ch-sec" id="couleurs">
+  <div class="ch-wrap">
+    <span class="ch-num">§ 02 — Palette</span>
+    <h2>Quatre <span class="em">familles</span> — sept tokens.</h2>
+    <p class="intro">Toutes les couleurs sont définies en <code style="font-family: var(--mono); font-size: 0.85em">oklch()</code> pour rester perceptuellement homogènes quand on glisse vers le mode sombre. Ne jamais inventer de teinte hors de cette palette&nbsp;: utiliser une variable existante ou en créer une via <code style="font-family: var(--mono); font-size: 0.85em">color-mix(in oklab, …)</code>.</p>
+
+    <h3 style="font-family: var(--serif-display); font-style: italic; font-size: 22px; margin: 28px 0 14px; color: var(--ink-soft)">— Papier · les neutres</h3>
+    <div class="swatches">
+      <div class="sw">
+        <div class="chip" style="background: var(--paper)"></div>
+        <div class="name">Crème</div>
+        <div class="var">--paper</div>
+        <div class="val">oklch(0.962 0.012 80)</div>
+        <div class="role">Fond principal</div>
+      </div>
+      <div class="sw">
+        <div class="chip" style="background: var(--paper-deep)"></div>
+        <div class="name">Vélin</div>
+        <div class="var">--paper-deep</div>
+        <div class="val">oklch(0.928 0.018 78)</div>
+        <div class="role">Surfaces secondaires</div>
+      </div>
+      <div class="sw">
+        <div class="chip" style="background: var(--paper-shade)"></div>
+        <div class="name">Ombre papier</div>
+        <div class="var">--paper-shade</div>
+        <div class="val">oklch(0.895 0.022 76)</div>
+        <div class="role">Sidebars, états appuyés</div>
+      </div>
+      <div class="sw">
+        <div class="chip" style="background: var(--rule)"></div>
+        <div class="name">Filet</div>
+        <div class="var">--rule</div>
+        <div class="val">oklch(0.82 0.014 72)</div>
+        <div class="role">Bordures, séparateurs</div>
+      </div>
+    </div>
+
+    <h3 style="font-family: var(--serif-display); font-style: italic; font-size: 22px; margin: 36px 0 14px; color: var(--ink-soft)">— Encre · le texte</h3>
+    <div class="swatches">
+      <div class="sw">
+        <div class="chip" style="background: var(--ink)"></div>
+        <div class="name">Encre</div>
+        <div class="var">--ink</div>
+        <div class="val">oklch(0.185 0.018 60)</div>
+        <div class="role">Titres, corps</div>
+      </div>
+      <div class="sw">
+        <div class="chip" style="background: var(--ink-soft)"></div>
+        <div class="name">Encre dilluée</div>
+        <div class="var">--ink-soft</div>
+        <div class="val">oklch(0.36 0.014 60)</div>
+        <div class="role">Lede, sous-titres</div>
+      </div>
+      <div class="sw">
+        <div class="chip" style="background: var(--ink-faint)"></div>
+        <div class="name">Encre pâle</div>
+        <div class="var">--ink-faint</div>
+        <div class="val">oklch(0.55 0.010 60)</div>
+        <div class="role">Méta, mono, hints</div>
+      </div>
+    </div>
+
+    <h3 style="font-family: var(--serif-display); font-style: italic; font-size: 22px; margin: 36px 0 14px; color: var(--ink-soft)">— Accents</h3>
+    <div class="swatches">
+      <div class="sw">
+        <div class="chip" style="background: var(--bordeaux)"></div>
+        <div class="name">Bordeaux</div>
+        <div class="var">--bordeaux</div>
+        <div class="val">oklch(0.42 0.115 22)</div>
+        <div class="role">Accent principal · italiques · CTA hover</div>
+      </div>
+      <div class="sw">
+        <div class="chip" style="background: var(--bordeaux-deep)"></div>
+        <div class="name">Bordeaux profond</div>
+        <div class="var">--bordeaux-deep</div>
+        <div class="val">oklch(0.32 0.105 22)</div>
+        <div class="role">Dialogues</div>
+      </div>
+      <div class="sw">
+        <div class="chip" style="background: var(--ocre)"></div>
+        <div class="name">Ocre</div>
+        <div class="var">--ocre</div>
+        <div class="val">oklch(0.62 0.115 70)</div>
+        <div class="role">Factions · alertes douces</div>
+      </div>
+      <div class="sw">
+        <div class="chip" style="background: var(--ivy)"></div>
+        <div class="name">Lierre</div>
+        <div class="var">--ivy</div>
+        <div class="val">oklch(0.40 0.060 145)</div>
+        <div class="role">Lieux · validations</div>
+      </div>
+    </div>
+
+    <p class="pull" style="margin-top: 36px">Les accents ne servent qu'à <em>indexer</em>. Bordeaux pour les personnages et ce qui parle, ocre pour les factions, lierre pour les lieux et les validations.</p>
+  </div>
+</section>
+
+<!-- ──────── TYPOGRAPHIE ──────── -->
+<section class="ch-sec" id="typo">
+  <div class="ch-wrap">
+    <span class="ch-num">§ 03 — Typographie</span>
+    <h2>Trois familles, <span class="em">aucune négociable.</span></h2>
+    <p class="intro">Cormorant Garamond pour l'expression, Source Serif 4 pour la lecture, JetBrains Mono pour la machinerie. Pas de sans-serif géométrique. Pas d'Inter.</p>
+
+    <div class="spec-row">
+      <div class="spec-meta">
+        <b>Cormorant Garamond</b>
+        Display · 500 / 500 italic<br>
+        --serif-display
+      </div>
+      <div>
+        <div class="specimen-display" style="font-size: 64px">L'atelier <span class="em">qui pense</span> avec toi.</div>
+        <div class="specimen-display" style="font-size: 28px; margin-top: 16px; color: var(--ink-soft)">À utiliser pour les titres, les chapitres, les citations.</div>
+      </div>
+    </div>
+
+    <div class="spec-row">
+      <div class="spec-meta">
+        <b>Source Serif 4</b>
+        Body · 300 / 400 / 500<br>
+        --serif-body
+      </div>
+      <div>
+        <div class="specimen-body" style="font-size: 18px">Romanesk est un atelier d'écriture local-first pour auteurs de fiction. Il combine la construction d'univers et la rédaction multi-chapitres dans un éditeur riche, avec une IA en sparring partner intégrée à chaque étape — continuation de chapitre, brainstorming, vérification de cohérence avec le lore.</div>
+        <div class="specimen-body" style="font-size: 14px; color: var(--ink-soft); margin-top: 14px">Lecture longue, descriptions de fiches, paragraphes d'éditeur. <em>Italique</em> pour les noms propres et les titres d'œuvre. Espaces insécables avant <strong>;</strong> <strong>:</strong> <strong>!</strong> <strong>?</strong> et après «&nbsp;.</div>
+      </div>
+    </div>
+
+    <div class="spec-row">
+      <div class="spec-meta">
+        <b>JetBrains Mono</b>
+        UI / méta · 400 / 500<br>
+        --mono
+      </div>
+      <div>
+        <div class="specimen-mono" style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase">§ 04 — méta · 11px · letter-spacing 0.18em</div>
+        <div class="specimen-mono" style="font-size: 12px; margin-top: 10px">Cendrelune.romanesk · Chapitre 7 · 14 327 mots · sauvegardé</div>
+        <div class="specimen-mono" style="font-size: 14px; margin-top: 10px; color: var(--ink)">~/Library/Application Support/Romanesk/</div>
+      </div>
+    </div>
+
+    <h3 style="font-family: var(--serif-display); font-style: italic; font-size: 22px; margin: 36px 0 14px; color: var(--ink-soft)">— Échelle</h3>
+    <div class="scale-grid">
+      <div class="scale"><b style="font-size: 96px">96</b><span>display · hero</span></div>
+      <div class="scale"><b style="font-size: 64px">64</b><span>display · h2</span></div>
+      <div class="scale"><b style="font-size: 48px">48</b><span>display · h3</span></div>
+      <div class="scale"><b style="font-size: 32px">32</b><span>display · card</span></div>
+      <div class="scale"><b style="font-size: 22px">22</b><span>citation</span></div>
+      <div class="scale"><b style="font-family: var(--serif-body); font-size: 19px">19</b><span>lede</span></div>
+      <div class="scale"><b style="font-family: var(--serif-body); font-size: 17px">17</b><span>corps</span></div>
+      <div class="scale"><b style="font-family: var(--serif-body); font-size: 14px">14</b><span>secondaire</span></div>
+      <div class="scale"><b style="font-family: var(--mono); font-size: 12px">12px</b><span>UI · méta</span></div>
+      <div class="scale"><b style="font-family: var(--mono); font-size: 11px">11px</b><span>eyebrow</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────── ESPACEMENT ──────── -->
+<section class="ch-sec">
+  <div class="ch-wrap">
+    <span class="ch-num">§ 04 — Espacement</span>
+    <h2>Ample, <span class="em">éditorial,</span> filaire.</h2>
+    <p class="intro">L'espace blanc fait la moitié du ton. Les sections respirent à <code style="font-family: var(--mono); font-size: 0.85em">--section-y</code> (clamp 80–160 px), et toute densité d'UI se calibre à partir d'une grille de 4 px.</p>
+    <table class="tok-table">
+      <tr><th>Token</th><th>Valeur</th><th>Usage</th></tr>
+      <tr><td><span class="nameish">--container</span></td><td>1240 px</td><td><span class="desc">largeur max texte/UI</span></td></tr>
+      <tr><td><span class="nameish">--gutter</span></td><td>clamp(20, 4vw, 56)</td><td><span class="desc">marges latérales</span></td></tr>
+      <tr><td><span class="nameish">--section-y</span></td><td>clamp(80, 11vw, 160)</td><td><span class="desc">padding bloc des sections</span></td></tr>
+      <tr><td><span class="nameish">grid 4</span></td><td>4 / 8 / 12 / 16 / 24 / 32 / 48</td><td><span class="desc">échelle interne UI</span></td></tr>
+      <tr><td><span class="nameish">radius</span></td><td>2 / 3 / 4 px</td><td><span class="desc">presque pas de coins arrondis — boutons 2 px, cartes 3-4 px</span></td></tr>
+      <tr><td><span class="nameish">rule</span></td><td>1 px</td><td><span class="desc">filet horizontal — jamais d'ombre portée à la place</span></td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ──────── COMPOSANTS ──────── -->
+<section class="ch-sec" id="composants">
+  <div class="ch-wrap">
+    <span class="ch-num">§ 05 — Composants</span>
+    <h2>Petite <span class="em">collection</span> de pièces.</h2>
+    <p class="intro">Tout ce qui constitue le langage UI de Romanesk. Chaque pièce se contente du minimum&nbsp;: une bordure, un filet, un mot juste.</p>
+
+    <div class="comp-grid">
+      <div class="comp eb-demo">
+        <h3>Eyebrow</h3>
+        <span class="eyebrow"><span class="bullet"></span>v0.4 — atelier d'écriture local</span>
+        <span class="eyebrow"><span class="bullet"></span>§ 02 — Fonctionnalités-clés</span>
+        <span class="note">JetBrains Mono · 11.5 px · letter-spacing 0.18em · ALL CAPS · point bordeaux 4×4 + 10 px de marge</span>
+      </div>
+
+      <div class="comp">
+        <h3>Boutons</h3>
+        <div class="btn-row">
+          <a class="btn btn-primary">Télécharger&nbsp;<span class="arr">↓</span></a>
+          <a class="btn btn-secondary">Voir les captures</a>
+        </div>
+        <span class="note">Mono · 13 px · UPPERCASE · radius 2 px · primary hover → bordeaux · secondary hover → bordure encre</span>
+      </div>
+
+      <div class="comp">
+        <h3>Carte fonctionnalité</h3>
+        <div class="mini-card">
+          <span class="num-label">01</span>
+          <h4>Construis <span class="em">ton univers.</span></h4>
+          <p>Six types de fiches polymorphes reliées par un graphe nébuleux qui se redessine quand tu écris.</p>
+        </div>
+        <span class="note">Numéro mono · titre display avec un seul mot italique bordeaux · texte body 16/1.55</span>
+      </div>
+
+      <div class="comp">
+        <h3>Citation pleine page</h3>
+        <p class="pull">Ton univers. Ton manuscrit. Ta machine. Romanesk est local-first par construction.</p>
+        <span class="note">Cormorant italique · 22-28 px · filet bordeaux 2 px à gauche · 24 px de retrait</span>
+      </div>
+
+      <div class="comp">
+        <h3>Filet de réassurance</h3>
+        <div style="display: flex; gap: 28px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px; color: var(--ink-soft); letter-spacing: 0.08em; text-transform: uppercase">
+          <span style="display: inline-flex; align-items: center; gap: 12px"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--bordeaux); display: inline-block"></span>Local-first <em style="font-family: var(--serif-body); text-transform: none; font-size: 13px; letter-spacing: 0; color: var(--ink-faint)">— ta machine, point.</em></span>
+          <span style="display: inline-flex; align-items: center; gap: 12px"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--ivy); display: inline-block"></span>Aucun cloud</span>
+        </div>
+        <span class="note">Bandeau horizontal · point coloré + label mono UPPER + glose italique en encre pâle</span>
+      </div>
+
+      <div class="comp">
+        <h3>Chips détectés</h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px">
+          <span class="detected-chip new">+ Maeren</span>
+          <span class="detected-chip">Vélanyr</span>
+          <span class="detected-chip warn">⚠ Cendrelune (2 graphies)</span>
+          <span class="detected-chip">Le Souffle</span>
+        </div>
+        <span class="note">Mono · 10.5 px · radius 999 · neutre par défaut, bordeaux pour <code>+ nouveau</code>, ocre pour <code>⚠ alerte</code></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────── ICONOGRAPHIE / ORNEMENTS ──────── -->
+<section class="ch-sec">
+  <div class="ch-wrap">
+    <span class="ch-num">§ 06 — Iconographie</span>
+    <h2>Trait fin, <span class="em">géométrie franche.</span></h2>
+    <p class="intro">SVG en stroke 1.2 à 1.5 px, jamais de remplissage massif. Cercles, croix, traits, pointillés. Aucun pictogramme « system » coloré, aucun emoji.</p>
+    <div class="orn-grid">
+      <div class="orn"><svg viewBox="0 0 36 36" stroke="var(--bordeaux)" fill="none" stroke-width="1.2"><circle cx="18" cy="18" r="14"/><circle cx="18" cy="18" r="3" fill="var(--bordeaux)"/><path d="M18 4 v 28 M4 18 h 28" stroke-opacity="0.4"/></svg></div>
+      <div class="orn"><svg viewBox="0 0 36 36" stroke="var(--ink)" fill="none" stroke-width="1.2"><path d="M6 8 h 24 M6 14 h 24 M6 20 h 18 M6 26 h 22"/><path d="M28 22 l -3 4 l -3 -3 l 6 -7 l 3 3 z" fill="var(--ocre)" stroke="var(--ocre)" stroke-width="0.6"/></svg></div>
+      <div class="orn"><svg viewBox="0 0 36 36" stroke="var(--ocre)" fill="none" stroke-width="1.2"><path d="M10 6 l 0 24 M6 10 l 8 -4 M6 26 l 8 4"/><circle cx="26" cy="14" r="5" stroke="var(--bordeaux)"/><circle cx="26" cy="22" r="3" stroke="var(--bordeaux)" stroke-dasharray="1.5 2"/></svg></div>
+      <div class="orn"><svg viewBox="0 0 36 36" stroke="var(--ivy)" fill="none" stroke-width="1.4"><circle cx="18" cy="18" r="12"/><path d="M11 18 l 5 5 l 9 -10" stroke-width="1.5"/></svg></div>
+      <div class="orn"><svg viewBox="0 0 36 36" stroke="var(--ink)" fill="none" stroke-width="1.2"><circle cx="10" cy="10" r="3"/><circle cx="26" cy="10" r="3"/><circle cx="10" cy="26" r="3"/><circle cx="26" cy="26" r="3"/><path d="M10 13 v 10 M26 13 v 10 M13 10 h 10 M13 26 h 10" stroke-dasharray="2 2"/></svg></div>
+      <div class="orn"><svg viewBox="0 0 36 36" stroke="var(--bordeaux)" fill="none" stroke-width="1.2"><path d="M8 8 h 16 v 4 h 4 v 16 h -16 v -4 h -4 z"/><path d="M12 16 h 12 M12 20 h 12 M12 24 h 8" stroke-width="1"/></svg></div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────── LOGO ──────── -->
+<section class="ch-sec">
+  <div class="ch-wrap">
+    <span class="ch-num">§ 07 — Logo</span>
+    <h2>Romanesk <span class="em">en deux temps.</span></h2>
+    <p class="intro">Une marque type — Cormorant Garamond 500, esperluette bordeaux quand le contexte l'autorise — accompagnée d'un sigillum géométrique (cercle + croix de Saint-André + pupille). Pas de version condensée, pas de variation de poids.</p>
+    <div class="logo-row">
+      <div class="logo-mono" style="font-size: 36px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 2 V 22 M2 12 H 22 M5 5 L 19 19 M19 5 L 5 19" stroke-width="0.6" opacity="0.4"></path>
+          <circle cx="12" cy="12" r="3.2" fill="currentColor"></circle>
+        </svg>
+        Romanesk
+      </div>
+      <div class="logo-mono" style="font-size: 22px; color: var(--ink-soft)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <circle cx="12" cy="12" r="10"></circle>
+          <circle cx="12" cy="12" r="3.2" fill="currentColor"></circle>
+        </svg>
+        Romanesk <span style="color: var(--bordeaux); font-style: italic; font-weight: 400">&amp; Cendrelune</span>
+      </div>
+      <div class="logo-mono" style="font-size: 16px; color: var(--ink-faint)">
+        Romanesk · v0.4.2
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────── VOIX / COPIE ──────── -->
+<section class="ch-sec" id="voix">
+  <div class="ch-wrap">
+    <span class="ch-num">§ 08 — Voix</span>
+    <h2>Tutoiement <span class="em">littéraire mesuré.</span></h2>
+    <p class="intro">On parle à des écrivains, pas à des startups. Concret avant abstrait, court avant long, italique avant exclamation.</p>
+    <div class="voice">
+      <div class="yes">
+        <h4>On dit</h4>
+        <ul>
+          <li>« 6 types de fiches »</li>
+          <li>« Tes données restent sur ta machine »</li>
+          <li>« L'IA propose, tu décides »</li>
+          <li>« Tu installes, tu ouvres, tu écris »</li>
+          <li>« comme on ouvrait un cahier »</li>
+        </ul>
+      </div>
+      <div class="no">
+        <h4>On ne dit pas</h4>
+        <ul>
+          <li>« Système flexible d'entités »</li>
+          <li>« Vos données sont sécurisées »</li>
+          <li>« Workflow IA-augmenté »</li>
+          <li>« Empower your creativity »</li>
+          <li>« 🚀 Boostez votre productivité »</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="pull" style="margin-top: 36px">Quand on hésite entre deux phrases, on garde la plus courte. Quand on hésite entre deux mots, on garde le plus concret. L'italique remplace l'exclamation.</p>
+  </div>
+</section>
+
+<!-- ──────── MISE EN ŒUVRE ──────── -->
+<section class="ch-sec">
+  <div class="ch-wrap">
+    <span class="ch-num">§ 09 — Mise en œuvre</span>
+    <h2>Comment <span class="em">embarquer</span> ça dans l'app.</h2>
+    <p class="intro">L'ensemble des tokens est défini dans <code style="font-family: var(--mono); font-size: 0.85em">styles.css</code> sous <code style="font-family: var(--mono); font-size: 0.85em">:root</code>. Le mode sombre n'écrase que ce qui doit l'être (papier, encre, filets) — les accents tiennent en l'état.</p>
+
+    <table class="tok-table">
+      <tr><th>Famille</th><th>Token</th><th>Rôle UI app</th></tr>
+      <tr><td>Fond</td><td>--paper</td><td><span class="desc">canvas de l'éditeur, fond de fenêtre</span></td></tr>
+      <tr><td>Fond</td><td>--paper-deep</td><td><span class="desc">sidebar fiches, panneau IA, bandeaux</span></td></tr>
+      <tr><td>Fond</td><td>--paper-shade</td><td><span class="desc">élément actif/sélectionné (sans accent)</span></td></tr>
+      <tr><td>Texte</td><td>--ink</td><td><span class="desc">manuscrit, titres de fiches</span></td></tr>
+      <tr><td>Texte</td><td>--ink-soft</td><td><span class="desc">descriptions, méta éditoriale</span></td></tr>
+      <tr><td>Texte</td><td>--ink-faint</td><td><span class="desc">UI mono, hints, tooltips</span></td></tr>
+      <tr><td>Filet</td><td>--rule</td><td><span class="desc">séparateurs panels, bordures cartes</span></td></tr>
+      <tr><td>Accent</td><td>--bordeaux</td><td><span class="desc">protagoniste, focus, CTA hover, citations IA acceptées</span></td></tr>
+      <tr><td>Accent</td><td>--ocre</td><td><span class="desc">factions, alertes douces, prompts IA</span></td></tr>
+      <tr><td>Accent</td><td>--ivy</td><td><span class="desc">lieux, validations, succès</span></td></tr>
+    </table>
+
+    <h3 style="font-family: var(--serif-display); font-style: italic; font-size: 22px; margin: 36px 0 14px; color: var(--ink-soft)">— Mode sombre</h3>
+    <p class="intro" style="margin-bottom: 16px">Activable via <code style="font-family: var(--mono); font-size: 0.85em">.dark</code> sur <code style="font-family: var(--mono); font-size: 0.85em">:root</code>. Les neutres deviennent ardoise/encre claire ; bordeaux et ocre montent en luminosité pour rester lisibles ; les valeurs <em>oklch</em> conservent la même teinte, donc l'identité tient.</p>
+
+    <p class="pull">Règle d'or — si une teinte ne sort pas de cette charte, elle ne va pas dans Romanesk.</p>
+  </div>
+</section>
+
+<!-- ──────── FOOTER ──────── -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-thin">
+      <div class="footer-left">
+        <div class="footer-brand">Romanesk</div>
+        <p class="footer-tag">Charte graphique v0.4 — à reporter telle quelle dans l'app.</p>
+      </div>
+      <nav class="footer-links">
+        <a href="index.html">Site</a>
+        <a href="#couleurs">Couleurs</a>
+        <a href="#typo">Typo</a>
+        <a href="#composants">Composants</a>
+      </nav>
+    </div>
+    <div class="footer-rule">
+      <span>© 2026 — Romanesk · charte graphique interne</span>
+      <span>Fait à la main · En Alsace</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
