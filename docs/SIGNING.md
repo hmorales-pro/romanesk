@@ -76,7 +76,7 @@ Le **signing identity** est la chaîne complète entre guillemets :
 3. Label : `Romanesk notarization`.
 4. Copier le password généré (format `xxxx-xxxx-xxxx-xxxx`).
 
-### 1.7 Poser les 6 secrets GitHub
+### 1.7 Poser les 6 secrets GitHub + décommenter le workflow
 
 Dans le repo : **Settings → Secrets and variables → Actions → New
 repository secret**. Ajouter ces 6 secrets, dans l'ordre :
@@ -90,8 +90,17 @@ repository secret**. Ajouter ces 6 secrets, dans l'ordre :
 | `APPLE_PASSWORD`             | l'App-Specific Password (étape 1.6)                               |
 | `APPLE_TEAM_ID`              | les 10 caractères du Team ID (étape 1.1)                          |
 
-Le workflow tauri-action va les lire automatiquement et signer +
-notarizer le `.dmg` à chaque tag `v*`.
+Une fois les 6 secrets posés, **décommenter le bloc `APPLE_*`** dans
+`.github/workflows/release.yml` (autour de la ligne 140). Les env
+sont laissées commentées par défaut parce que GitHub Actions injecte
+des chaînes vides quand un secret est absent, ce qui fait planter
+`security import` côté tauri-action avec `SecKeychainItemImport: One
+or more parameters passed to a function were not valid`. Décommenter
+seulement après avoir posé les vrais secrets.
+
+Après le commit qui décommente, le workflow tauri-action va lire
+automatiquement les variables et signer + notarizer le `.dmg` à
+chaque tag `v*`.
 
 ### 1.8 Vérifier après build
 
