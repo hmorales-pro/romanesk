@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use romanesk_core::ai::{Provider, ProviderId};
 
-fn with_embed_prefix(model: &str, text: &str, is_query: bool) -> String {
+pub fn with_embed_prefix(model: &str, text: &str, is_query: bool) -> String {
     let m = model.to_lowercase();
     if m.starts_with("nomic-embed") {
         if is_query {
@@ -18,7 +18,7 @@ fn with_embed_prefix(model: &str, text: &str, is_query: bool) -> String {
     }
 }
 
-fn truncate(s: &str, n: usize) -> String {
+pub fn truncate(s: &str, n: usize) -> String {
     if s.chars().count() <= n {
         s.to_string()
     } else {
@@ -28,7 +28,7 @@ fn truncate(s: &str, n: usize) -> String {
     }
 }
 
-fn provider_id_label(id: &ProviderId) -> String {
+pub fn provider_id_label(id: &ProviderId) -> String {
     match id {
         ProviderId::Ollama => "ollama".into(),
         ProviderId::Anthropic => "anthropic".into(),
@@ -43,7 +43,7 @@ fn provider_id_label(id: &ProviderId) -> String {
 /// pas dans son contrat). On fait du best-effort : on tente une complétion
 /// vide pour récupérer le `model` retourné. En P3.2+ on stockera
 /// explicitement le default_model dans la State.
-fn default_model_label(_provider: &Arc<dyn Provider>) -> String {
+pub fn default_model_label(_provider: &Arc<dyn Provider>) -> String {
     // Compromis : on ne déclenche pas de requête réseau ici (le caller
     // appelle ai_ping qui peut être hors-ligne). On affiche juste l'id.
     "default".into()

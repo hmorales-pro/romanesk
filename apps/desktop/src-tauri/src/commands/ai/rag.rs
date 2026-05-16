@@ -17,7 +17,7 @@ use uuid::Uuid;
 
 use super::super::{CommandError, CommandResult};
 use super::state::{AiEmbedder, AiEmbedderInner, AiProvider};
-use super::util::{default_model_label, provider_id_label};
+use super::util::{default_model_label, provider_id_label, truncate, with_embed_prefix};
 
 // ---------------------------------------------------------------------------
 // Indexation + Q&A RAG (P3.3)
@@ -323,7 +323,6 @@ pub async fn ai_rag_query(
     })
 }
 
-/// Convertit une entité en texte plat indexable.
 /// Split une entité en plusieurs chunks pour l'indexation.
 ///
 /// P7.6 : avant cette refactorisation, 1 entité = 1 chunk (donc 1 vecteur)
@@ -340,3 +339,95 @@ pub async fn ai_rag_query(
 ///   sur un fragment court.
 /// - Les paragraphes de moins de 5 mots sont fusionnés avec le précédent
 ///   pour éviter les chunks bruyants (titres seuls, numéros…).
+fn entity_to_chunks(entity: &Entity) -> Vec<String> {
+    let mut chunks: Vec<String> = Vec::new();
+
+    // Header
+    let mut header = String::new();
+    header.push_str(&format!("{} ({:?})\n", entity.name, entity.kind));
+    if let Some(s) = &entity.summary {
+        header.push_str(s);
+        header.push('\n');
+    }
+    if let Some(s) = entity.content.get("archetype").and_then(|v| v.as_str()) {
+        header.push_str(&format!("Archétype : {s}\n"));
+    }
+    if let Some(arr) = entity.content.get("traits").and_then(|v| v.as_array()) {
+        let traits: Vec<&str> = arr.iter().filter_map(|t| t.as_str()).collect();
+        if !traits.is_empty() {
+            header.push_str(&format!("Traits : {}\n", traits.join(", ")));
+        }
+    }
+    if let Some(s) = entity.content.get("climate").and_then(|v| v.as_str()) {
+        header.push_str(&format!("Climat : {s}\n"));
+    }
+    if let Some(s) = entity.content.get("population").and_then(|v| v.as_str()) {
+        header.push_str(&format!("Population : {s}\n"));
+    }
+    if let Some(s) = entity.content.get("kind").and_then(|v| v.as_str()) {
+        header.push_str(&format!("Sous-type : {s}\n"));
+    }
+    if let Some(s) = entity.content.get("ideology").and_then(|v| v.as_str()) {
+        header.push_str(&format!("Idéologie : {s}\n"));
+    }
+    if let Some(s) = entity.content.get("founded").and_then(|v| v.as_str()) {
+        header.push_str(&format!("Fondation : {s}\n"));
+    }
+    if let Some(s) = entity.content.get("leader").and_then(|v| v.as_str()) {
+        header.push_str(&format!("Dirigeant : {s}\n"));
+    }
+    if let Some(s) = entity.content.get("origin").and_then(|v| v.as_str()) {
+        header.push_str(&format!("Origine : {s}\n"));
+    }
+    if let Some(s) = entity.content.get("owner").and_then(|v| v.as_str()) {
+        header.push_str(&format!("Propriétaire : {s}\n"));
+    }
+    if let Some(arr) = entity.content.get("properties").and_then(|v| v.as_array()) {
+        let props: Vec<&str> = arr.iter().filter_map(|t| t.as_str()).collect();
+        if !props.is_empty() {
+            header.push_str(&format!("Propriétés : {}\n", props.join(", ")));
+        }
+    }
+    if let Some(s) = entity.content.get("domain").and_then(|v| v.as_str()) {
+        header.push_str(&format!("Domaine : {s}\n"));
+    }
+    chunks.push(header);
+
+    // Bio / description : split en paragraphes
+    for key in ["biography", "description", "biographyText", "descriptionText"] {
+        if let Some(v) = entity.content.get(key) {
+            let text = if let Some(s) = v.as_str() {
+                s.to_string()
+            } else if v.is_object() {
+                romanesk_core::export::render_tiptap_doc(v)
+            } else {
+                continue;
+            };
+            if text.trim().is_empty() {
+                continue;
+            }
+            // Split sur double-newline (paragraphes du render Markdown).
+            // Chaque chunk est préfixé par le nom de l'entité pour
+            // garder le contexte sémantique fort même sur un fragment.
+            for para in text.split("\n\n") {
+                let p = para.trim();
+                if p.is_empty() {
+                    continue;
+                }
+                let word_count = p.split_whitespace().count();
+                if word_count < 5 {
+                    // Fusionne avec le chunk précédent au lieu de créer
+                    // un chunk bruyant (titre solitaire par ex.).
+                    if let Some(last) = chunks.last_mut() {
+                        last.push_str("\n\n");
+                        last.push_str(p);
+                    }
+                    continue;
+                }
+                chunks.push(format!("{} : {}", entity.name, p));
+            }
+        }
+    }
+
+    chunks
+}
