@@ -48,6 +48,7 @@ import { TiptapEditor, type TiptapDoc } from "@/components/TiptapEditor";
 import { AiContinuePanel } from "@/components/AiContinuePanel";
 import { AiActionsPanel } from "@/components/AiActionsPanel";
 import { AiConsistencyPanel } from "@/components/AiConsistencyPanel";
+import { UnknownNamesPanel } from "@/components/UnknownNamesPanel";
 import { usePageMeta } from "@/components/PageMeta";
 import {
   appendParagraphsToDoc,
@@ -649,6 +650,11 @@ function ChapterWorkspace({
             universeId={universeId}
             story={story}
             chapterTitle={chapter.title}
+            body={body}
+          />
+          <UnknownNamesPanel
+            chapterId={chapter.id}
+            universeId={universeId}
             body={body}
           />
         </div>

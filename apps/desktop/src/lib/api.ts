@@ -243,6 +243,32 @@ export function entityMerge(payload: MergePayload): Promise<MergeResult> {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Détection passive de noms propres (P11.2)
+// ---------------------------------------------------------------------------
+
+export interface UnknownName {
+  /** Le nom propre tel qu'il apparaît dans le texte. */
+  name: string;
+  /** Nombre d'occurrences dans le chapitre. */
+  occurrences: number;
+  /** Court extrait avec [...] autour de la première occurrence. */
+  excerpt: string;
+}
+
+/**
+ * Scanne le body_json d'un chapitre et retourne les noms propres
+ * détectés qui ne matchent aucune entité existante de l'univers.
+ * Heuristique : capitalisé + pas en début de phrase + pas un stop-word
+ * + ≥ 3 caractères. Comparaison normalisée NFD + lowercase (donc
+ * « Élodie » match « elodie »).
+ */
+export function chapterDetectUnknownNames(
+  chapterId: Uuid,
+): Promise<UnknownName[]> {
+  return invoke<UnknownName[]>("chapter_detect_unknown_names", { chapterId });
+}
+
 // --- Cover image ------------------------------------------------------------
 
 export interface CoverImageData {

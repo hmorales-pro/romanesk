@@ -43,6 +43,10 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "str
 futures-util = "0.3"
 # regex pour le scan word-boundary dans le rename propagé (P14.1)
 regex = "1"
+# Normalisation Unicode (NFD) pour la détection passive de noms propres
+# (P11.2) — permet de matcher « Élodie » et « elodie » après strip
+# d'accents.
+unicode-normalization = "0.1"
 # sqlx — accès direct au pool pour les opérations cross-tables qui ne
 # tiennent pas dans une seule méthode du Repo (P14.2 fusion de fiches :
 # transaction atomique sur 6 tables avec dedup PK composites).

@@ -246,6 +246,7 @@ pub fn run() {
             commands::chapter::chapter_update,
             commands::chapter::chapter_reorder,
             commands::chapter::chapter_delete,
+            commands::detect::chapter_detect_unknown_names,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

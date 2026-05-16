@@ -13,6 +13,7 @@
 pub mod ai;
 pub mod anchor;
 pub mod chapter;
+pub mod detect;
 pub mod entity;
 pub mod era;
 pub mod error;
