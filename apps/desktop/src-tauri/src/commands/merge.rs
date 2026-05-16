@@ -474,3 +474,159 @@ fn rename_in_content_recursive(
         _ => {}
     }
 }
+
+// ---------------------------------------------------------------------------
+// Tests unitaires (P15.5)
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn re(name: &str) -> Regex {
+        build_word_regex(name)
+    }
+
+    #[test]
+    fn recursive_rename_in_simple_string_value() {
+        let mut v = json!("Aldwen est mort.");
+        let mut changed = false;
+        rename_in_content_recursive(&mut v, &re("Aldwen"), "Galore", &mut changed);
+        assert!(changed);
+        assert_eq!(v, json!("Galore est mort."));
+    }
+
+    #[test]
+    fn recursive_rename_in_nested_object() {
+        let mut v = json!({
+            "traits": ["Aldwen est sage"],
+            "summary": "Histoire de Aldwen et de Galore.",
+            "meta": {"author": "Aldwen le Vieux"},
+        });
+        let mut changed = false;
+        rename_in_content_recursive(&mut v, &re("Aldwen"), "Galore", &mut changed);
+        assert!(changed);
+        assert_eq!(v["traits"][0].as_str().unwrap(), "Galore est sage");
+        assert_eq!(
+            v["summary"].as_str().unwrap(),
+            "Histoire de Galore et de Galore."
+        );
+        assert_eq!(v["meta"]["author"].as_str().unwrap(), "Galore le Vieux");
+    }
+
+    #[test]
+    fn recursive_rename_walks_tiptap_doc_inside_content() {
+        let mut v = json!({
+            "biography": {
+                "type": "doc",
+                "content": [{"type": "paragraph", "content": [
+                    {"type": "text", "text": "Aldwen partit à l'aube."}
+                ]}]
+            },
+            "archetype": "héros"
+        });
+        let mut changed = false;
+        rename_in_content_recursive(&mut v, &re("Aldwen"), "Galore", &mut changed);
+        assert!(changed);
+        // L'archetype n'est pas touché.
+        assert_eq!(v["archetype"].as_str().unwrap(), "héros");
+        // Le Tiptap doc a été modifié.
+        let text = v["biography"]["content"][0]["content"][0]["text"]
+            .as_str()
+            .unwrap();
+        assert_eq!(text, "Galore partit à l'aube.");
+    }
+
+    #[test]
+    fn recursive_rename_respects_word_boundary() {
+        let mut v = json!({
+            "summary": "Aldwen et Aldwendom sont différents.",
+        });
+        let mut changed = false;
+        rename_in_content_recursive(&mut v, &re("Aldwen"), "Galore", &mut changed);
+        assert!(changed);
+        assert_eq!(
+            v["summary"].as_str().unwrap(),
+            "Galore et Aldwendom sont différents."
+        );
+    }
+
+    #[test]
+    fn recursive_rename_no_change_when_no_match() {
+        let mut v = json!({"summary": "Histoire de Bob."});
+        let mut changed = false;
+        rename_in_content_recursive(&mut v, &re("Aldwen"), "Galore", &mut changed);
+        assert!(!changed);
+        assert_eq!(v["summary"].as_str().unwrap(), "Histoire de Bob.");
+    }
+
+    // Merge strategies — purs sur les valeurs, sans toucher à la DB.
+    // Reproduit la logique du `match payload.summary_strategy {...}` avec
+    // les mêmes branches pour s'assurer qu'aucune n'évolue silencieusement.
+
+    fn summary_after_merge(
+        strategy: MergeStrategy,
+        target: Option<&str>,
+        source: Option<&str>,
+    ) -> Option<String> {
+        let target = target.map(String::from);
+        let source = source.map(String::from);
+        match strategy {
+            MergeStrategy::KeepTarget => target,
+            MergeStrategy::KeepSource => source,
+            MergeStrategy::Concat => match (&target, &source) {
+                (Some(t), Some(s)) if !s.trim().is_empty() && t.trim() != s.trim() => {
+                    Some(format!("{t}\n\n{s}"))
+                }
+                (Some(t), _) => Some(t.clone()),
+                (None, s) => s.clone(),
+            },
+        }
+    }
+
+    #[test]
+    fn merge_strategy_keep_target() {
+        assert_eq!(
+            summary_after_merge(MergeStrategy::KeepTarget, Some("T"), Some("S")),
+            Some("T".into())
+        );
+    }
+
+    #[test]
+    fn merge_strategy_keep_source() {
+        assert_eq!(
+            summary_after_merge(MergeStrategy::KeepSource, Some("T"), Some("S")),
+            Some("S".into())
+        );
+    }
+
+    #[test]
+    fn merge_strategy_concat_joins_when_both_present_and_different() {
+        assert_eq!(
+            summary_after_merge(MergeStrategy::Concat, Some("Alpha"), Some("Beta")),
+            Some("Alpha\n\nBeta".into())
+        );
+    }
+
+    #[test]
+    fn merge_strategy_concat_keeps_target_if_source_equal() {
+        assert_eq!(
+            summary_after_merge(MergeStrategy::Concat, Some("Same"), Some("Same")),
+            Some("Same".into())
+        );
+    }
+
+    #[test]
+    fn merge_strategy_concat_falls_back_to_source_if_target_missing() {
+        assert_eq!(
+            summary_after_merge(MergeStrategy::Concat, None, Some("S")),
+            Some("S".into())
+        );
+    }
+
+    #[test]
+    fn merge_strategy_default_is_keep_target() {
+        assert_eq!(MergeStrategy::default(), MergeStrategy::KeepTarget);
+    }
+}

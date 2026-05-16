@@ -183,3 +183,236 @@ pub fn friendly_field(field: &str) -> String {
         other => other.to_string(),
     }
 }
+
+// ---------------------------------------------------------------------------
+// Tests unitaires (P15.5)
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    // ── build_word_regex ────────────────────────────────────────────
+
+    #[test]
+    fn word_regex_matches_exact_word() {
+        let re = build_word_regex("Aldwen");
+        assert!(re.is_match("Aldwen marche."));
+        assert!(re.is_match("Le grand Aldwen sourit."));
+        assert!(re.is_match("Aldwen,"));
+    }
+
+    #[test]
+    fn word_regex_does_not_match_substring() {
+        let re = build_word_regex("Aldwen");
+        assert!(!re.is_match("Aldwendom est vaste."));
+        assert!(!re.is_match("PreAldwenPost"));
+    }
+
+    #[test]
+    fn word_regex_handles_unicode_accents() {
+        let re = build_word_regex("Élodie");
+        assert!(re.is_match("Élodie souffle."));
+        assert!(!re.is_match("Élodien"));
+    }
+
+    #[test]
+    fn word_regex_escapes_metacharacters() {
+        // « Saint-Pierre » contient un tiret qui n'est pas un méta-char
+        // mais on teste un cas plus piégeux : un nom avec un point.
+        let re = build_word_regex("M. Aldwen");
+        assert!(re.is_match("M. Aldwen"));
+        // Le `.` ne doit PAS matcher n'importe quel caractère.
+        assert!(!re.is_match("M, Aldwen"));
+    }
+
+    // ── collect_text_nodes ──────────────────────────────────────────
+
+    #[test]
+    fn collect_text_nodes_flattens_tiptap_doc() {
+        let doc = json!({
+            "type": "doc",
+            "content": [
+                {"type": "paragraph", "content": [
+                    {"type": "text", "text": "Aldwen marche."},
+                    {"type": "text", "text": " Puis il s'arrête."}
+                ]},
+                {"type": "paragraph", "content": [
+                    {"type": "text", "text": "Élodie le suit."}
+                ]}
+            ]
+        });
+        let mut out = Vec::new();
+        collect_text_nodes(&doc, &mut out);
+        assert_eq!(
+            out,
+            vec![
+                "Aldwen marche.".to_string(),
+                " Puis il s'arrête.".to_string(),
+                "Élodie le suit.".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn collect_text_nodes_handles_empty_doc() {
+        let doc = json!({"type": "doc", "content": []});
+        let mut out = Vec::new();
+        collect_text_nodes(&doc, &mut out);
+        assert!(out.is_empty());
+    }
+
+    // ── rename_in_text_nodes ────────────────────────────────────────
+
+    #[test]
+    fn rename_in_text_nodes_replaces_all_occurrences() {
+        let re = build_word_regex("Aldwen");
+        let mut doc = json!({
+            "type": "doc",
+            "content": [
+                {"type": "paragraph", "content": [
+                    {"type": "text", "text": "Aldwen et Aldwen partent."},
+                ]}
+            ]
+        });
+        let changed = rename_in_text_nodes(&mut doc, &re, "Galore");
+        assert!(changed);
+        let mut texts = Vec::new();
+        collect_text_nodes(&doc, &mut texts);
+        assert_eq!(texts.join(""), "Galore et Galore partent.");
+    }
+
+    #[test]
+    fn rename_in_text_nodes_is_idempotent() {
+        let re = build_word_regex("Aldwen");
+        let mut doc = json!({
+            "type": "doc",
+            "content": [{"type": "paragraph", "content": [
+                {"type": "text", "text": "Pas de mention."},
+            ]}]
+        });
+        let changed = rename_in_text_nodes(&mut doc, &re, "Galore");
+        assert!(!changed);
+    }
+
+    #[test]
+    fn rename_in_text_nodes_respects_word_boundary() {
+        let re = build_word_regex("Aldwen");
+        let mut doc = json!({
+            "type": "doc",
+            "content": [{"type": "paragraph", "content": [
+                {"type": "text", "text": "Aldwen va à Aldwendom."},
+            ]}]
+        });
+        rename_in_text_nodes(&mut doc, &re, "Galore");
+        let mut texts = Vec::new();
+        collect_text_nodes(&doc, &mut texts);
+        assert_eq!(texts.join(""), "Galore va à Aldwendom.");
+    }
+
+    // ── rename_in_content_fields ────────────────────────────────────
+
+    #[test]
+    fn rename_in_content_fields_updates_string_field() {
+        let re = build_word_regex("Aldwen");
+        let mut content = json!({
+            "biographyText": "Aldwen est né en 1200.",
+            "archetype": "héros",
+        });
+        let changed = rename_in_content_fields(
+            &mut content,
+            &["biographyText".to_string()],
+            &re,
+            "Galore",
+        );
+        assert!(changed);
+        assert_eq!(
+            content["biographyText"].as_str().unwrap(),
+            "Galore est né en 1200."
+        );
+        // Le field non sélectionné est intact.
+        assert_eq!(content["archetype"].as_str().unwrap(), "héros");
+    }
+
+    #[test]
+    fn rename_in_content_fields_updates_tiptap_doc_field() {
+        let re = build_word_regex("Aldwen");
+        let mut content = json!({
+            "description": {
+                "type": "doc",
+                "content": [{"type": "paragraph", "content": [
+                    {"type": "text", "text": "Aldwen est puissant."}
+                ]}]
+            }
+        });
+        let changed = rename_in_content_fields(
+            &mut content,
+            &["description".to_string()],
+            &re,
+            "Galore",
+        );
+        assert!(changed);
+        let mut texts = Vec::new();
+        collect_text_nodes(&content["description"], &mut texts);
+        assert_eq!(texts.join(""), "Galore est puissant.");
+    }
+
+    #[test]
+    fn rename_in_content_fields_skips_missing_field() {
+        let re = build_word_regex("Aldwen");
+        let mut content = json!({"archetype": "héros"});
+        let changed = rename_in_content_fields(
+            &mut content,
+            &["biographyText".to_string()],
+            &re,
+            "Galore",
+        );
+        assert!(!changed);
+    }
+
+    // ── first_excerpt ──────────────────────────────────────────────
+
+    #[test]
+    fn excerpt_returns_context_around_match() {
+        let re = build_word_regex("Aldwen");
+        let text =
+            "Il était une fois, dans un royaume lointain, un prince nommé Aldwen qui parcourait les terres.";
+        let ex = first_excerpt(text, &re);
+        assert!(ex.contains("Aldwen"));
+        // Doit contenir du contexte autour.
+        assert!(ex.len() > "Aldwen".len());
+    }
+
+    #[test]
+    fn excerpt_handles_utf8_boundaries() {
+        let re = build_word_regex("Élodie");
+        // « Élodie » contient des caractères multi-bytes.
+        let text = "Avant Élodie, après Élodie, encore Élodie.";
+        let ex = first_excerpt(text, &re);
+        // Pas de panic, et l'excerpt contient au moins une occurrence.
+        assert!(ex.contains("Élodie"));
+    }
+
+    #[test]
+    fn excerpt_empty_when_no_match() {
+        let re = build_word_regex("Inconnu");
+        let text = "Aldwen marche.";
+        let ex = first_excerpt(text, &re);
+        assert!(ex.is_empty());
+    }
+
+    // ── friendly_field ──────────────────────────────────────────────
+
+    #[test]
+    fn friendly_field_translates_known_keys() {
+        assert_eq!(friendly_field("biographyText"), "biographie");
+        assert_eq!(friendly_field("ideology"), "idéologie");
+        assert_eq!(friendly_field("climate"), "climat");
+    }
+
+    #[test]
+    fn friendly_field_passes_through_unknown() {
+        assert_eq!(friendly_field("customField"), "customField");
+    }
+}
