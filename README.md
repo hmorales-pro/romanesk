@@ -73,8 +73,9 @@ pnpm tauri dev
 ### Construire un bundle local (.dmg, .msi, .AppImage, .deb)
 ```bash
 # Une seule fois — génère .icns macOS + Square*.png Windows à partir
-# de apps/desktop/src-tauri/icons/icon.png (1024×1024).
-pnpm --filter @romanesk/desktop tauri icon apps/desktop/src-tauri/icons/icon.png
+# de src-tauri/icons/icon.png (1024×1024). Le chemin est relatif au
+# crate desktop : pnpm --filter exécute la commande dans apps/desktop/.
+pnpm --filter @romanesk/desktop tauri icon src-tauri/icons/icon.png
 
 # Bundle pour l'OS courant
 pnpm tauri build
