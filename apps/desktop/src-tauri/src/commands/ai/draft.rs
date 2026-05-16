@@ -347,7 +347,7 @@ fn parse_draft(raw: &str, kind: EntityType) -> EntityDraft {
     draft
 }
 
-fn extract_json_object(s: &str) -> String {
+pub fn extract_json_object(s: &str) -> String {
     let bytes = s.as_bytes();
     let start = bytes.iter().position(|&b| b == b'{');
     let end = bytes.iter().rposition(|&b| b == b'}');

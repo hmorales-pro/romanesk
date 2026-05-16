@@ -22,6 +22,7 @@ use tokio::sync::RwLock;
 use uuid::Uuid;
 
 use super::super::{CommandError, CommandResult};
+use super::draft::extract_json_object;
 use super::state::{AiEmbedder, AiEmbedderInner, AiProvider};
 use super::util::{default_model_label, provider_id_label};
 

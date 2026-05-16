@@ -54,27 +54,3 @@ pub async fn ai_delete_model(payload: AiDeleteModelPayload) -> CommandResult<()>
     }
     Ok(())
 }
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AiCompletePayload {
-    pub system: Option<String>,
-    pub user: String,
-    #[serde(default)]
-    pub temperature: Option<f32>,
-    #[serde(default)]
-    pub max_tokens: Option<u32>,
-    /// Si vide, utilise le `default_model` du provider.
-    #[serde(default)]
-    pub model: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AiCompleteResult {
-    pub model: String,
-    pub content: String,
-    pub finish_reason: Option<String>,
-    pub prompt_tokens: Option<u32>,
-    pub completion_tokens: Option<u32>,
-}

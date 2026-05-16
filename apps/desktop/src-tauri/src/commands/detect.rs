@@ -62,10 +62,14 @@ pub async fn chapter_detect_unknown_names(
         .get(chapter.story_id)
         .await?
         .ok_or_else(|| CommandError::Other("story introuvable".into()))?;
-    let entities = repo
-        .entities()
-        .list_in_universe(story.universe_id, None)
-        .await?;
+    // Story.universe_id est Option<Uuid> (une story peut exister sans
+    // univers attaché — cas legacy ou stand-alone). Sans univers, on
+    // ne peut pas matcher les noms contre un lore → on renvoie une
+    // liste vide silencieusement plutôt que de planter.
+    let Some(universe_id) = story.universe_id else {
+        return Ok(Vec::new());
+    };
+    let entities = repo.entities().list_in_universe(universe_id, None).await?;
 
     // Index des noms d'entités, normalisés pour matching tolérant.
     let mut known: HashSet<String> = HashSet::new();
