@@ -17,8 +17,7 @@ pub async fn entity_rename_in_universe(
     db: State<'_, Database>,
     payload: RenamePayload,
 ) -> CommandResult<RenameResult> {
-    let entity_uuid =
-        Uuid::parse_str(&payload.entity_id).map_err(CommandError::InvalidUuid)?;
+    let entity_uuid = Uuid::parse_str(&payload.entity_id).map_err(CommandError::InvalidUuid)?;
     let new_name = payload.new_name.trim();
     if new_name.is_empty() {
         return Err(CommandError::Other("nouveau nom vide".into()));
@@ -93,12 +92,10 @@ pub async fn entity_rename_in_universe(
     // ── Entities (summary + champs content) ────────────────────────
     let mut entity_uuids_to_update: HashSet<Uuid> = HashSet::new();
     for eid in &entity_summary_ids {
-        entity_uuids_to_update
-            .insert(Uuid::parse_str(eid).map_err(CommandError::InvalidUuid)?);
+        entity_uuids_to_update.insert(Uuid::parse_str(eid).map_err(CommandError::InvalidUuid)?);
     }
     for (eid, _) in &entity_field_ids {
-        entity_uuids_to_update
-            .insert(Uuid::parse_str(eid).map_err(CommandError::InvalidUuid)?);
+        entity_uuids_to_update.insert(Uuid::parse_str(eid).map_err(CommandError::InvalidUuid)?);
     }
 
     for euuid in entity_uuids_to_update {

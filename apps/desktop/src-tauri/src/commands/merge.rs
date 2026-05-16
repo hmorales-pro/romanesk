@@ -97,10 +97,8 @@ pub async fn entity_merge(
     db: State<'_, Database>,
     payload: MergePayload,
 ) -> CommandResult<MergeResult> {
-    let target_uuid = Uuid::parse_str(&payload.target_id)
-        .map_err(CommandError::InvalidUuid)?;
-    let source_uuid = Uuid::parse_str(&payload.source_id)
-        .map_err(CommandError::InvalidUuid)?;
+    let target_uuid = Uuid::parse_str(&payload.target_id).map_err(CommandError::InvalidUuid)?;
+    let source_uuid = Uuid::parse_str(&payload.source_id).map_err(CommandError::InvalidUuid)?;
     if target_uuid == source_uuid {
         return Err(CommandError::Other(
             "source et target sont la même fiche".into(),
@@ -183,33 +181,31 @@ pub async fn entity_merge(
     //       source.name comme sub-string ; en pratique on a un
     //       word-boundary regex donc c'est safe, mais skip = clean).
     let pool = db.pool();
-    let mut tx = pool.begin().await.map_err(|e| {
-        CommandError::Other(format!("begin transaction: {e}"))
-    })?;
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|e| CommandError::Other(format!("begin transaction: {e}")))?;
 
     let re = build_word_regex(&old_source_name);
     let universe_id = target.universe_id;
 
     let mut chapters_renamed = 0usize;
     // Tous les chapitres de toutes les stories de l'univers.
-    let story_rows = sqlx::query(
-        "SELECT id FROM stories WHERE universe_id = ? AND deleted_at IS NULL",
-    )
-    .bind(universe_id.to_string())
-    .fetch_all(&mut *tx)
-    .await
-    .map_err(|e| CommandError::Other(format!("list stories: {e}")))?;
+    let story_rows =
+        sqlx::query("SELECT id FROM stories WHERE universe_id = ? AND deleted_at IS NULL")
+            .bind(universe_id.to_string())
+            .fetch_all(&mut *tx)
+            .await
+            .map_err(|e| CommandError::Other(format!("list stories: {e}")))?;
     for sr in story_rows {
         let sid: String = sr
             .try_get("id")
             .map_err(|e| CommandError::Other(format!("story id: {e}")))?;
-        let chapter_rows = sqlx::query(
-            "SELECT id, body_json FROM chapters WHERE story_id = ?",
-        )
-        .bind(&sid)
-        .fetch_all(&mut *tx)
-        .await
-        .map_err(|e| CommandError::Other(format!("list chapters: {e}")))?;
+        let chapter_rows = sqlx::query("SELECT id, body_json FROM chapters WHERE story_id = ?")
+            .bind(&sid)
+            .fetch_all(&mut *tx)
+            .await
+            .map_err(|e| CommandError::Other(format!("list chapters: {e}")))?;
         for cr in chapter_rows {
             let cid: String = cr
                 .try_get("id")
@@ -221,9 +217,8 @@ pub async fn entity_merge(
                 .map_err(|e| CommandError::Other(format!("parse body_json: {e}")))?;
             let changed = rename_in_text_nodes(&mut body, &re, &target_name);
             if changed {
-                let new_str = serde_json::to_string(&body).map_err(|e| {
-                    CommandError::Other(format!("ser body_json: {e}"))
-                })?;
+                let new_str = serde_json::to_string(&body)
+                    .map_err(|e| CommandError::Other(format!("ser body_json: {e}")))?;
                 sqlx::query("UPDATE chapters SET body_json = ? WHERE id = ?")
                     .bind(new_str)
                     .bind(cid)
@@ -256,9 +251,9 @@ pub async fn entity_merge(
             .try_get("content_json")
             .map_err(|e| CommandError::Other(format!("content_json: {e}")))?;
 
-        let new_summary = summary.as_ref().map(|s| {
-            re.replace_all(s, target_name.as_str()).to_string()
-        });
+        let new_summary = summary
+            .as_ref()
+            .map(|s| re.replace_all(s, target_name.as_str()).to_string());
         let summary_changed = new_summary.as_deref() != summary.as_deref();
 
         let mut content_v: Value = serde_json::from_str(&content_str)
@@ -268,18 +263,15 @@ pub async fn entity_merge(
         rename_in_content_recursive(&mut content_v, &re, &target_name, &mut content_changed);
 
         if summary_changed || content_changed {
-            let new_content_str = serde_json::to_string(&content_v).map_err(|e| {
-                CommandError::Other(format!("ser content: {e}"))
-            })?;
-            sqlx::query(
-                "UPDATE lore_entities SET summary = ?, content_json = ? WHERE id = ?",
-            )
-            .bind(new_summary.as_deref())
-            .bind(new_content_str)
-            .bind(eid)
-            .execute(&mut *tx)
-            .await
-            .map_err(|e| CommandError::Other(format!("update entity: {e}")))?;
+            let new_content_str = serde_json::to_string(&content_v)
+                .map_err(|e| CommandError::Other(format!("ser content: {e}")))?;
+            sqlx::query("UPDATE lore_entities SET summary = ?, content_json = ? WHERE id = ?")
+                .bind(new_summary.as_deref())
+                .bind(new_content_str)
+                .bind(eid)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| CommandError::Other(format!("update entity: {e}")))?;
             entities_renamed += 1;
         }
     }
@@ -303,33 +295,27 @@ pub async fn entity_merge(
     .await
     .map_err(|e| CommandError::Other(format!("dedup relations: {e}")))?;
 
-    let r1 = sqlx::query(
-        "UPDATE relations SET source_id = ? WHERE source_id = ?",
-    )
-    .bind(&target_str)
-    .bind(&source_str)
-    .execute(&mut *tx)
-    .await
-    .map_err(|e| CommandError::Other(format!("rel source: {e}")))?;
-    let r2 = sqlx::query(
-        "UPDATE relations SET target_id = ? WHERE target_id = ?",
-    )
-    .bind(&target_str)
-    .bind(&source_str)
-    .execute(&mut *tx)
-    .await
-    .map_err(|e| CommandError::Other(format!("rel target: {e}")))?;
+    let r1 = sqlx::query("UPDATE relations SET source_id = ? WHERE source_id = ?")
+        .bind(&target_str)
+        .bind(&source_str)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| CommandError::Other(format!("rel source: {e}")))?;
+    let r2 = sqlx::query("UPDATE relations SET target_id = ? WHERE target_id = ?")
+        .bind(&target_str)
+        .bind(&source_str)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| CommandError::Other(format!("rel target: {e}")))?;
     let relations_migrated = (r1.rows_affected() + r2.rows_affected()) as usize;
 
     // 5b. temporal_snapshots
-    let s1 = sqlx::query(
-        "UPDATE temporal_snapshots SET entity_id = ? WHERE entity_id = ?",
-    )
-    .bind(&target_str)
-    .bind(&source_str)
-    .execute(&mut *tx)
-    .await
-    .map_err(|e| CommandError::Other(format!("snapshots: {e}")))?;
+    let s1 = sqlx::query("UPDATE temporal_snapshots SET entity_id = ? WHERE entity_id = ?")
+        .bind(&target_str)
+        .bind(&source_str)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| CommandError::Other(format!("snapshots: {e}")))?;
     let snapshots_migrated = s1.rows_affected() as usize;
 
     // 5c. chapter_entity_refs (PRIMARY KEY composite chapter_id+entity_id) :
@@ -396,13 +382,11 @@ pub async fn entity_merge(
         .map_err(|e| CommandError::Other(format!("notes: {e}")))?;
 
     // ── 6. Soft-delete la source ────────────────────────────────────
-    sqlx::query(
-        "UPDATE lore_entities SET deleted_at = datetime('now') WHERE id = ?",
-    )
-    .bind(&source_str)
-    .execute(&mut *tx)
-    .await
-    .map_err(|e| CommandError::Other(format!("soft delete source: {e}")))?;
+    sqlx::query("UPDATE lore_entities SET deleted_at = datetime('now') WHERE id = ?")
+        .bind(&source_str)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| CommandError::Other(format!("soft delete source: {e}")))?;
 
     tx.commit()
         .await
@@ -439,12 +423,7 @@ fn build_word_regex(name: &str) -> Regex {
 /// remplacement à tous les champs string et tous les Tiptap docs
 /// trouvés. `changed` est positionné à true si au moins un remplacement
 /// a été fait.
-fn rename_in_content_recursive(
-    val: &mut Value,
-    re: &Regex,
-    replacement: &str,
-    changed: &mut bool,
-) {
+fn rename_in_content_recursive(val: &mut Value, re: &Regex, replacement: &str, changed: &mut bool) {
     match val {
         Value::String(s) => {
             let new = re.replace_all(s, replacement);

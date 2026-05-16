@@ -59,4 +59,3 @@ pub async fn ai_complete(
         completion_tokens: res.usage.as_ref().map(|u| u.completion_tokens),
     })
 }
-

@@ -71,10 +71,7 @@ pub async fn snapshot_list_for_entity(
 }
 
 #[tauri::command]
-pub async fn snapshot_get(
-    db: State<'_, Database>,
-    id: String,
-) -> CommandResult<Option<Snapshot>> {
+pub async fn snapshot_get(db: State<'_, Database>, id: String) -> CommandResult<Option<Snapshot>> {
     let id = Uuid::parse_str(&id)?;
     Ok(Repo::new(db.inner().clone()).snapshots().get(id).await?)
 }

@@ -23,8 +23,7 @@ pub async fn entity_find_mentions(
     db: State<'_, Database>,
     entity_id: String,
 ) -> CommandResult<FindMentionsResult> {
-    let entity_uuid =
-        Uuid::parse_str(&entity_id).map_err(CommandError::InvalidUuid)?;
+    let entity_uuid = Uuid::parse_str(&entity_id).map_err(CommandError::InvalidUuid)?;
 
     let repo = Repo::new(db.inner().clone());
 
@@ -92,21 +91,17 @@ pub async fn entity_find_mentions(
         // Champs riches dans `content_json` : on parcourt récursivement
         // toutes les valeurs string et tous les Tiptap docs reconnus
         // (objets ayant un `type` "doc" ou contenant un `content` array).
-        scan_content_for_field_mentions(
-            &ent.content,
-            &re,
-            &mut |field_path, count, excerpt| {
-                mentions.push(Mention {
-                    key: MentionLocationKey::EntityField {
-                        entity_id: ent.id.to_string(),
-                        field: field_path.clone(),
-                    },
-                    label: format!("{} · {}", ent.name, friendly_field(&field_path)),
-                    excerpt,
-                    count,
-                });
-            },
-        );
+        scan_content_for_field_mentions(&ent.content, &re, &mut |field_path, count, excerpt| {
+            mentions.push(Mention {
+                key: MentionLocationKey::EntityField {
+                    entity_id: ent.id.to_string(),
+                    field: field_path.clone(),
+                },
+                label: format!("{} · {}", ent.name, friendly_field(&field_path)),
+                excerpt,
+                count,
+            });
+        });
     }
 
     // Tri stable : chapitres d'abord (plus impactants), puis entités.

@@ -234,9 +234,7 @@ Réponds STRICTEMENT en JSON valide avec ces clés exactes :
 
 Aucun texte autour du JSON. Pas d'explication. Juste l'objet JSON."#
         }
-        _ => {
-            r#"Réponds en JSON avec les clés "name" et "summary"."#
-        }
+        _ => r#"Réponds en JSON avec les clés "name" et "summary"."#,
     };
 
     let system = format!(
@@ -358,4 +356,3 @@ fn extract_json_object(s: &str) -> String {
         _ => s.to_string(),
     }
 }
-

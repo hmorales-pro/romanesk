@@ -63,14 +63,14 @@ pub async fn event_list_in_era(
     era_id: String,
 ) -> CommandResult<Vec<Event>> {
     let id = Uuid::parse_str(&era_id)?;
-    Ok(Repo::new(db.inner().clone()).events().list_in_era(id).await?)
+    Ok(Repo::new(db.inner().clone())
+        .events()
+        .list_in_era(id)
+        .await?)
 }
 
 #[tauri::command]
-pub async fn event_get(
-    db: State<'_, Database>,
-    id: String,
-) -> CommandResult<Option<Event>> {
+pub async fn event_get(db: State<'_, Database>, id: String) -> CommandResult<Option<Event>> {
     let id = Uuid::parse_str(&id)?;
     Ok(Repo::new(db.inner().clone()).events().get(id).await?)
 }

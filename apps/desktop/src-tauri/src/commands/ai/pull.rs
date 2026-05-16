@@ -95,8 +95,7 @@ pub async fn ai_pull_model(
     let mut buf: Vec<u8> = Vec::new();
 
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk
-            .map_err(|e| CommandError::Other(format!("stream: {e}")))?;
+        let chunk = chunk.map_err(|e| CommandError::Other(format!("stream: {e}")))?;
         buf.extend_from_slice(&chunk);
 
         while let Some(pos) = buf.iter().position(|&b| b == b'\n') {
@@ -133,4 +132,3 @@ pub async fn ai_pull_model(
 
     Ok(())
 }
-

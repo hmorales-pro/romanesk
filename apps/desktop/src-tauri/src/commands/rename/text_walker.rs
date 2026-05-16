@@ -152,8 +152,13 @@ pub fn first_excerpt(text: &str, re: &Regex) -> String {
     let start_byte = m.start().saturating_sub(RADIUS);
     let end_byte = (m.end() + RADIUS).min(text.len());
     // Snap aux frontières char pour ne pas couper un caractère UTF-8.
-    let safe_start = (0..=start_byte).rev().find(|i| text.is_char_boundary(*i)).unwrap_or(0);
-    let safe_end = (end_byte..=text.len()).find(|i| text.is_char_boundary(*i)).unwrap_or(text.len());
+    let safe_start = (0..=start_byte)
+        .rev()
+        .find(|i| text.is_char_boundary(*i))
+        .unwrap_or(0);
+    let safe_end = (end_byte..=text.len())
+        .find(|i| text.is_char_boundary(*i))
+        .unwrap_or(text.len());
     let mut out = String::new();
     if safe_start > 0 {
         out.push_str("[…] ");
@@ -320,12 +325,8 @@ mod tests {
             "biographyText": "Aldwen est né en 1200.",
             "archetype": "héros",
         });
-        let changed = rename_in_content_fields(
-            &mut content,
-            &["biographyText".to_string()],
-            &re,
-            "Galore",
-        );
+        let changed =
+            rename_in_content_fields(&mut content, &["biographyText".to_string()], &re, "Galore");
         assert!(changed);
         assert_eq!(
             content["biographyText"].as_str().unwrap(),
@@ -346,12 +347,8 @@ mod tests {
                 ]}]
             }
         });
-        let changed = rename_in_content_fields(
-            &mut content,
-            &["description".to_string()],
-            &re,
-            "Galore",
-        );
+        let changed =
+            rename_in_content_fields(&mut content, &["description".to_string()], &re, "Galore");
         assert!(changed);
         let mut texts = Vec::new();
         collect_text_nodes(&content["description"], &mut texts);
@@ -362,12 +359,8 @@ mod tests {
     fn rename_in_content_fields_skips_missing_field() {
         let re = build_word_regex("Aldwen");
         let mut content = json!({"archetype": "héros"});
-        let changed = rename_in_content_fields(
-            &mut content,
-            &["biographyText".to_string()],
-            &re,
-            "Galore",
-        );
+        let changed =
+            rename_in_content_fields(&mut content, &["biographyText".to_string()], &re, "Galore");
         assert!(!changed);
     }
 

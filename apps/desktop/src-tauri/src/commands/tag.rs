@@ -96,11 +96,8 @@ pub async fn tag_set_for_entity(
     payload: SetTagsForEntityPayload,
 ) -> CommandResult<()> {
     let entity_id = Uuid::parse_str(&payload.entity_id)?;
-    let tag_ids: Result<Vec<Uuid>, _> = payload
-        .tag_ids
-        .iter()
-        .map(|s| Uuid::parse_str(s))
-        .collect();
+    let tag_ids: Result<Vec<Uuid>, _> =
+        payload.tag_ids.iter().map(|s| Uuid::parse_str(s)).collect();
     let tag_ids = tag_ids?;
     Repo::new(db.inner().clone())
         .tags()

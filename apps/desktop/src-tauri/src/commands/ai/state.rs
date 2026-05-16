@@ -9,7 +9,6 @@ use std::sync::Arc;
 use romanesk_core::ai::{OllamaProvider, Provider};
 use tokio::sync::RwLock;
 
-
 /// Wrapper qui donne un nom typable à la State partagée.
 ///
 /// Phase 5 (P5.3) : interior-mutable pour permettre le hot-reload des

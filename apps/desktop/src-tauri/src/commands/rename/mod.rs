@@ -36,6 +36,6 @@ pub use types::*;
 // Re-export des helpers Tiptap pour que `commands::merge` puisse les
 // importer sans dupliquer la logique.
 pub use text_walker::{
-    build_word_regex, collect_text_nodes, first_excerpt, friendly_field,
-    rename_in_content_fields, rename_in_text_nodes, scan_content_for_field_mentions,
+    build_word_regex, collect_text_nodes, first_excerpt, friendly_field, rename_in_content_fields,
+    rename_in_text_nodes, scan_content_for_field_mentions,
 };

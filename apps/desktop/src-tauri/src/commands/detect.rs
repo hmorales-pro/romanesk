@@ -114,7 +114,11 @@ pub async fn chapter_detect_unknown_names(
         .collect();
 
     // Tri : par fréquence décroissante, puis par nom (stable).
-    out.sort_by(|a, b| b.occurrences.cmp(&a.occurrences).then_with(|| a.name.cmp(&b.name)));
+    out.sort_by(|a, b| {
+        b.occurrences
+            .cmp(&a.occurrences)
+            .then_with(|| a.name.cmp(&b.name))
+    });
 
     Ok(out)
 }
@@ -184,17 +188,67 @@ fn normalize_for_match(s: &str) -> String {
 fn is_stop_word(s: &str) -> bool {
     const STOPS: &[&str] = &[
         // Titres / formes d'adresse
-        "Monsieur", "Madame", "Mademoiselle", "Mister", "Mrs", "Miss", "Doctor",
-        "Docteur", "Maitre", "Maître", "Sire", "Lord", "Lady",
+        "Monsieur",
+        "Madame",
+        "Mademoiselle",
+        "Mister",
+        "Mrs",
+        "Miss",
+        "Doctor",
+        "Docteur",
+        "Maitre",
+        "Maître",
+        "Sire",
+        "Lord",
+        "Lady",
         // Jours / mois (rarement des noms de fiches)
-        "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche",
-        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août",
-        "Septembre", "Octobre", "Novembre", "Décembre",
-        "January", "February", "March", "April", "May", "June", "July", "August",
-        "September", "October", "November", "December",
-        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+        "Lundi",
+        "Mardi",
+        "Mercredi",
+        "Jeudi",
+        "Vendredi",
+        "Samedi",
+        "Dimanche",
+        "Janvier",
+        "Février",
+        "Mars",
+        "Avril",
+        "Mai",
+        "Juin",
+        "Juillet",
+        "Août",
+        "Septembre",
+        "Octobre",
+        "Novembre",
+        "Décembre",
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
         // Connecteurs / interjections fréquemment capitalisés en dialogue
-        "Oui", "Non", "Bien", "Bon", "Yes", "No", "Well", "Right",
+        "Oui",
+        "Non",
+        "Bien",
+        "Bon",
+        "Yes",
+        "No",
+        "Well",
+        "Right",
     ];
     let lower = s.to_lowercase();
     STOPS.iter().any(|w| w.to_lowercase() == lower)

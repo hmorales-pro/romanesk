@@ -258,8 +258,10 @@ pub async fn import_apply(
         .iter()
         .map(|e| (e.name.to_lowercase(), e.id))
         .collect();
-    let mut existing_era_names: std::collections::HashSet<String> =
-        existing_eras.iter().map(|e| e.name.to_lowercase()).collect();
+    let mut existing_era_names: std::collections::HashSet<String> = existing_eras
+        .iter()
+        .map(|e| e.name.to_lowercase())
+        .collect();
 
     let mut skipped: Vec<String> = Vec::new();
     let mut created_chars = 0;

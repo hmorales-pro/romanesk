@@ -193,11 +193,7 @@ pub async fn ai_rag_query(
     use romanesk_core::rag::SearchFilter;
     let raw_hits = repo
         .embeddings()
-        .search_topk(
-            &q_vec,
-            k,
-            SearchFilter::by_model(&embedder.model),
-        )
+        .search_topk(&q_vec, k, SearchFilter::by_model(&embedder.model))
         .await?;
 
     // P7.6 : cutoff de score. La cosine similarity sur du texte
@@ -268,7 +264,11 @@ pub async fn ai_rag_query(
         .get("language")
         .and_then(|v| v.as_str())
         .unwrap_or("fr");
-    let lang_label = if language == "en" { "English" } else { "français" };
+    let lang_label = if language == "en" {
+        "English"
+    } else {
+        "français"
+    };
 
     let system = format!(
         "Tu es un assistant de worldbuilding qui répond en {lang_label} aux questions \
@@ -394,7 +394,12 @@ fn entity_to_chunks(entity: &Entity) -> Vec<String> {
     chunks.push(header);
 
     // Bio / description : split en paragraphes
-    for key in ["biography", "description", "biographyText", "descriptionText"] {
+    for key in [
+        "biography",
+        "description",
+        "biographyText",
+        "descriptionText",
+    ] {
         if let Some(v) = entity.content.get(key) {
             let text = if let Some(s) = v.as_str() {
                 s.to_string()

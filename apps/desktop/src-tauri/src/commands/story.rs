@@ -148,10 +148,7 @@ pub async fn story_delete(db: State<'_, Database>, id: String) -> CommandResult<
 /// Le rendu inclut les chapitres dans l'ordre `sort_order` et convertit le
 /// `body_json` Tiptap via `render_tiptap_doc`. Phase 6 (P6.5).
 #[tauri::command]
-pub async fn story_export_markdown(
-    db: State<'_, Database>,
-    id: String,
-) -> CommandResult<String> {
+pub async fn story_export_markdown(db: State<'_, Database>, id: String) -> CommandResult<String> {
     let story_id = Uuid::parse_str(&id)?;
     let repo = Repo::new(db.inner().clone());
     let story = repo

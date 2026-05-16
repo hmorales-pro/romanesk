@@ -66,11 +66,9 @@ impl AppSettings {
             .unwrap_or_default();
 
         Self {
-            ollama_base_url: std::env::var("OLLAMA_BASE_URL")
-                .unwrap_or(from_disk.ollama_base_url),
+            ollama_base_url: std::env::var("OLLAMA_BASE_URL").unwrap_or(from_disk.ollama_base_url),
             chat_model: std::env::var("OLLAMA_MODEL").unwrap_or(from_disk.chat_model),
-            embed_model: std::env::var("OLLAMA_EMBED_MODEL")
-                .unwrap_or(from_disk.embed_model),
+            embed_model: std::env::var("OLLAMA_EMBED_MODEL").unwrap_or(from_disk.embed_model),
             creative_model: std::env::var("OLLAMA_CREATIVE_MODEL")
                 .ok()
                 .or(from_disk.creative_model),

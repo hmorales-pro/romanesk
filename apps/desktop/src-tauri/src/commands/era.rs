@@ -25,10 +25,7 @@ pub struct CreateEraPayload {
 }
 
 #[tauri::command]
-pub async fn era_create(
-    db: State<'_, Database>,
-    payload: CreateEraPayload,
-) -> CommandResult<Era> {
+pub async fn era_create(db: State<'_, Database>, payload: CreateEraPayload) -> CommandResult<Era> {
     let universe_id = Uuid::parse_str(&payload.universe_id)?;
     let new = NewEra {
         universe_id,
@@ -81,10 +78,7 @@ pub struct UpdateEraPayload {
 }
 
 #[tauri::command]
-pub async fn era_update(
-    db: State<'_, Database>,
-    payload: UpdateEraPayload,
-) -> CommandResult<Era> {
+pub async fn era_update(db: State<'_, Database>, payload: UpdateEraPayload) -> CommandResult<Era> {
     let id = Uuid::parse_str(&payload.id)?;
     let update = UpdateEra {
         name: payload.name,
@@ -97,7 +91,10 @@ pub async fn era_update(
         color: payload.color.filter(|c| !c.trim().is_empty()),
         sort_order: payload.sort_order.unwrap_or(0),
     };
-    Ok(Repo::new(db.inner().clone()).eras().update(id, update).await?)
+    Ok(Repo::new(db.inner().clone())
+        .eras()
+        .update(id, update)
+        .await?)
 }
 
 #[tauri::command]

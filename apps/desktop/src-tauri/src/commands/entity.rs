@@ -76,10 +76,7 @@ pub async fn entity_create(
         is_real: payload.is_real,
     };
 
-    let created = Repo::new(db.inner().clone())
-        .entities()
-        .create(new)
-        .await?;
+    let created = Repo::new(db.inner().clone()).entities().create(new).await?;
     Ok(created)
 }
 
@@ -125,10 +122,7 @@ pub async fn entity_update(
 }
 
 #[tauri::command]
-pub async fn entity_get(
-    db: State<'_, Database>,
-    id: String,
-) -> CommandResult<Option<Entity>> {
+pub async fn entity_get(db: State<'_, Database>, id: String) -> CommandResult<Option<Entity>> {
     let id = Uuid::parse_str(&id)?;
     let res = Repo::new(db.inner().clone()).entities().get(id).await?;
     Ok(res)
@@ -225,14 +219,17 @@ pub async fn entity_set_cover_image(
 
     // On stocke le chemin RELATIF à app_data_dir pour rester portable
     // (ex. si l'utilisateur déplace son répertoire de données).
-    let rel_path: PathBuf = ["media", &entity.universe_id.to_string(), &entity.id.to_string(), &filename]
-        .iter()
-        .collect();
+    let rel_path: PathBuf = [
+        "media",
+        &entity.universe_id.to_string(),
+        &entity.id.to_string(),
+        &filename,
+    ]
+    .iter()
+    .collect();
     let rel_str = rel_path.to_string_lossy().to_string();
 
-    repo.entities()
-        .set_cover_image(id, Some(&rel_str))
-        .await?;
+    repo.entities().set_cover_image(id, Some(&rel_str)).await?;
 
     Ok(rel_str)
 }
@@ -270,8 +267,7 @@ pub async fn entity_get_cover_image_data(
         return Ok(None);
     }
 
-    let bytes = std::fs::read(&abs)
-        .map_err(|e| CommandError::Other(format!("read image: {e}")))?;
+    let bytes = std::fs::read(&abs).map_err(|e| CommandError::Other(format!("read image: {e}")))?;
     let mime = mime_for_path(&abs);
     let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
 

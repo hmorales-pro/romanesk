@@ -10,7 +10,6 @@
 //! re-expose tous les types et toutes les commandes pour que les
 //! call-sites (`commands::ai::ai_ping`, etc.) continuent de fonctionner.
 
-
 mod complete;
 mod delete;
 mod describe;

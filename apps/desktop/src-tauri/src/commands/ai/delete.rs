@@ -78,4 +78,3 @@ pub struct AiCompleteResult {
     pub prompt_tokens: Option<u32>,
     pub completion_tokens: Option<u32>,
 }
-

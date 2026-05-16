@@ -48,4 +48,3 @@ pub async fn ai_ping(provider: State<'_, AiProvider>) -> CommandResult<AiStatus>
         }),
     }
 }
-

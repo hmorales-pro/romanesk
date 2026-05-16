@@ -101,4 +101,3 @@ pub async fn ai_describe_image(
         content,
     })
 }
-

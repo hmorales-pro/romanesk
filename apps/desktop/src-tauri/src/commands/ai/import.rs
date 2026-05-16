@@ -488,11 +488,10 @@ Aucun texte autour du JSON."#;
         };
 
         let json_str = extract_json_object(&chunk_text);
-        let parsed: ChunkResult =
-            serde_json::from_str(&json_str).unwrap_or(ChunkResult {
-                discovered: Vec::new(),
-                chunk_summary: String::new(),
-            });
+        let parsed: ChunkResult = serde_json::from_str(&json_str).unwrap_or(ChunkResult {
+            discovered: Vec::new(),
+            chunk_summary: String::new(),
+        });
 
         all_discovered.extend(parsed.discovered.clone());
         if !parsed.chunk_summary.trim().is_empty() {
@@ -515,8 +514,7 @@ Aucun texte autour du JSON."#;
 
     let _ = app.emit("import-progress", ImportProgressEvent::Reducing);
 
-    let mut seen_names: std::collections::HashSet<String> =
-        std::collections::HashSet::new();
+    let mut seen_names: std::collections::HashSet<String> = std::collections::HashSet::new();
     let mut deduped: Vec<DiscoveredItem> = Vec::new();
     for item in all_discovered.iter() {
         let key = normalize_for_dedup(&item.name);
@@ -531,7 +529,7 @@ Aucun texte autour du JSON."#;
     let target_block = payload
         .target_universe_name
         .filter(|s| !s.trim().is_empty())
-        .map(|n| format!("\nL'univers cible existant s'appelle « {n} ».", ))
+        .map(|n| format!("\nL'univers cible existant s'appelle « {n} ».",))
         .unwrap_or_default();
 
     let entities_recap = deduped
@@ -685,10 +683,7 @@ fn parse_import_analysis(raw: &str) -> ImportAnalysis {
             .get("language")
             .and_then(|x| x.as_str())
             .map(str::to_string);
-        a.universe.tone = uni
-            .get("tone")
-            .and_then(|x| x.as_str())
-            .map(str::to_string);
+        a.universe.tone = uni.get("tone").and_then(|x| x.as_str()).map(str::to_string);
     }
     a.is_narrative = v
         .get("isNarrative")
@@ -734,7 +729,11 @@ fn arr_s(v: &serde_json::Value, k: &str) -> Vec<String> {
         .and_then(|x| x.as_array())
         .map(|arr| {
             arr.iter()
-                .filter_map(|i| i.as_str().filter(|s| !s.trim().is_empty()).map(str::to_string))
+                .filter_map(|i| {
+                    i.as_str()
+                        .filter(|s| !s.trim().is_empty())
+                        .map(str::to_string)
+                })
                 .collect()
         })
         .unwrap_or_default()
@@ -821,4 +820,3 @@ fn parse_chapter(v: &serde_json::Value) -> Option<ImportChapter> {
     let body_text = s_field(v, "bodyText")?;
     Some(ImportChapter { title, body_text })
 }
-

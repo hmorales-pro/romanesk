@@ -91,4 +91,3 @@ pub async fn ai_list_models(payload: AiListModelsPayload) -> CommandResult<Vec<A
         })
         .collect())
 }
-
