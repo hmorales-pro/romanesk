@@ -18,8 +18,6 @@
 //!      - notes.entity_id
 //!   5. Soft-delete la source.
 
-use std::collections::HashSet;
-
 use regex::Regex;
 use romanesk_core::{Database, Entity, Repo, UpdateEntity};
 use serde::{Deserialize, Serialize};
@@ -28,7 +26,7 @@ use sqlx::Row;
 use tauri::State;
 use uuid::Uuid;
 
-use super::rename::{collect_text_nodes_pub, rename_in_text_nodes_pub};
+use super::rename::rename_in_text_nodes;
 use super::{CommandError, CommandResult};
 
 // ---------------------------------------------------------------------------
@@ -221,7 +219,7 @@ pub async fn entity_merge(
                 .map_err(|e| CommandError::Other(format!("body_json: {e}")))?;
             let mut body: Value = serde_json::from_str(&body_str)
                 .map_err(|e| CommandError::Other(format!("parse body_json: {e}")))?;
-            let changed = rename_in_text_nodes_pub(&mut body, &re, &target_name);
+            let changed = rename_in_text_nodes(&mut body, &re, &target_name);
             if changed {
                 let new_str = serde_json::to_string(&body).map_err(|e| {
                     CommandError::Other(format!("ser body_json: {e}"))
@@ -459,7 +457,7 @@ fn rename_in_content_recursive(
             // Soit c'est un Tiptap doc (a un type/content array),
             // soit c'est juste un objet de méta — dans les deux cas
             // on parcourt récursivement ses fields.
-            if rename_in_text_nodes_pub(val, re, replacement) {
+            if rename_in_text_nodes(val, re, replacement) {
                 *changed = true;
             }
             if let Some(obj) = val.as_object_mut() {
@@ -475,11 +473,4 @@ fn rename_in_content_recursive(
         }
         _ => {}
     }
-}
-
-// Garde-tree
-#[allow(dead_code)]
-fn _unused() {
-    let _ = HashSet::<String>::new();
-    let _ = collect_text_nodes_pub;
 }
