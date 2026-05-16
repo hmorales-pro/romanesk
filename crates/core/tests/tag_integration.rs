@@ -6,7 +6,11 @@ use romanesk_core::{Database, Repo, RepoError};
 async fn setup() -> (Repo, romanesk_core::Universe, romanesk_core::Entity) {
     let db = Database::new_in_memory().await.unwrap();
     let repo = Repo::new(db);
-    let u = repo.universes().create(NewUniverse::named("Aether")).await.unwrap();
+    let u = repo
+        .universes()
+        .create(NewUniverse::named("Aether"))
+        .await
+        .unwrap();
     let e = repo
         .entities()
         .create(NewEntity::character(u.id, "Aldric"))
@@ -143,23 +147,47 @@ async fn rejects_empty_name() {
 #[tokio::test]
 async fn set_for_entity_replaces_in_bulk() {
     let (repo, u, e) = setup().await;
-    let t1 = repo.tags().create_in_universe(NewTag {
-        universe_id: u.id, name: "a".into(), color: None,
-    }).await.unwrap();
-    let t2 = repo.tags().create_in_universe(NewTag {
-        universe_id: u.id, name: "b".into(), color: None,
-    }).await.unwrap();
-    let t3 = repo.tags().create_in_universe(NewTag {
-        universe_id: u.id, name: "c".into(), color: None,
-    }).await.unwrap();
+    let t1 = repo
+        .tags()
+        .create_in_universe(NewTag {
+            universe_id: u.id,
+            name: "a".into(),
+            color: None,
+        })
+        .await
+        .unwrap();
+    let t2 = repo
+        .tags()
+        .create_in_universe(NewTag {
+            universe_id: u.id,
+            name: "b".into(),
+            color: None,
+        })
+        .await
+        .unwrap();
+    let t3 = repo
+        .tags()
+        .create_in_universe(NewTag {
+            universe_id: u.id,
+            name: "c".into(),
+            color: None,
+        })
+        .await
+        .unwrap();
 
     // Première assignation : t1 + t2
-    repo.tags().set_for_entity(e.id, &[t1.id, t2.id]).await.unwrap();
+    repo.tags()
+        .set_for_entity(e.id, &[t1.id, t2.id])
+        .await
+        .unwrap();
     let assigned = repo.tags().get_for_entity(e.id).await.unwrap();
     assert_eq!(assigned.len(), 2);
 
     // Re-assignation : on remplace par t2 + t3 → t1 doit disparaître
-    repo.tags().set_for_entity(e.id, &[t2.id, t3.id]).await.unwrap();
+    repo.tags()
+        .set_for_entity(e.id, &[t2.id, t3.id])
+        .await
+        .unwrap();
     let assigned = repo.tags().get_for_entity(e.id).await.unwrap();
     assert_eq!(assigned.len(), 2);
     let names: Vec<&str> = assigned.iter().map(|t| t.name.as_str()).collect();
@@ -175,9 +203,15 @@ async fn set_for_entity_replaces_in_bulk() {
 #[tokio::test]
 async fn deleting_tag_removes_assignments() {
     let (repo, u, e) = setup().await;
-    let t = repo.tags().create_in_universe(NewTag {
-        universe_id: u.id, name: "magie".into(), color: None,
-    }).await.unwrap();
+    let t = repo
+        .tags()
+        .create_in_universe(NewTag {
+            universe_id: u.id,
+            name: "magie".into(),
+            color: None,
+        })
+        .await
+        .unwrap();
 
     repo.tags().set_for_entity(e.id, &[t.id]).await.unwrap();
     assert_eq!(repo.tags().get_for_entity(e.id).await.unwrap().len(), 1);
@@ -192,15 +226,33 @@ async fn deleting_tag_removes_assignments() {
 async fn tags_isolated_per_universe() {
     let db = Database::new_in_memory().await.unwrap();
     let repo = Repo::new(db);
-    let u1 = repo.universes().create(NewUniverse::named("U1")).await.unwrap();
-    let u2 = repo.universes().create(NewUniverse::named("U2")).await.unwrap();
+    let u1 = repo
+        .universes()
+        .create(NewUniverse::named("U1"))
+        .await
+        .unwrap();
+    let u2 = repo
+        .universes()
+        .create(NewUniverse::named("U2"))
+        .await
+        .unwrap();
 
-    repo.tags().create_in_universe(NewTag {
-        universe_id: u1.id, name: "magie".into(), color: None,
-    }).await.unwrap();
-    repo.tags().create_in_universe(NewTag {
-        universe_id: u2.id, name: "magie".into(), color: None,
-    }).await.unwrap();
+    repo.tags()
+        .create_in_universe(NewTag {
+            universe_id: u1.id,
+            name: "magie".into(),
+            color: None,
+        })
+        .await
+        .unwrap();
+    repo.tags()
+        .create_in_universe(NewTag {
+            universe_id: u2.id,
+            name: "magie".into(),
+            color: None,
+        })
+        .await
+        .unwrap();
 
     // Même nom dans 2 univers : pas de conflit
     assert_eq!(repo.tags().list_in_universe(u1.id).await.unwrap().len(), 1);

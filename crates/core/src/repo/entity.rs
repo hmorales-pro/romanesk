@@ -158,11 +158,7 @@ impl<'a> EntityRepo<'a> {
     /// Met à jour uniquement la colonne `cover_image` d'une entité.
     /// Plus économique qu'un `update()` complet quand on change juste
     /// l'image (et évite d'avoir à reconstruire le `UpdateEntity`).
-    pub async fn set_cover_image(
-        &self,
-        id: Uuid,
-        cover_image: Option<&str>,
-    ) -> RepoResult<()> {
+    pub async fn set_cover_image(&self, id: Uuid, cover_image: Option<&str>) -> RepoResult<()> {
         let res = sqlx::query(
             "UPDATE lore_entities SET cover_image = ? \
              WHERE id = ? AND deleted_at IS NULL",

@@ -23,15 +23,12 @@
 use std::env;
 use std::process::ExitCode;
 
-use romanesk_core::ai::{
-    CompletionRequest, Message, OllamaConfig, OllamaProvider, Provider, Role,
-};
+use romanesk_core::ai::{CompletionRequest, Message, OllamaConfig, OllamaProvider, Provider, Role};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> ExitCode {
     let model = env::var("OLLAMA_MODEL").unwrap_or_else(|_| "gemma:latest".into());
-    let base_url =
-        env::var("OLLAMA_BASE_URL").unwrap_or_else(|_| "http://localhost:11434".into());
+    let base_url = env::var("OLLAMA_BASE_URL").unwrap_or_else(|_| "http://localhost:11434".into());
 
     println!("Romanesk · ping Ollama");
     println!("  base_url = {base_url}");

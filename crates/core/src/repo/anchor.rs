@@ -81,11 +81,7 @@ impl<'a> AnchorRepo<'a> {
         self.get(id).await?.ok_or(RepoError::NotFound)
     }
 
-    pub async fn update(
-        &self,
-        id: Uuid,
-        update: UpdateRealityAnchor,
-    ) -> RepoResult<RealityAnchor> {
+    pub async fn update(&self, id: Uuid, update: UpdateRealityAnchor) -> RepoResult<RealityAnchor> {
         let res = sqlx::query(
             "UPDATE reality_anchors \
              SET mode = ?, pivot_date = ?, base_world = ?, notes = ? \
@@ -118,12 +114,11 @@ impl<'a> AnchorRepo<'a> {
 
     // -- DivergencePoint ----------------------------------------------------
 
-    pub async fn divergence_create(
-        &self,
-        new: NewDivergencePoint,
-    ) -> RepoResult<DivergencePoint> {
+    pub async fn divergence_create(&self, new: NewDivergencePoint) -> RepoResult<DivergencePoint> {
         if new.title.trim().is_empty() {
-            return Err(RepoError::Invalid("divergence title must not be empty".into()));
+            return Err(RepoError::Invalid(
+                "divergence title must not be empty".into(),
+            ));
         }
         let id = Uuid::now_v7();
         sqlx::query(

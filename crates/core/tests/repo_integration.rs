@@ -35,7 +35,10 @@ async fn create_and_get_universe() {
 
     assert_eq!(u.name, "Aether");
     assert_eq!(u.description.as_deref(), Some("monde haute fantaisie"));
-    assert_eq!(u.settings, json!({ "language": "fr", "calendar": "custom" }));
+    assert_eq!(
+        u.settings,
+        json!({ "language": "fr", "calendar": "custom" })
+    );
 
     let fetched = repo
         .universes()
@@ -52,9 +55,21 @@ async fn list_universes_orders_by_recency() {
 
     // UUID v7 est monotone temporellement, l'ordre de création se reflète
     // dans l'ordre lexicographique des id. Pas besoin de sleep.
-    let u1 = repo.universes().create(NewUniverse::named("Alpha")).await.unwrap();
-    let u2 = repo.universes().create(NewUniverse::named("Beta")).await.unwrap();
-    let u3 = repo.universes().create(NewUniverse::named("Gamma")).await.unwrap();
+    let u1 = repo
+        .universes()
+        .create(NewUniverse::named("Alpha"))
+        .await
+        .unwrap();
+    let u2 = repo
+        .universes()
+        .create(NewUniverse::named("Beta"))
+        .await
+        .unwrap();
+    let u3 = repo
+        .universes()
+        .create(NewUniverse::named("Gamma"))
+        .await
+        .unwrap();
 
     let listed = repo.universes().list().await.unwrap();
     assert_eq!(listed.len(), 3);
@@ -114,7 +129,11 @@ async fn create_entity_in_universe() {
 #[tokio::test]
 async fn list_entities_filters_by_type() {
     let repo = fresh_repo().await;
-    let u = repo.universes().create(NewUniverse::named("Aether")).await.unwrap();
+    let u = repo
+        .universes()
+        .create(NewUniverse::named("Aether"))
+        .await
+        .unwrap();
 
     repo.entities()
         .create(NewEntity::character(u.id, "Aldric"))
@@ -159,7 +178,11 @@ async fn list_entities_filters_by_type() {
 #[tokio::test]
 async fn soft_delete_universe_hides_it_from_list() {
     let repo = fresh_repo().await;
-    let u = repo.universes().create(NewUniverse::named("Aether")).await.unwrap();
+    let u = repo
+        .universes()
+        .create(NewUniverse::named("Aether"))
+        .await
+        .unwrap();
 
     assert_eq!(repo.universes().list().await.unwrap().len(), 1);
 
@@ -172,7 +195,11 @@ async fn soft_delete_universe_hides_it_from_list() {
 #[tokio::test]
 async fn hard_delete_universe_cascades_entities() {
     let repo = fresh_repo().await;
-    let u = repo.universes().create(NewUniverse::named("Aether")).await.unwrap();
+    let u = repo
+        .universes()
+        .create(NewUniverse::named("Aether"))
+        .await
+        .unwrap();
 
     let aldric = repo
         .entities()
@@ -211,7 +238,11 @@ async fn delete_unknown_id_returns_not_found() {
 #[tokio::test]
 async fn rejects_empty_entity_name() {
     let repo = fresh_repo().await;
-    let u = repo.universes().create(NewUniverse::named("Aether")).await.unwrap();
+    let u = repo
+        .universes()
+        .create(NewUniverse::named("Aether"))
+        .await
+        .unwrap();
 
     let err = repo
         .entities()
@@ -224,7 +255,11 @@ async fn rejects_empty_entity_name() {
 #[tokio::test]
 async fn update_entity_replaces_modifiable_fields() {
     let repo = fresh_repo().await;
-    let u = repo.universes().create(NewUniverse::named("Aether")).await.unwrap();
+    let u = repo
+        .universes()
+        .create(NewUniverse::named("Aether"))
+        .await
+        .unwrap();
 
     let original = repo
         .entities()
@@ -298,7 +333,11 @@ async fn update_entity_replaces_modifiable_fields() {
 #[tokio::test]
 async fn update_entity_rejects_empty_name() {
     let repo = fresh_repo().await;
-    let u = repo.universes().create(NewUniverse::named("Aether")).await.unwrap();
+    let u = repo
+        .universes()
+        .create(NewUniverse::named("Aether"))
+        .await
+        .unwrap();
     let e = repo
         .entities()
         .create(NewEntity::character(u.id, "Aldric"))
@@ -325,8 +364,16 @@ async fn update_entity_rejects_empty_name() {
 #[tokio::test]
 async fn set_cover_image_round_trip() {
     let repo = fresh_repo().await;
-    let u = repo.universes().create(NewUniverse::named("Aether")).await.unwrap();
-    let e = repo.entities().create(NewEntity::character(u.id, "Aldric")).await.unwrap();
+    let u = repo
+        .universes()
+        .create(NewUniverse::named("Aether"))
+        .await
+        .unwrap();
+    let e = repo
+        .entities()
+        .create(NewEntity::character(u.id, "Aldric"))
+        .await
+        .unwrap();
     assert!(e.cover_image.is_none());
 
     repo.entities()

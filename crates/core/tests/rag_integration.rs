@@ -42,7 +42,10 @@ async fn insert_and_top_k_cosine() {
         .unwrap();
     let entity = repo
         .entities()
-        .create(romanesk_core::domain::NewEntity::character(universe.id, "Aldric"))
+        .create(romanesk_core::domain::NewEntity::character(
+            universe.id,
+            "Aldric",
+        ))
         .await
         .unwrap();
     let emb = embedder(&db);

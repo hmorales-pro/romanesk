@@ -198,11 +198,7 @@ impl Provider for OllamaProvider {
         }
     }
 
-    async fn describe_image(
-        &self,
-        img: ImageInput,
-        prompt: &str,
-    ) -> Result<String, ProviderError> {
+    async fn describe_image(&self, img: ImageInput, prompt: &str) -> Result<String, ProviderError> {
         // P6.6 : encode l'image en base64 et l'attache au champ `images` de
         // la requête `/api/chat`. Ne fonctionne qu'avec un modèle
         // vision-capable côté Ollama (llava, qwen2.5vl, gemma3:4b avec vision…).
@@ -221,10 +217,7 @@ impl Provider for OllamaProvider {
         use base64::{engine::general_purpose, Engine as _};
         let b64 = general_purpose::STANDARD.encode(&bytes);
 
-        let url = format!(
-            "{}/api/chat",
-            self.cfg.base_url.trim_end_matches('/')
-        );
+        let url = format!("{}/api/chat", self.cfg.base_url.trim_end_matches('/'));
         let payload = serde_json::json!({
             "model": &self.cfg.default_model,
             "stream": false,

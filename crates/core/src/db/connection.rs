@@ -95,11 +95,12 @@ mod tests {
     async fn in_memory_opens_and_migrates() {
         let db = Database::new_in_memory().await.expect("open in-memory");
         // Vérifie qu'au moins une table de la migration 0001 existe.
-        let row: (i64,) =
-            sqlx::query_as("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='universes'")
-                .fetch_one(db.pool())
-                .await
-                .expect("query sqlite_master");
+        let row: (i64,) = sqlx::query_as(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='universes'",
+        )
+        .fetch_one(db.pool())
+        .await
+        .expect("query sqlite_master");
         assert_eq!(row.0, 1, "table `universes` doit exister après migration");
     }
 

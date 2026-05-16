@@ -29,9 +29,7 @@ impl<'a> StoryRepo<'a> {
         }
         if let Some(target) = new.target_word_count {
             if target < 0 {
-                return Err(RepoError::Invalid(
-                    "target_word_count must be >= 0".into(),
-                ));
+                return Err(RepoError::Invalid("target_word_count must be >= 0".into()));
             }
         }
 
@@ -95,9 +93,7 @@ impl<'a> StoryRepo<'a> {
         }
         if let Some(target) = update.target_word_count {
             if target < 0 {
-                return Err(RepoError::Invalid(
-                    "target_word_count must be >= 0".into(),
-                ));
+                return Err(RepoError::Invalid("target_word_count must be >= 0".into()));
             }
         }
 
@@ -148,9 +144,8 @@ fn row_to_story(row: SqliteRow) -> RepoResult<Story> {
     let universe_id_opt: Option<String> = row.try_get("universe_id")?;
     let pivot_era_id_opt: Option<String> = row.try_get("pivot_era_id")?;
     let kind_str: String = row.try_get("type")?;
-    let kind = StoryType::parse(&kind_str).ok_or_else(|| {
-        RepoError::Invalid(format!("unknown story type in db: {kind_str:?}"))
-    })?;
+    let kind = StoryType::parse(&kind_str)
+        .ok_or_else(|| RepoError::Invalid(format!("unknown story type in db: {kind_str:?}")))?;
     let created_at: NaiveDateTime = row.try_get("created_at")?;
     let updated_at: NaiveDateTime = row.try_get("updated_at")?;
 
@@ -387,7 +382,12 @@ mod tests {
 
         // Le get filtre les soft-deleted.
         assert!(repo.stories().get(s.id).await.unwrap().is_none());
-        assert!(repo.stories().list_in_universe(u.id).await.unwrap().is_empty());
+        assert!(repo
+            .stories()
+            .list_in_universe(u.id)
+            .await
+            .unwrap()
+            .is_empty());
 
         // Re-delete renvoie NotFound.
         assert!(matches!(

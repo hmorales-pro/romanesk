@@ -136,9 +136,7 @@ impl MockProvider {
     }
 
     pub fn stage_image_description_error(&self, err: ProviderError) -> &Self {
-        self.lock()
-            .canned_image_descriptions
-            .push_back(Err(err));
+        self.lock().canned_image_descriptions.push_back(Err(err));
         self
     }
 
@@ -187,10 +185,7 @@ impl Provider for MockProvider {
         self.capabilities
     }
 
-    async fn complete(
-        &self,
-        _req: CompletionRequest,
-    ) -> Result<CompletionResponse, ProviderError> {
+    async fn complete(&self, _req: CompletionRequest) -> Result<CompletionResponse, ProviderError> {
         // On enferme le verrou dans un bloc pour ne JAMAIS le tenir au-delà
         // d'un point de yield (même s'il n'y en a pas ici, c'est le pattern safe).
         let staged = {
@@ -305,10 +300,7 @@ mod tests {
     async fn embed_returns_staged_vectors() {
         let mock = MockProvider::new();
         mock.stage_embedding(vec![vec![1.0_f32, 2.0], vec![3.0, 4.0]]);
-        let v = mock
-            .embed(vec!["x".into(), "y".into()])
-            .await
-            .unwrap();
+        let v = mock.embed(vec!["x".into(), "y".into()]).await.unwrap();
         assert_eq!(v, vec![vec![1.0_f32, 2.0], vec![3.0, 4.0]]);
     }
 

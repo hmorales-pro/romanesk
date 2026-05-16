@@ -25,9 +25,7 @@ impl<'a> EraRepo<'a> {
         }
         if let (Some(s), Some(e)) = (new.start_year, new.end_year) {
             if e < s {
-                return Err(RepoError::Invalid(
-                    "end_year must be >= start_year".into(),
-                ));
+                return Err(RepoError::Invalid("end_year must be >= start_year".into()));
             }
         }
 
@@ -85,9 +83,7 @@ impl<'a> EraRepo<'a> {
         }
         if let (Some(s), Some(e)) = (update.start_year, update.end_year) {
             if e < s {
-                return Err(RepoError::Invalid(
-                    "end_year must be >= start_year".into(),
-                ));
+                return Err(RepoError::Invalid("end_year must be >= start_year".into()));
             }
         }
 

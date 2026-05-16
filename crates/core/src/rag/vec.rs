@@ -210,7 +210,10 @@ impl<'a> EmbeddingRepo<'a> {
             .into_iter()
             .map(|e| {
                 let s = cosine(query, &e.vector);
-                EmbeddingHit { embedding: e, score: s }
+                EmbeddingHit {
+                    embedding: e,
+                    score: s,
+                }
             })
             .collect();
 
@@ -226,11 +229,7 @@ impl<'a> EmbeddingRepo<'a> {
 
     /// Supprime tous les embeddings rattachés à une source (ex. pour
     /// réindexer une fiche dont le contenu a changé).
-    pub async fn delete_for(
-        &self,
-        source_type: SourceType,
-        source_id: Uuid,
-    ) -> RepoResult<u64> {
+    pub async fn delete_for(&self, source_type: SourceType, source_id: Uuid) -> RepoResult<u64> {
         let res = sqlx::query("DELETE FROM embeddings WHERE source_type = ? AND source_id = ?")
             .bind(source_type.as_str())
             .bind(source_id.to_string())

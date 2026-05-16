@@ -37,8 +37,14 @@ pub fn render_universe_markdown(
     out.push_str("---\n\n");
 
     // Sections par type
-    let characters: Vec<&Entity> = entities.iter().filter(|e| e.kind == EntityType::Character).collect();
-    let locations: Vec<&Entity> = entities.iter().filter(|e| e.kind == EntityType::Location).collect();
+    let characters: Vec<&Entity> = entities
+        .iter()
+        .filter(|e| e.kind == EntityType::Character)
+        .collect();
+    let locations: Vec<&Entity> = entities
+        .iter()
+        .filter(|e| e.kind == EntityType::Location)
+        .collect();
     let others: Vec<&Entity> = entities
         .iter()
         .filter(|e| e.kind != EntityType::Character && e.kind != EntityType::Location)
@@ -450,7 +456,10 @@ mod tests {
 
     #[test]
     fn legacy_string_returned_as_is() {
-        assert_eq!(render_tiptap_doc(&json!("plain text legacy")), "plain text legacy");
+        assert_eq!(
+            render_tiptap_doc(&json!("plain text legacy")),
+            "plain text legacy"
+        );
     }
 
     #[test]

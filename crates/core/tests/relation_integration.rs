@@ -155,12 +155,26 @@ async fn relations_cascade_when_entity_hard_deleted() {
         .await
         .unwrap();
 
-    assert_eq!(repo.relations().list_for_entity(aldric).await.unwrap().len(), 1);
+    assert_eq!(
+        repo.relations()
+            .list_for_entity(aldric)
+            .await
+            .unwrap()
+            .len(),
+        1
+    );
 
     repo.entities().hard_delete(lyra).await.unwrap();
 
     // L'arc doit avoir été effacé en cascade (FK ON DELETE CASCADE).
-    assert_eq!(repo.relations().list_for_entity(aldric).await.unwrap().len(), 0);
+    assert_eq!(
+        repo.relations()
+            .list_for_entity(aldric)
+            .await
+            .unwrap()
+            .len(),
+        0
+    );
 }
 
 #[tokio::test]
@@ -168,22 +182,58 @@ async fn list_in_universe_returns_only_that_universe() {
     let db = Database::new_in_memory().await.unwrap();
     let repo = Repo::new(db);
 
-    let u1 = repo.universes().create(NewUniverse::named("U1")).await.unwrap();
-    let u2 = repo.universes().create(NewUniverse::named("U2")).await.unwrap();
+    let u1 = repo
+        .universes()
+        .create(NewUniverse::named("U1"))
+        .await
+        .unwrap();
+    let u2 = repo
+        .universes()
+        .create(NewUniverse::named("U2"))
+        .await
+        .unwrap();
 
-    let a1 = repo.entities().create(NewEntity::character(u1.id, "A1")).await.unwrap();
-    let b1 = repo.entities().create(NewEntity::character(u1.id, "B1")).await.unwrap();
-    let a2 = repo.entities().create(NewEntity::character(u2.id, "A2")).await.unwrap();
-    let b2 = repo.entities().create(NewEntity::character(u2.id, "B2")).await.unwrap();
+    let a1 = repo
+        .entities()
+        .create(NewEntity::character(u1.id, "A1"))
+        .await
+        .unwrap();
+    let b1 = repo
+        .entities()
+        .create(NewEntity::character(u1.id, "B1"))
+        .await
+        .unwrap();
+    let a2 = repo
+        .entities()
+        .create(NewEntity::character(u2.id, "A2"))
+        .await
+        .unwrap();
+    let b2 = repo
+        .entities()
+        .create(NewEntity::character(u2.id, "B2"))
+        .await
+        .unwrap();
 
-    repo.relations().create(NewRelation {
-        source_id: a1.id, target_id: b1.id, kind: RelationType::AllyOf,
-        era_id: None, description: None,
-    }).await.unwrap();
-    repo.relations().create(NewRelation {
-        source_id: a2.id, target_id: b2.id, kind: RelationType::EnemyOf,
-        era_id: None, description: None,
-    }).await.unwrap();
+    repo.relations()
+        .create(NewRelation {
+            source_id: a1.id,
+            target_id: b1.id,
+            kind: RelationType::AllyOf,
+            era_id: None,
+            description: None,
+        })
+        .await
+        .unwrap();
+    repo.relations()
+        .create(NewRelation {
+            source_id: a2.id,
+            target_id: b2.id,
+            kind: RelationType::EnemyOf,
+            era_id: None,
+            description: None,
+        })
+        .await
+        .unwrap();
 
     let u1_rels = repo.relations().list_in_universe(u1.id).await.unwrap();
     assert_eq!(u1_rels.len(), 1);
@@ -198,9 +248,20 @@ async fn list_in_universe_returns_only_that_universe() {
 fn relation_type_round_trip() {
     use RelationType::*;
     let all = [
-        AllyOf, EnemyOf, MentorOf, ParentOf, SiblingOf, MarriedTo,
-        MemberOf, LeaderOf, RuledOver, LocatedIn, Owns, Created,
-        DerivedFrom, Mentions,
+        AllyOf,
+        EnemyOf,
+        MentorOf,
+        ParentOf,
+        SiblingOf,
+        MarriedTo,
+        MemberOf,
+        LeaderOf,
+        RuledOver,
+        LocatedIn,
+        Owns,
+        Created,
+        DerivedFrom,
+        Mentions,
     ];
     for t in all {
         assert_eq!(RelationType::parse(t.as_str()), Some(t), "{:?}", t);

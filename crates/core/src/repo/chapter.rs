@@ -39,10 +39,12 @@ impl<'a> ChapterRepo<'a> {
         let sort_order = if let Some(s) = new.sort_order {
             s
         } else {
-            let row = sqlx::query("SELECT COALESCE(MAX(sort_order), -1) AS m FROM chapters WHERE story_id = ?")
-                .bind(new.story_id.to_string())
-                .fetch_one(self.db.pool())
-                .await?;
+            let row = sqlx::query(
+                "SELECT COALESCE(MAX(sort_order), -1) AS m FROM chapters WHERE story_id = ?",
+            )
+            .bind(new.story_id.to_string())
+            .fetch_one(self.db.pool())
+            .await?;
             let max: i64 = row.try_get("m")?;
             max + 1
         };
@@ -155,8 +157,9 @@ fn row_to_chapter(row: SqliteRow) -> RepoResult<Chapter> {
     let body_json: serde_json::Value = serde_json::from_str(&body_str)
         .map_err(|e| RepoError::Invalid(format!("corrupt body_json in db: {e}")))?;
     let status_str: String = row.try_get("status")?;
-    let status = ChapterStatus::parse(&status_str)
-        .ok_or_else(|| RepoError::Invalid(format!("unknown chapter status in db: {status_str:?}")))?;
+    let status = ChapterStatus::parse(&status_str).ok_or_else(|| {
+        RepoError::Invalid(format!("unknown chapter status in db: {status_str:?}"))
+    })?;
     let created_at: NaiveDateTime = row.try_get("created_at")?;
     let updated_at: NaiveDateTime = row.try_get("updated_at")?;
 
@@ -168,10 +171,7 @@ fn row_to_chapter(row: SqliteRow) -> RepoResult<Chapter> {
         body_json,
         word_count: row.try_get("word_count")?,
         status,
-        era_id: era_id_opt
-            .as_deref()
-            .map(Uuid::parse_str)
-            .transpose()?,
+        era_id: era_id_opt.as_deref().map(Uuid::parse_str).transpose()?,
         created_at: created_at.and_utc(),
         updated_at: updated_at.and_utc(),
     })
@@ -415,12 +415,11 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(
-            repo.chapters()
-                .list_for_story(story_id)
-                .await
-                .unwrap()
-                .is_empty()
-        );
+        assert!(repo
+            .chapters()
+            .list_for_story(story_id)
+            .await
+            .unwrap()
+            .is_empty());
     }
 }
