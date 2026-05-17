@@ -13,6 +13,8 @@ node_modules/
 dist/
 .vite/
 .turbo/
+# Cache incrémental TypeScript (tsc -b) — local seulement, jamais commité.
+**/tsconfig.tsbuildinfo
 
 # Tauri
 apps/desktop/src-tauri/target/
