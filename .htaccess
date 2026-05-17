@@ -1,20 +1,32 @@
-# .htaccess racine — sert apps/landing/ comme site public sur Hostinger.
+# .htaccess racine pour Hostinger — sert apps/landing/ comme site public
+# pour romanesk.fr (et www.romanesk.fr).
 #
-# Ce fichier n'est nécessaire QUE si tout le repo est uploadé dans le
-# document root (cas où Hostinger ne permet pas de changer le document
-# root vers un sous-dossier). Sinon, préférer :
-#   - Option A : pointer le document root du domaine sur apps/landing/
-#     dans hPanel (Domaines → Custom document root).
-#   - Option B : le workflow .github/workflows/deploy-landing.yml qui
-#     upload juste apps/landing/* dans public_html/, auquel cas ce
-#     fichier ne sert à rien.
+# Solution recommandée par Kodee quand le plan Hostinger ne permet pas
+# de changer le document root vers un sous-dossier.
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
-  # Bloque l'accès direct à tout sauf apps/landing/ (sécurité : le code
-  # Rust, les configs, le .git, etc. ne doivent jamais être servis).
+  # ── Rewrite romanesk.fr/* → apps/landing/* ─────────────────────────
+  # Le visiteur voit `https://romanesk.fr/` ; Apache sert
+  # `apps/landing/index.html` sans changer la barre d'adresse.
+  RewriteCond %{HTTP_HOST} ^romanesk\.fr$ [NC,OR]
+  RewriteCond %{HTTP_HOST} ^www\.romanesk\.fr$ [NC]
+  RewriteCond %{REQUEST_URI} !^/apps/landing/
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(.*)$ /apps/landing/$1 [L]
+
+  # Page d'accueil explicite (au cas où `$1` est vide).
+  RewriteCond %{HTTP_HOST} ^(www\.)?romanesk\.fr$ [NC]
+  RewriteRule ^$ /apps/landing/index.html [L]
+
+  # ── Sécurité : bloque l'accès direct aux dossiers source ───────────
+  # Sans ces règles, un visiteur curieux pourrait taper
+  # `romanesk.fr/Cargo.toml` ou `romanesk.fr/crates/core/...` et voir
+  # le code Rust en clair.
   RewriteRule ^\.git/ - [F,L]
+  RewriteRule ^\.github/ - [F,L]
   RewriteRule ^crates/ - [F,L]
   RewriteRule ^db/ - [F,L]
   RewriteRule ^docs/ - [F,L]
@@ -22,31 +34,16 @@
   RewriteRule ^target/ - [F,L]
   RewriteRule ^node_modules/ - [F,L]
   RewriteRule ^apps/desktop/ - [F,L]
-  RewriteRule ^Cargo\.(toml|lock)$ - [F,L]
-  RewriteRule ^package\.json$ - [F,L]
-  RewriteRule ^pnpm-lock\.yaml$ - [F,L]
-  RewriteRule ^pnpm-workspace\.yaml$ - [F,L]
-  RewriteRule ^README\.md$ - [F,L]
-
-  # Rewrite la racine et toute requête vers apps/landing/.
-  # Le visiteur tape https://romanesk.fr/ → Apache sert apps/landing/index.html
-  # sans changer l'URL affichée.
-  RewriteCond %{REQUEST_URI} !^/apps/landing/
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule ^(.*)$ apps/landing/$1 [L]
-
-  # Page d'accueil
-  RewriteRule ^$ apps/landing/index.html [L]
 </IfModule>
 
-# Bloque aussi l'accès aux fichiers source en cas de listage de
-# répertoire activé par défaut (au cas où mod_rewrite est désactivé).
+# ── Filets défensifs si mod_rewrite est désactivé ─────────────────────
+# Refuse les extensions source en accès direct.
 <FilesMatch "\.(rs|toml|lock|yaml|yml|md)$">
   Require all denied
 </FilesMatch>
 
-# Hide dotfiles
-<FilesMatch "^\.">
+# Cache les dotfiles (sauf .well-known/ qui est légitime pour Let's
+# Encrypt et apple-app-site-association).
+<FilesMatch "^\.(?!well-known)">
   Require all denied
 </FilesMatch>
