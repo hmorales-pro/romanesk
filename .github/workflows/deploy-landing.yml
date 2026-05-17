@@ -1,0 +1,51 @@
+name: Deploy landing to Hostinger
+
+# Push automatique de apps/landing/ vers Hostinger via FTP/FTPS à chaque
+# commit sur main qui touche le dossier landing.
+#
+# Secrets à poser dans le repo :
+#   FTP_SERVER   — hostname FTP/FTPS (ex. ftp.romanesk.fr, ou cf hPanel
+#                  → FTP Accounts → Hostname)
+#   FTP_USERNAME — user FTP (souvent ton domaine, cf hPanel)
+#   FTP_PASSWORD — password FTP (jamais ton mot de passe Hostinger principal,
+#                  utilise un compte FTP dédié dans hPanel → FTP Accounts)
+#   FTP_TARGET   — chemin de publication sur le serveur (ex. /public_html/ ou
+#                  /domains/romanesk.fr/public_html/ selon ta config Hostinger)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/landing/**"
+      - ".github/workflows/deploy-landing.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Sync apps/landing to Hostinger
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./apps/landing/
+          server-dir: ${{ secrets.FTP_TARGET }}
+          # On ignore le tweaks-panel + les uploads (mode interne) et le
+          # dossier node_modules au cas où il est créé localement.
+          exclude: |
+            **/node_modules/**
+            **/uploads/**
+            **/tweaks-panel.jsx
+            **/app.jsx
+            **/.git*
+            **/package.json
+            **/README.md
+          # Sécurité FTPS — Hostinger supporte explicit FTPS, c'est par
+          # défaut sur l'action.
+          protocol: ftps
+          # log-level: standard suffit en steady-state.
