@@ -297,7 +297,7 @@ télémétrie ni cloud obligatoire.
     - `entity_get_cover_image_data(entityId) → { mime, dataBase64 } | null` : lit le fichier et le renvoie en base64 (auto-clean DB si fichier physique disparu).
     - `entity_clear_cover_image(entityId)` : supprime DB + fichier physique.
   - `<CoverImage>` composant front : aspect 16/9, prévisualisation via data URL, bouton « Ajouter/Changer » qui ouvre le picker système Tauri (filtré sur les extensions image), bouton « Retirer ». Intégré dans `CharacterDetail` et `LocationDetail` au-dessus des cartes archétype/climat.
-  - Stockage sous le répertoire de données par OS (`~/Library/Application Support/app.romanesk.desktop/media/...` sur Mac) → portable, sauvegardable, exportable.
+  - Stockage sous le répertoire de données par OS (`~/Library/Application Support/fr.romanesk.desktop/media/...` sur Mac) → portable, sauvegardable, exportable.
 - **P1.3** : **Vue graphe interactive** des relations d'un univers.
   - Dep `@xyflow/react` v12 (anciennement react-flow), CSS importé.
   - Nouvelle route `/u/:universeId/graph` + page `GraphPage`.

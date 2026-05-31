@@ -118,9 +118,9 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .setup(|app| {
             // Résolution du répertoire de données par OS :
-            // - macOS  : ~/Library/Application Support/app.romanesk.desktop/
-            // - Linux  : ~/.local/share/app.romanesk.desktop/
-            // - Windows: %APPDATA%\app.romanesk.desktop\
+            // - macOS  : ~/Library/Application Support/fr.romanesk.desktop/
+            // - Linux  : ~/.local/share/fr.romanesk.desktop/
+            // - Windows: %APPDATA%\fr.romanesk.desktop\
             let app_data_dir = app
                 .path()
                 .app_data_dir()
