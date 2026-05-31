@@ -18,6 +18,7 @@
 #![allow(clippy::future_not_send)]
 
 mod commands;
+mod safety;
 
 use std::sync::Arc;
 
@@ -97,6 +98,21 @@ pub fn run() {
     tracing::info!("Romanesk desktop démarre");
 
     tauri::Builder::default()
+        // P16.1 — Single-instance lock. Si l'utilisateur lance une deuxième
+        // instance de Romanesk (double-clic sur le .dmg pendant que l'app
+        // tourne, `pnpm tauri dev` en plus d'une release installée, etc.),
+        // le callback est appelé sur l'instance déjà ouverte et la nouvelle
+        // se ferme immédiatement. Ça évite deux process écrivant
+        // concurremment sur la même DB SQLite — scénario qui peut
+        // corrompre ou wiper les données utilisateur.
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            tracing::info!("Tentative de seconde instance détectée — focus de la fenêtre existante");
+            // Best-effort : ramène la fenêtre principale au premier plan.
+            if let Some(window) = app.webview_windows().values().next() {
+                let _ = window.set_focus();
+                let _ = window.unminimize();
+            }
+        }))
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
@@ -114,6 +130,19 @@ pub fn run() {
                 .expect("impossible de créer le répertoire de données Romanesk");
 
             let db_path = app_data_dir.join("romanesk.db");
+
+            // P16.2 — Backup auto rotatif. Avant d'ouvrir la DB (pour
+            // copier un fichier dans un état cohérent), on snapshote
+            // la DB live vers ~/Documents/Romanesk-backups/. Best-effort :
+            // si le backup échoue (Documents pas accessible, disque
+            // plein, etc.), on log et on continue — le démarrage ne doit
+            // jamais être bloqué par un échec de backup.
+            if let Ok(docs_dir) = app.path().document_dir() {
+                safety::backup_database(&db_path, &docs_dir);
+            } else {
+                tracing::warn!("Document dir indisponible — backup auto skip");
+            }
+
             tracing::info!(?db_path, "Ouverture de la base SQLite");
 
             // Ouverture synchrone : on bloque le setup jusqu'à ce que la DB

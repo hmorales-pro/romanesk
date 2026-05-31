@@ -24,6 +24,10 @@ tauri = { version = "2", features = [] }
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-clipboard-manager = "2"
+# P16.1 — single-instance lock : refuse de démarrer si une autre instance
+# de Romanesk tourne déjà. Sans ça, deux process écrivant sur la même DB
+# SQLite peuvent corrompre les données (cas vu en bêta interne).
+tauri-plugin-single-instance = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chrono = { version = "0.4", features = ["serde"] }
@@ -55,6 +59,10 @@ sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio",
 
 # Notre logique métier réutilisable (Phase 0 — J3+).
 romanesk-core = { path = "../../../crates/core" }
+
+[dev-dependencies]
+# Dossiers temporaires pour les tests de backup (P16.2).
+tempfile = "3"
 
 [features]
 # Évite que Tauri ouvre une console Windows en release.
