@@ -472,7 +472,10 @@ mod tests {
                 ]}
             ]
         });
-        assert_eq!(render_tiptap_doc(&doc), "Hello world.");
+        // `render_tiptap_doc` produit un Markdown bien formé : chaque
+        // bloc (paragraphe, heading, etc.) est suivi d'un newline pour
+        // permettre la concaténation propre. Le test doit l'inclure.
+        assert_eq!(render_tiptap_doc(&doc), "Hello world.\n");
     }
 
     #[test]
@@ -503,7 +506,7 @@ mod tests {
                   "content": [{"type": "text", "text": "Titre"}] }
             ]
         });
-        assert_eq!(render_tiptap_doc(&doc), "## Titre");
+        assert_eq!(render_tiptap_doc(&doc), "## Titre\n");
     }
 
     #[test]
