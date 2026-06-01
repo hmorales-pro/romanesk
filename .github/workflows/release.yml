@@ -138,19 +138,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Code signing macOS — décommenter UNE FOIS que les 6 secrets
-          # APPLE_* sont posés dans le repo (cf. docs/SIGNING.md §1.7).
+          APPLE_* sont posés dans le repo (cf. docs/SIGNING.md §1.7).
           # Tant qu'ils sont commentés, les bundles macOS sortent non
           # signés (utilisable en bêta interne). Si on les laisse activés
           # mais que les secrets sont absents, GitHub injecte des chaînes
           # vides et `security import` plante avec SecKeychainItemImport
           # invalid parameters — d'où ce commentaire défensif.
           #
-          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          # APPLE_ID: ${{ secrets.APPLE_ID }}
-          # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           #
           # Tauri updater (à activer plus tard pour les MAJ automatiques).
           # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
