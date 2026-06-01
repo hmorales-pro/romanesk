@@ -58,6 +58,19 @@ jobs:
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
+      # Tauri 2 `generate_context!()` valide `frontendDist` au compile-time :
+      # il faut donc avoir buildé le front avant clippy/test, sinon le proc
+      # macro panique avec "The `frontendDist` configuration is set to
+      # `../dist` but this path doesn't exist".
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install front deps (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+      - name: Build front (vite)
+        run: pnpm --filter @romanesk/desktop build
       # P15.9 : on dégrade -D warnings en simples avertissements jusqu'à la
       # passe globale 'cargo fix --allow-dirty + cargo clippy --fix' qu'on
       # fera au cap v1.0. Les warnings actuels viennent surtout des sous-
@@ -95,6 +108,17 @@ jobs:
             libssl-dev
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+      # Pré-build front (cf. note dans le job clippy ci-dessus) pour que
+      # `tauri::generate_context!()` trouve `../dist` au compile-time.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install front deps (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+      - name: Build front (vite)
+        run: pnpm --filter @romanesk/desktop build
       - run: cargo test --workspace --features offline-tests
 
   # ---------------------------------------------------------------------------

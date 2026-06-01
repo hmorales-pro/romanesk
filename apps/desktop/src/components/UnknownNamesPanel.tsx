@@ -96,7 +96,11 @@ export function UnknownNamesPanel({
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // La règle eslint react-hooks/exhaustive-deps n'est pas activée dans
+    // notre config (plugin non installé), donc on ne masque rien. On
+    // dépend volontairement de bodyKey + chapterId uniquement ; runScan
+    // est une closure stable par render qui n'a pas besoin d'être dans
+    // les deps.
   }, [bodyKey, chapterId]);
 
   // Premier scan immédiat au mount, pour ne pas attendre 30 s la première
@@ -104,7 +108,6 @@ export function UnknownNamesPanel({
   // noms détectés à partir du contenu déjà écrit).
   useEffect(() => {
     void runScan();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chapterId]);
 
   const visible = names.filter((n) => !ignored.has(n.name));

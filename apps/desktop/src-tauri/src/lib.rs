@@ -106,7 +106,9 @@ pub fn run() {
         // concurremment sur la même DB SQLite — scénario qui peut
         // corrompre ou wiper les données utilisateur.
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
-            tracing::info!("Tentative de seconde instance détectée — focus de la fenêtre existante");
+            tracing::info!(
+                "Tentative de seconde instance détectée — focus de la fenêtre existante"
+            );
             // Best-effort : ramène la fenêtre principale au premier plan.
             if let Some(window) = app.webview_windows().values().next() {
                 let _ = window.set_focus();
