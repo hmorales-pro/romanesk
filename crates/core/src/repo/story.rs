@@ -177,7 +177,7 @@ mod tests {
     use crate::repo::Repo;
 
     async fn fresh_repo() -> Repo {
-        let db = Database::open_in_memory().await.expect("open in-memory db");
+        let db = Database::new_in_memory().await.expect("open in-memory db");
         Repo::new(db)
     }
 
