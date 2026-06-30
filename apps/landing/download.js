@@ -94,11 +94,11 @@
   // ── 3. Fetch GitHub release + cabler les bons assets ─────────────
 
   // Heuristiques pour identifier les assets dans les noms tauri-action.
-  // Patterns Tauri 2 par défaut :
-  //   Romanesk_<ver>_x64.dmg            → macOS Intel
-  //   Romanesk_<ver>_aarch64.dmg        → macOS Apple Silicon
+  // Patterns Tauri 2 par défaut (depuis P16.9 / rc7, build macOS unique
+  // universal Intel + Apple Silicon) :
+  //   Romanesk_<ver>_universal.dmg      → macOS universal
   //   Romanesk_<ver>_x64-setup.exe      → Windows NSIS
-  //   Romanesk_<ver>_x64_en-US.msi      → Windows WiX
+  //   Romanesk_<ver>_x64_fr-FR.msi      → Windows WiX français
   //   romanesk_<ver>_amd64.AppImage     → Linux AppImage
   //   romanesk_<ver>_amd64.deb          → Linux deb
   function pickAssetUrl(assets, os) {
@@ -108,13 +108,22 @@
       return m ? m.browser_download_url : null;
     };
     if (os === "mac") {
-      // Préférer aarch64 (Apple Silicon majoritaire depuis 2021).
+      // Préférer universal (Intel + Apple Silicon, signé Developer ID).
+      // Fallback : aarch64 ou x64 sur d'anciennes releases pré-rc7.
       return (
-        find(/aarch64.*\.dmg$/i) || find(/\.dmg$/i) || find(/aarch64.*\.app/i)
+        find(/universal.*\.dmg$/i) ||
+        find(/aarch64.*\.dmg$/i) ||
+        find(/\.dmg$/i)
       );
     }
     if (os === "windows") {
-      return find(/setup\.exe$/i) || find(/\.msi$/i) || find(/\.exe$/i);
+      // NSIS d'abord (plus léger), puis MSI français, puis n'importe lequel.
+      return (
+        find(/setup\.exe$/i) ||
+        find(/fr-FR\.msi$/i) ||
+        find(/\.msi$/i) ||
+        find(/\.exe$/i)
+      );
     }
     if (os === "linux") {
       return find(/\.AppImage$/i) || find(/\.deb$/i);
@@ -124,12 +133,25 @@
 
   async function fetchLatest(os) {
     try {
-      const res = await fetch(
+      // 1. Essaye la dernière release stable.
+      // 2. Fallback : la dernière release publiée (prerelease incluse) —
+      //    utile pendant la phase rc/beta où aucune stable n'existe encore.
+      const acceptHeader = { Accept: "application/vnd.github+json" };
+      let res = await fetch(
         `https://api.github.com/repos/${OWNER}/${REPO}/releases/latest`,
-        { headers: { Accept: "application/vnd.github+json" } },
+        { headers: acceptHeader },
       );
-      if (!res.ok) return; // 404 si pas encore de release publique
-      const data = await res.json();
+      let data = res.ok ? await res.json() : null;
+      if (!data) {
+        res = await fetch(
+          `https://api.github.com/repos/${OWNER}/${REPO}/releases?per_page=1`,
+          { headers: acceptHeader },
+        );
+        if (!res.ok) return;
+        const arr = await res.json();
+        if (!Array.isArray(arr) || !arr.length) return;
+        data = arr[0];
+      }
       const tag = data.tag_name || data.name || "v0.6.0";
       const date = data.published_at ? formatDate(data.published_at) : null;
 
