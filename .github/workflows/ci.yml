@@ -203,11 +203,22 @@ jobs:
         # - RUSTSEC-2024-0413 : atk gtk-rs unmaintained (transitive via
         #   tauri-plugin-shell sur Linux). Pas de fix : gtk-rs entier
         #   est en transition vers GTK4 mais tauri 2 utilise encore GTK3.
+        # - RUSTSEC-2026-0194 + RUSTSEC-2026-0195 : quick-xml 0.39.2 DoS
+        #   (quadratic runtime + unbounded namespace alloc). On a bumpé
+        #   plist 1.9 -> 1.10 qui tire quick-xml 0.41 corrigée. Il reste
+        #   une occurrence de quick-xml 0.39 via wayland-scanner 0.31 —
+        #   utilitaire de génération de code compile-time (parse les
+        #   .xml de protocoles Wayland embarqués dans les crates), jamais
+        #   exécuté sur des entrées runtime. Surface d'attaque nulle en
+        #   production. Bumper wayland-scanner demanderait de rebumper
+        #   toute la chaîne wayland-* verrouillée par tao/tauri.
         run: |
           cargo audit \
             --ignore RUSTSEC-2024-0436 \
             --ignore RUSTSEC-2023-0071 \
-            --ignore RUSTSEC-2024-0413
+            --ignore RUSTSEC-2024-0413 \
+            --ignore RUSTSEC-2026-0194 \
+            --ignore RUSTSEC-2026-0195
 
   # ---------------------------------------------------------------------------
   # Job 7 — pnpm audit (npm advisories).
