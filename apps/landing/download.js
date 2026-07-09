@@ -187,11 +187,45 @@
     }
   }
 
-  // ── 4. Run ───────────────────────────────────────────────────────
+  // ── 4. Plausible custom events ───────────────────────────────────
+  //
+  // Le snippet Plausible (index.html) définit window.plausible dès le
+  // parse, sans attendre le chargement du script — donc les events
+  // envoyés avant que script.js soit prêt sont queuées puis flushées.
+  // Ici on émet deux events custom pour piloter la bêta :
+  //   1. OS Detected : ratio des visiteurs par OS selon NOTRE détection
+  //      (utile pour cross-checker vs la détection UA de Plausible, qui
+  //      peut différer sur Safari post-iOS 13).
+  //   2. Download Click : clic sur le bouton primary avec l'OS + la
+  //      version en props. Complète l'auto-tracking outbound-links en
+  //      donnant un event nommé et des props propres.
+
+  function track(event, props) {
+    if (typeof window.plausible === "function") {
+      window.plausible(event, props ? { props } : undefined);
+    }
+  }
+
+  function wireClickTracking(os) {
+    document.querySelectorAll("[data-dl-primary]").forEach((el) => {
+      el.addEventListener("click", () => {
+        const href = el.getAttribute("href") || "";
+        // Extrait la version depuis l'URL asset GitHub :
+        // .../releases/download/v0.6.1-rc7/Romanesk_...
+        const m = href.match(/\/releases\/download\/([^/]+)\//);
+        const version = m ? m[1] : "unresolved";
+        track("Download Click", { os, version });
+      });
+    });
+  }
+
+  // ── 5. Run ───────────────────────────────────────────────────────
 
   function init() {
     const os = detectOs();
     relabelButtons(os);
+    track("OS Detected", { os });
+    wireClickTracking(os);
     void fetchLatest(os);
   }
 
