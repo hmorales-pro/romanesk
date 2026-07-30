@@ -161,7 +161,11 @@ export default function SettingsPage() {
                 </select>
                 {runtime?.managedActive && (
                   <p className="text-xs text-muted-foreground">
-                    Moteur intégré actif sur{" "}
+                    Moteur intégré
+                    {runtime.managedVersion && (
+                      <> v{runtime.managedVersion}</>
+                    )}{" "}
+                    actif sur{" "}
                     <span className="font-mono">
                       {runtime.effectiveBaseUrl}
                     </span>{" "}

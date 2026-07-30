@@ -21,6 +21,10 @@ pub struct RuntimeStatus {
     pub mode: OllamaMode,
     /// Le binaire managé est présent sur le disque.
     pub managed_installed: bool,
+    /// Version du runtime managé installé (manifest.json, backfill via
+    /// `ollama --version` pour les installations pré-manifest). `None`
+    /// si non installé ou version indéterminable.
+    pub managed_version: Option<String>,
     /// Le runtime managé répond sur son port privé.
     pub managed_running: bool,
     /// L'Ollama système (URL des settings) répond.
@@ -122,6 +126,7 @@ async fn build_status(app: &tauri::AppHandle) -> CommandResult<RuntimeStatus> {
     Ok(RuntimeStatus {
         mode: settings.ollama_mode,
         managed_installed: mgr.is_installed(),
+        managed_version: mgr.installed_version(),
         managed_running,
         system_reachable,
         effective_base_url: effective,

@@ -29,7 +29,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::time::Duration;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager};
 use tokio::sync::Mutex;
 
@@ -58,6 +58,30 @@ pub struct RuntimeDownloadProgress {
     pub completed: Option<u64>,
     pub total: Option<u64>,
     pub message: String,
+}
+
+/// Manifest d'installation du runtime managé, écrit dans
+/// `runtime/ollama/manifest.json` à la fin d'un téléchargement réussi.
+///
+/// C'est le socle de la future logique d'update du moteur (P18+) : sans
+/// version connue, impossible de comparer à la dernière release ni de
+/// proposer une mise à jour. `source` et `asset` documentent d'où vient
+/// le binaire, utile pour le support et pour re-télécharger au même
+/// endroit (miroir d'entreprise via `ROMANESK_OLLAMA_DOWNLOAD_BASE`).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RuntimeManifest {
+    /// Version rapportée par `ollama --version` (ex. "0.12.3").
+    /// `None` si le binaire n'a pas voulu répondre — l'install reste
+    /// utilisable, juste non comparable.
+    pub version: Option<String>,
+    /// Date d'installation, RFC 3339.
+    pub installed_at: String,
+    /// Base de téléchargement utilisée, ou "backfill" pour un manifest
+    /// reconstruit a posteriori sur une installation pré-P17.1.
+    pub source: String,
+    /// Nom de l'asset officiel installé (ex. "ollama-darwin.tgz").
+    pub asset: String,
 }
 
 /// Gestionnaire du processus Ollama managé. Stocké en `tauri::State`.
@@ -104,6 +128,53 @@ impl RuntimeManager {
     #[must_use]
     pub fn is_installed(&self) -> bool {
         self.binary_path().is_some()
+    }
+
+    fn manifest_path(&self) -> PathBuf {
+        self.runtime_dir().join("manifest.json")
+    }
+
+    #[must_use]
+    pub fn read_manifest(&self) -> Option<RuntimeManifest> {
+        let raw = std::fs::read_to_string(self.manifest_path()).ok()?;
+        serde_json::from_str(&raw).ok()
+    }
+
+    /// Écrit le manifest. Best-effort : un échec d'écriture ne doit
+    /// jamais faire échouer une installation par ailleurs réussie.
+    pub fn write_manifest(&self, manifest: &RuntimeManifest) {
+        let path = self.manifest_path();
+        let write = std::fs::create_dir_all(self.runtime_dir())
+            .and_then(|()| {
+                let json = serde_json::to_string_pretty(manifest)
+                    .map_err(std::io::Error::other)?;
+                std::fs::write(&path, json)
+            });
+        if let Err(e) = write {
+            tracing::warn!(?path, error = %e, "échec écriture manifest runtime");
+        }
+    }
+
+    /// Version du runtime managé installé.
+    ///
+    /// Lit le manifest ; pour les installations antérieures au manifest
+    /// (P17.0), interroge le binaire une fois puis écrit le manifest
+    /// (backfill) — les prochains appels ne coûtent qu'une lecture de
+    /// fichier.
+    #[must_use]
+    pub fn installed_version(&self) -> Option<String> {
+        let bin = self.binary_path()?;
+        if let Some(manifest) = self.read_manifest() {
+            return manifest.version;
+        }
+        let version = query_binary_version(&bin);
+        self.write_manifest(&RuntimeManifest {
+            version: version.clone(),
+            installed_at: chrono::Utc::now().to_rfc3339(),
+            source: "backfill".into(),
+            asset: asset_name().unwrap_or("unknown").into(),
+        });
+        version
     }
 
     /// Vrai si on détient un processus enfant encore vivant.
@@ -194,6 +265,35 @@ impl RuntimeManager {
     }
 }
 
+/// Interroge le binaire via `ollama --version` (rapide, ne démarre pas
+/// le serveur) et extrait le numéro de version.
+fn query_binary_version(bin: &Path) -> Option<String> {
+    let mut cmd = Command::new(bin);
+    cmd.arg("--version")
+        .stdin(Stdio::null())
+        .stderr(Stdio::null());
+
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    let output = cmd.output().ok()?;
+    parse_version_output(&String::from_utf8_lossy(&output.stdout))
+}
+
+/// Extrait "0.12.3" de la sortie "ollama version is 0.12.3" — sans
+/// dépendre du libellé exact, qui a déjà changé entre versions.
+fn parse_version_output(s: &str) -> Option<String> {
+    s.split_whitespace()
+        .find(|tok| {
+            tok.contains('.') && tok.chars().next().is_some_and(|c| c.is_ascii_digit())
+        })
+        .map(str::to_string)
+}
+
 /// Healthcheck HTTP rapide (2 s) sur `/api/version`.
 pub async fn probe(base_url: &str) -> bool {
     let url = format!("{}/api/version", base_url.trim_end_matches('/'));
@@ -274,6 +374,14 @@ pub async fn download_runtime(app: &tauri::AppHandle) -> Result<(), String> {
                     use std::os::unix::fs::PermissionsExt;
                     let _ = std::fs::set_permissions(&bin, std::fs::Permissions::from_mode(0o755));
                 }
+                // Manifest d'installation — socle de la future logique
+                // d'update du moteur (comparaison à la dernière release).
+                mgr.write_manifest(&RuntimeManifest {
+                    version: query_binary_version(&bin),
+                    installed_at: chrono::Utc::now().to_rfc3339(),
+                    source: base.clone(),
+                    asset: asset.into(),
+                });
                 emit_progress(
                     app,
                     &RuntimeDownloadProgress {
@@ -476,6 +584,50 @@ mod tests {
     #[test]
     fn recommended_model_is_gemma() {
         assert!(recommended_chat_model().starts_with("gemma3:"));
+    }
+
+    #[test]
+    fn parse_version_output_extracts_semver() {
+        assert_eq!(
+            parse_version_output("ollama version is 0.12.3"),
+            Some("0.12.3".to_string())
+        );
+        // Variante avec warning sur une autre ligne.
+        assert_eq!(
+            parse_version_output("Warning: could not connect\nollama version is 1.0.0-rc1"),
+            Some("1.0.0-rc1".to_string())
+        );
+        assert_eq!(parse_version_output("garbage output"), None);
+        assert_eq!(parse_version_output(""), None);
+    }
+
+    #[test]
+    fn manifest_roundtrips_through_disk() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let mgr = RuntimeManager::new(tmp.path().to_path_buf());
+        assert!(mgr.read_manifest().is_none());
+
+        let manifest = RuntimeManifest {
+            version: Some("0.12.3".into()),
+            installed_at: "2026-07-30T12:00:00Z".into(),
+            source: "https://example.test/download".into(),
+            asset: "ollama-linux-amd64.tgz".into(),
+        };
+        mgr.write_manifest(&manifest);
+
+        let back = mgr.read_manifest().expect("manifest relu");
+        assert_eq!(back.version.as_deref(), Some("0.12.3"));
+        assert_eq!(back.asset, "ollama-linux-amd64.tgz");
+    }
+
+    #[test]
+    fn installed_version_is_none_without_binary() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let mgr = RuntimeManager::new(tmp.path().to_path_buf());
+        // Pas de binaire → pas de version, et surtout pas de backfill
+        // fantôme sur le disque.
+        assert_eq!(mgr.installed_version(), None);
+        assert!(mgr.read_manifest().is_none());
     }
 
     #[test]
