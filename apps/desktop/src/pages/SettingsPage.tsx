@@ -10,7 +10,9 @@ import {
   settingsSave,
   type AiModel,
   type AppSettings,
+  type OllamaMode,
 } from "@/lib/api";
+import { useRuntime } from "@/lib/use-runtime";
 import { alertDialog } from "@/lib/dialog";
 import { ModelPullPanel } from "@/components/ModelPullPanel";
 import { Button } from "@/components/ui/button";
@@ -39,7 +41,10 @@ export default function SettingsPage() {
     },
   });
 
+  const { runtime } = useRuntime();
+
   const [ollamaBaseUrl, setOllamaBaseUrl] = useState("");
+  const [ollamaMode, setOllamaMode] = useState<OllamaMode>("auto");
   const [chatModel, setChatModel] = useState("");
   const [embedModel, setEmbedModel] = useState("");
   const [creativeModel, setCreativeModel] = useState("");
@@ -51,6 +56,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (settingsQuery.data) {
       setOllamaBaseUrl(settingsQuery.data.ollamaBaseUrl);
+      setOllamaMode(settingsQuery.data.ollamaMode ?? "auto");
       setChatModel(settingsQuery.data.chatModel);
       setEmbedModel(settingsQuery.data.embedModel);
       setCreativeModel(settingsQuery.data.creativeModel ?? "");
@@ -59,9 +65,17 @@ export default function SettingsPage() {
     }
   }, [settingsQuery.data]);
 
+  // P17 : les dropdowns de modèles et le téléchargeur doivent parler au
+  // serveur *effectif* (runtime managé sur son port privé quand il est
+  // actif), pas forcément à l'URL saisie dans le formulaire.
+  const modelsBaseUrl = runtime?.managedActive
+    ? runtime.effectiveBaseUrl
+    : ollamaBaseUrl;
+
   const onSave = () => {
     const next: AppSettings = {
       ollamaBaseUrl: ollamaBaseUrl.trim() || "http://localhost:11434",
+      ollamaMode,
       chatModel: chatModel.trim() || "gemma4:e2b",
       embedModel: embedModel.trim() || "nomic-embed-text:latest",
       creativeModel: creativeModel.trim() || null,
@@ -124,18 +138,53 @@ export default function SettingsPage() {
 
           {settingsQuery.data && (
             <>
+              {/* P17 — politique de résolution du serveur IA. */}
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="set-url">URL Ollama</Label>
-                <Input
-                  id="set-url"
-                  value={ollamaBaseUrl}
-                  onChange={(e) => setOllamaBaseUrl(e.target.value)}
-                  placeholder="http://localhost:11434"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Default : http://localhost:11434
-                </p>
+                <Label htmlFor="set-mode">Moteur IA</Label>
+                <select
+                  id="set-mode"
+                  value={ollamaMode}
+                  onChange={(e) => setOllamaMode(e.target.value as OllamaMode)}
+                  className="h-9 rounded-[3px] border border-rule bg-paper px-3 font-body text-[14px] text-ink transition-colors focus-visible:border-bordeaux/40 focus-visible:outline-none"
+                >
+                  <option value="auto">
+                    Automatique — Ollama système si présent, sinon moteur
+                    intégré (recommandé)
+                  </option>
+                  <option value="managed">
+                    Moteur intégré Romanesk — tout vit dans le dossier de
+                    l'app
+                  </option>
+                  <option value="system">
+                    Mon Ollama — j'utilise mon installation (avancé)
+                  </option>
+                </select>
+                {runtime?.managedActive && (
+                  <p className="text-xs text-muted-foreground">
+                    Moteur intégré actif sur{" "}
+                    <span className="font-mono">
+                      {runtime.effectiveBaseUrl}
+                    </span>{" "}
+                    — les modèles sont stockés dans le dossier de données
+                    Romanesk.
+                  </p>
+                )}
               </div>
+
+              {ollamaMode !== "managed" && (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="set-url">URL Ollama</Label>
+                  <Input
+                    id="set-url"
+                    value={ollamaBaseUrl}
+                    onChange={(e) => setOllamaBaseUrl(e.target.value)}
+                    placeholder="http://localhost:11434"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Default : http://localhost:11434
+                  </p>
+                </div>
+              )}
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <ModelSelect
@@ -143,7 +192,7 @@ export default function SettingsPage() {
                   label="Modèle chat (par défaut)"
                   value={chatModel}
                   onChange={setChatModel}
-                  baseUrl={ollamaBaseUrl}
+                  baseUrl={modelsBaseUrl}
                   hint="Modèle utilisé par défaut pour toutes les actions IA. Suggestions : gemma4:e2b, llama3.2:latest, mistral:latest."
                 />
                 <ModelSelect
@@ -151,7 +200,7 @@ export default function SettingsPage() {
                   label="Modèle d'embedding"
                   value={embedModel}
                   onChange={setEmbedModel}
-                  baseUrl={ollamaBaseUrl}
+                  baseUrl={modelsBaseUrl}
                   hint="Pour l'indexation RAG. Doit être un modèle d'embedding (768-1024 dim). Suggestions : nomic-embed-text:latest, qwen3-embedding:4b ou :8b, bge-m3:latest."
                 />
               </div>
@@ -162,7 +211,7 @@ export default function SettingsPage() {
                   label="Modèle créatif (optionnel)"
                   value={creativeModel}
                   onChange={setCreativeModel}
-                  baseUrl={ollamaBaseUrl}
+                  baseUrl={modelsBaseUrl}
                   optional
                   hint="Utilisé pour les actions divergentes : continuation, brainstorm, atelier description, drafts. Idéalement un modèle plus gros / plus créatif (mistral, llama3.3:70b…)."
                 />
@@ -171,7 +220,7 @@ export default function SettingsPage() {
                   label="Modèle littéral (optionnel)"
                   value={literalModel}
                   onChange={setLiteralModel}
-                  baseUrl={ollamaBaseUrl}
+                  baseUrl={modelsBaseUrl}
                   optional
                   hint="Utilisé pour les actions strictes : réécriture, résumé, cohérence. Idéalement un modèle qui suit bien les instructions JSON (gemma3:12b, qwen2.5:14b…)."
                 />
@@ -183,7 +232,7 @@ export default function SettingsPage() {
                   label="Modèle vision (optionnel — atelier description en mode image)"
                   value={visionModel}
                   onChange={setVisionModel}
-                  baseUrl={ollamaBaseUrl}
+                  baseUrl={modelsBaseUrl}
                   optional
                   hint="Active l'atelier description en mode image sur les fiches Personnage / Lieu / Objet. Doit être un modèle Ollama vision-capable. Suggestions : llava:latest, qwen2.5vl:7b, gemma3:4b (avec vision)."
                 />
@@ -222,7 +271,7 @@ export default function SettingsPage() {
 
       {/* P9.2 — téléchargeur de modèles intégré, accessible directement
        * sans passer par le terminal. */}
-      {settingsQuery.data && <ModelPullPanel baseUrl={ollamaBaseUrl} />}
+      {settingsQuery.data && <ModelPullPanel baseUrl={modelsBaseUrl} />}
     </div>
   );
 }

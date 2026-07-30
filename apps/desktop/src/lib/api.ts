@@ -1317,8 +1317,16 @@ export function briefDelete(id: Uuid): Promise<void> {
 // Settings (Phase 3.x)
 // ---------------------------------------------------------------------------
 
+/** P17 : politique de résolution du serveur IA.
+ * - "auto"    : Ollama système s'il répond, sinon runtime managé.
+ * - "system"  : toujours ollamaBaseUrl (comportement historique).
+ * - "managed" : toujours le runtime téléchargé/lancé par Romanesk. */
+export type OllamaMode = "auto" | "system" | "managed";
+
 export interface AppSettings {
   ollamaBaseUrl: string;
+  /** P17 : voir OllamaMode. */
+  ollamaMode: OllamaMode;
   chatModel: string;
   embedModel: string;
   /** P6.2 : modèle préféré pour les actions créatives (continuation,
@@ -1339,6 +1347,55 @@ export function settingsGet(): Promise<AppSettings> {
 
 export function settingsSave(settings: AppSettings): Promise<AppSettings> {
   return invoke<AppSettings>("settings_save", { settings });
+}
+
+// ---------------------------------------------------------------------------
+// Runtime IA managé (P17)
+// ---------------------------------------------------------------------------
+
+export interface RuntimeStatus {
+  mode: OllamaMode;
+  /** Le binaire du runtime managé est présent sur le disque. */
+  managedInstalled: boolean;
+  /** Le runtime managé répond sur son port privé (11540). */
+  managedRunning: boolean;
+  /** L'Ollama système (URL des settings) répond. */
+  systemReachable: boolean;
+  /** URL effectivement utilisée par les providers IA — à passer à
+   * aiListModels / aiPullModel plutôt que settings.ollamaBaseUrl. */
+  effectiveBaseUrl: string;
+  /** Vrai si l'URL effective est celle du runtime managé. */
+  managedActive: boolean;
+  /** Modèle de chat conseillé pour cette machine (selon la RAM). */
+  recommendedChatModel: string;
+  totalMemGb: number | null;
+}
+
+export function runtimeStatus(): Promise<RuntimeStatus> {
+  return invoke<RuntimeStatus>("runtime_status");
+}
+
+/**
+ * Télécharge et installe le moteur IA (binaire Ollama officiel) dans le
+ * dossier de données Romanesk. Le progrès est diffusé via l'event Tauri
+ * "runtime-download-progress". La promise résout à la fin de
+ * l'installation.
+ */
+export function runtimeDownload(): Promise<void> {
+  return invoke<void>("runtime_download");
+}
+
+/** Démarre le runtime managé et rebascule les providers IA dessus. */
+export function runtimeStart(): Promise<RuntimeStatus> {
+  return invoke<RuntimeStatus>("runtime_start");
+}
+
+export interface RuntimeDownloadProgress {
+  /** "download" | "verify" | "unpack" | "done" */
+  phase: string;
+  completed: number | null;
+  total: number | null;
+  message: string;
 }
 
 // ---------------------------------------------------------------------------

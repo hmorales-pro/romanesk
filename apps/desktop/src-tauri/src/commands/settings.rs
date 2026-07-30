@@ -18,10 +18,40 @@ use tauri::{Emitter, Manager, State};
 use super::ai::{AiEmbedder, AiProvider};
 use super::{CommandError, CommandResult};
 
+/// Politique de résolution du serveur IA (P17 — runtime managé).
+///
+/// - `Auto` : Ollama système s'il répond, sinon runtime managé s'il est
+///   installé. Le bon défaut pour tout le monde.
+/// - `System` : comportement historique — `ollama_base_url`, point.
+/// - `Managed` : toujours le runtime téléchargé/lancé par Romanesk.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum OllamaMode {
+    #[default]
+    Auto,
+    System,
+    Managed,
+}
+
+impl OllamaMode {
+    fn from_env_str(s: &str) -> Option<Self> {
+        match s.trim().to_lowercase().as_str() {
+            "auto" => Some(Self::Auto),
+            "system" => Some(Self::System),
+            "managed" => Some(Self::Managed),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
     pub ollama_base_url: String,
+    /// P17 : politique de résolution du serveur IA. `#[serde(default)]`
+    /// pour rester compatible avec les settings.json existants.
+    #[serde(default)]
+    pub ollama_mode: OllamaMode,
     pub chat_model: String,
     pub embed_model: String,
     /// Phase 6 (P6.2) : modèle préféré pour les actions « créatives »
@@ -44,6 +74,7 @@ impl Default for AppSettings {
     fn default() -> Self {
         Self {
             ollama_base_url: "http://localhost:11434".into(),
+            ollama_mode: OllamaMode::default(),
             chat_model: "gemma4:e2b".into(),
             embed_model: "nomic-embed-text:latest".into(),
             creative_model: None,
@@ -67,6 +98,10 @@ impl AppSettings {
 
         Self {
             ollama_base_url: std::env::var("OLLAMA_BASE_URL").unwrap_or(from_disk.ollama_base_url),
+            ollama_mode: std::env::var("ROMANESK_OLLAMA_MODE")
+                .ok()
+                .and_then(|s| OllamaMode::from_env_str(&s))
+                .unwrap_or(from_disk.ollama_mode),
             chat_model: std::env::var("OLLAMA_MODEL").unwrap_or(from_disk.chat_model),
             embed_model: std::env::var("OLLAMA_EMBED_MODEL").unwrap_or(from_disk.embed_model),
             creative_model: std::env::var("OLLAMA_CREATIVE_MODEL")
@@ -103,28 +138,19 @@ pub async fn settings_get(app: tauri::AppHandle) -> CommandResult<AppSettings> {
     Ok(AppSettings::load(&dir))
 }
 
-#[tauri::command]
-pub async fn settings_save(
-    app: tauri::AppHandle,
-    chat_state: State<'_, AiProvider>,
-    embed_state: State<'_, AiEmbedder>,
-    settings: AppSettings,
-) -> CommandResult<AppSettings> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| CommandError::Other(format!("app_data_dir unavailable: {e}")))?;
-    settings
-        .save(&dir)
-        .map_err(|e| CommandError::Other(format!("write settings.json: {e}")))?;
-
-    // Hot-reload des providers IA : on reconstruit les `OllamaProvider`
-    // avec les nouveaux URL + modèles, et on swap la valeur dans les
-    // States Tauri. Les commandes IA snapshot leur State au début de
-    // leur exécution, donc le swap est visible au prochain appel sans
-    // toucher au code des commandes.
+/// Reconstruit les providers chat + embeddings sur `base_url` et les
+/// swap à chaud dans les States Tauri. Les commandes IA snapshotent leur
+/// State en début d'exécution, donc le swap est visible au prochain appel
+/// sans toucher au code des commandes. `base_url` est l'URL *effective*
+/// (Ollama système ou runtime managé), pas forcément celle des settings.
+pub async fn rebuild_providers(
+    chat_state: &AiProvider,
+    embed_state: &AiEmbedder,
+    settings: &AppSettings,
+    base_url: &str,
+) {
     let chat_provider = OllamaProvider::new(OllamaConfig {
-        base_url: settings.ollama_base_url.clone(),
+        base_url: base_url.to_string(),
         default_model: settings.chat_model.clone(),
         capabilities: Capabilities {
             text: true,
@@ -135,7 +161,7 @@ pub async fn settings_save(
         },
     });
     let embed_provider = OllamaProvider::new(OllamaConfig {
-        base_url: settings.ollama_base_url.clone(),
+        base_url: base_url.to_string(),
         default_model: settings.embed_model.clone(),
         capabilities: Capabilities {
             text: false,
@@ -151,11 +177,33 @@ pub async fn settings_save(
         .replace(Arc::new(embed_provider), settings.embed_model.clone())
         .await;
     tracing::info!(
-        ollama = %settings.ollama_base_url,
+        ollama = %base_url,
         chat = %settings.chat_model,
         embed = %settings.embed_model,
-        "Providers IA hot-reloaded depuis settings_save"
+        "Providers IA hot-reloaded"
     );
+}
+
+#[tauri::command]
+pub async fn settings_save(
+    app: tauri::AppHandle,
+    chat_state: State<'_, AiProvider>,
+    embed_state: State<'_, AiEmbedder>,
+    settings: AppSettings,
+) -> CommandResult<AppSettings> {
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| CommandError::Other(format!("app_data_dir unavailable: {e}")))?;
+    settings
+        .save(&dir)
+        .map_err(|e| CommandError::Other(format!("write settings.json: {e}")))?;
+
+    // P17 : le mode a pu changer (managé ↔ système) — on applique la
+    // politique (start/stop du runtime managé) puis on rebranche les
+    // providers sur l'URL effective qui en résulte.
+    let effective = super::runtime::apply_runtime_policy(&app, &settings).await;
+    rebuild_providers(&chat_state, &embed_state, &settings, &effective).await;
 
     // P6.2 : émet un event Tauri pour que le front rafraîchisse les
     // composants qui dépendent des settings (badge IA, panels qui
@@ -163,6 +211,11 @@ pub async fn settings_save(
     // ping de 30s.
     if let Err(e) = app.emit("settings-changed", &settings) {
         tracing::warn!(error = %e, "échec emit settings-changed");
+    }
+    // P17 : l'URL effective a pu changer avec le mode — le front
+    // ré-interroge runtime_status en recevant cet event.
+    if let Err(e) = app.emit(crate::runtime::CHANGED_EVENT, ()) {
+        tracing::warn!(error = %e, "échec emit runtime-changed");
     }
 
     Ok(settings)

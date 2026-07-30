@@ -18,6 +18,7 @@
 #![allow(clippy::future_not_send)]
 
 mod commands;
+mod runtime;
 mod safety;
 
 use std::sync::Arc;
@@ -195,6 +196,17 @@ pub fn run() {
                 Arc::new(embed_provider),
                 settings.embed_model.clone(),
             ));
+
+            // P17 — runtime Ollama managé. Le manager est posé en State
+            // tout de suite ; la résolution (Ollama système joignable ?
+            // faut-il démarrer le runtime managé ?) part en tâche async
+            // pour ne pas retarder l'ouverture de la fenêtre. Les
+            // providers ci-dessus servent de valeur initiale et sont
+            // rebasculés sur l'URL effective par `runtime::startup`.
+            app.manage(runtime::RuntimeManager::new(app_data_dir.clone()));
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(commands::runtime::startup(handle));
+
             tracing::info!("Setup terminé, base prête, providers IA initialisés");
             Ok(())
         })
@@ -264,6 +276,9 @@ pub fn run() {
             commands::anchor::brief_delete,
             commands::settings::settings_get,
             commands::settings::settings_save,
+            commands::runtime::runtime_status,
+            commands::runtime::runtime_download,
+            commands::runtime::runtime_start,
             commands::story::story_create,
             commands::story::story_list_in_universe,
             commands::story::story_get,
@@ -279,8 +294,18 @@ pub fn run() {
             commands::chapter::chapter_delete,
             commands::detect::chapter_detect_unknown_names,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        .run(|app_handle, event| {
+            // P17 — le runtime Ollama managé est un processus enfant :
+            // il meurt avec l'app, jamais orphelin. `RunEvent::Exit` est
+            // le dernier point d'exécution garanti avant la fin du
+            // process principal.
+            if let tauri::RunEvent::Exit = event {
+                let mgr = app_handle.state::<runtime::RuntimeManager>();
+                tauri::async_runtime::block_on(mgr.stop());
+            }
+        });
 }
 
 #[cfg(test)]
