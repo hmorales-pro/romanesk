@@ -45,6 +45,14 @@ tokio = { version = "1", features = ["sync"] }
 # côté src-tauri pour ne pas dépendre d'un re-export.
 reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
 futures-util = "0.3"
+# P17 — runtime Ollama managé : téléchargement de l'archive officielle
+# (vérif sha2), décompression tgz (flate2+tar) ou zip (Windows), et
+# détection de la RAM totale pour recommander un modèle adapté.
+sha2 = "0.10"
+flate2 = "1"
+tar = "0.4"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+sysinfo = { version = "0.33", default-features = false, features = ["system"] }
 # regex pour le scan word-boundary dans le rename propagé (P14.1)
 regex = "1"
 # Normalisation Unicode (NFD) pour la détection passive de noms propres
