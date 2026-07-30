@@ -1357,6 +1357,9 @@ export interface RuntimeStatus {
   mode: OllamaMode;
   /** Le binaire du runtime managé est présent sur le disque. */
   managedInstalled: boolean;
+  /** Version du runtime managé installé (ex. "0.12.3"), null si non
+   * installé ou indéterminable. Socle de la future logique d'update. */
+  managedVersion: string | null;
   /** Le runtime managé répond sur son port privé (11540). */
   managedRunning: boolean;
   /** L'Ollama système (URL des settings) répond. */

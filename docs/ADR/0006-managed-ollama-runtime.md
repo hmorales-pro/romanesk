@@ -70,6 +70,12 @@ décision ne l'exclut.
   pour autoriser l'origine `tauri://` du WebView.
 - Dépendances ajoutées côté desktop : `sha2`, `flate2`, `tar`, `zip`,
   `sysinfo`.
+- P17.1 : un `manifest.json` (version via `ollama --version`, date,
+  source, asset) est écrit dans `runtime/ollama/` à chaque installation,
+  avec backfill pour les installations antérieures — socle de la future
+  logique d'update du moteur (check de release, bannière Settings, swap
+  atomique). Règle actée pour la suite : Romanesk ne met à jour **que**
+  le runtime qu'il a installé lui-même, jamais un Ollama système.
 - Non couvert (assumé) : redémarrage automatique si le runtime managé
   crashe en cours de session (le badge IA passe hors ligne, la gate
   propose « Relancer le moteur IA ») ; reprise partielle d'un
