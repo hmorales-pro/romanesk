@@ -4,7 +4,44 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/) ; le projet s
 
 ## [Unreleased]
 
-_Rien pour l'instant — Phase 7 démarre au prochain commit._
+_Rien pour l'instant._
+
+## [0.7.0] — 2026-07-31
+
+Tag de Phase 7 (P17 — IA locale « tout packagé en un seul endroit »).
+Romanesk n'exige plus une installation manuelle d'Ollama : l'app
+télécharge le moteur elle-même, le lance en processus enfant et
+l'arrête à la fermeture — modèle « Jan », zéro terminal.
+
+### Added — Phase 7
+- **P17.0** : Runtime Ollama managé. `RuntimeManager`
+  (`src-tauri/src/runtime.rs`) : téléchargement streamé du binaire
+  officiel (GitHub Releases, fallback ollama.com, vérification SHA-256
+  best-effort), décompression tgz/zip, spawn sur le port privé 11540
+  avec `OLLAMA_MODELS` dans le dossier de données Romanesk, kill sur
+  `RunEvent::Exit`, adoption d'un runtime orphelin. Trois modes via
+  `AppSettings::ollama_mode` : `auto` (défaut — Ollama système s'il
+  répond, sinon managé), `managed`, `system`. Commandes
+  `runtime_status` / `runtime_download` / `runtime_start` ; le backend
+  est la source de vérité de l'URL effective. Onboarding un-clic :
+  moteur + modèle chat recommandé selon la RAM (gemma3:1b/4b/12b) +
+  modèle d'embedding enchaînés avec progression. Sélecteur de mode
+  dans Settings. CSP : ajout du port 11540. ADR 0006.
+- **P17.1** : Manifest de version du runtime managé
+  (`runtime/ollama/manifest.json` : version via `ollama --version`,
+  date, source, asset) écrit à chaque installation, backfill pour les
+  installations antérieures. `runtime_status` expose `managedVersion`,
+  affiché dans Settings. Socle de la future logique d'update — règle
+  actée : Romanesk ne met à jour que le runtime qu'il a installé
+  lui-même, jamais un Ollama système.
+
+### Fixed
+- **Sécurité deps front** : `pnpm audit --audit-level high` repasse à
+  zéro. Bumps : vitest 3.2.6 (critical GHSA-5xrq-8626-4rwp), vite
+  6.4.3, react-router-dom 7.18.2. Overrides transitives : linkify-it,
+  js-yaml, postcss, brace-expansion (par lignée). Deux advisories
+  ignorées avec justification (RSC serveur inexistant en desktop ;
+  brace-expansion 1.x dev-only sans patch publié).
 
 ## [0.6.0] — 2026-05-02
 
