@@ -895,11 +895,21 @@
 <!-- ───────── Smart download (OS detection + GitHub release fetch) ───────── -->
 <script src="download.js" defer></script>
 
-<!-- ───────── React + Tweaks ───────── -->
+<!-- ───────── Panneau de réglages (interne, non déployé) ─────────
+     `tweaks-panel.jsx` et `app.jsx` sont exclus du déploiement par
+     .github/workflows/deploy-landing.yml. Leurs balises restaient
+     pourtant dans le HTML publié : chaque visiteur téléchargeait React
+     en build *development* et Babel standalone depuis unpkg — environ
+     4,5 Mo — pour transpiler deux fichiers qui répondaient 404.
+
+     Pour retrouver le panneau en local, décommenter ce bloc et celui du
+     `tweaks-root` plus bas ; ne pas les committer décommentés.
+
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 <script type="text/babel" src="tweaks-panel.jsx"></script>
+-->
 
 <script>
   // Newsletter — feedback uniquement, pas d'envoi (pas encore de back).
@@ -924,8 +934,10 @@
     });
   })();
 </script>
+<!-- Point de montage du panneau interne — cf. le bloc commenté plus haut.
 <div id="tweaks-root"></div>
 <script type="text/babel" src="app.jsx"></script>
+-->
 <script>
 /* Romanesk — démo éditeur en ligne (inlined) */
 (() => {

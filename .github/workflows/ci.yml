@@ -71,11 +71,12 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build front (vite)
         run: pnpm --filter @romanesk/desktop build
-      # P15.9 : on dégrade -D warnings en simples avertissements jusqu'à la
-      # passe globale 'cargo fix --allow-dirty + cargo clippy --fix' qu'on
-      # fera au cap v1.0. Les warnings actuels viennent surtout des sous-
-      # modules splittés en P15.3 (imports dupliqués), pas de vraies bugs.
-      - run: cargo clippy --workspace --all-targets
+      # La passe globale annoncée pour v1.0 a été faite : `cargo clippy
+      # --fix` sur le workspace, plus deux corrections à la main. Le
+      # workspace est propre, `-D warnings` est donc réactivé — c'est ce
+      # qui a permis de voir la violation de MSRV, jusque-là noyée dans
+      # les avertissements tolérés.
+      - run: cargo clippy --workspace --all-targets -- -D warnings
 
   # ---------------------------------------------------------------------------
   # Job 3 — `cargo test --workspace` sur les 3 OS desktop cibles.
@@ -158,10 +159,10 @@ jobs:
         run: cargo build -p romanesk-desktop --release
 
   # ---------------------------------------------------------------------------
-  # Job 5 — Front : typecheck + lint (pas de tests Vitest en Phase 0).
+  # Job 5 — Front : typecheck + lint + tests Vitest.
   # ---------------------------------------------------------------------------
   front-checks:
-    name: pnpm typecheck + lint
+    name: pnpm typecheck + lint + test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -173,6 +174,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
+      # `api.test.ts` existait depuis un moment mais n'était lancé nulle
+      # part : le job s'arrêtait au lint, avec un commentaire hérité de
+      # la Phase 0 (« pas de tests Vitest »).
+      - run: pnpm test
 
   # ---------------------------------------------------------------------------
   # Job 6 — cargo audit (RustSec advisories).

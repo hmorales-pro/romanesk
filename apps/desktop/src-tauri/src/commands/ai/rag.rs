@@ -95,27 +95,31 @@ pub async fn ai_universe_reindex(
 
     let dim = vectors.first().map(Vec::len).unwrap_or(0);
 
-    // Purge l'ancien index pour toutes les entités, puis ré-insère
-    // tous les chunks (le contenu stocké ne contient PAS le préfixe
-    // Nomic — celui-ci est un détail d'embedding, pas de display).
-    for entity in &entities {
-        repo.embeddings()
-            .delete_for(SourceType::Entity, entity.id)
-            .await?;
-    }
+    // Purge l'ancien index pour toutes les entités, puis ré-insère tous
+    // les chunks (le contenu stocké ne contient PAS le préfixe Nomic —
+    // celui-ci est un détail d'embedding, pas de display).
+    //
+    // Le tout en une transaction : purger puis réinsérer instruction par
+    // instruction laissait l'index à moitié effacé si quoi que ce soit
+    // échouait en route.
+    let entity_ids: Vec<_> = entities.iter().map(|e| e.id).collect();
+    let rows: Vec<NewEmbedding> = chunks
+        .iter()
+        .zip(vectors.iter())
+        .map(|((entity_id, chunk_idx, content), vector)| NewEmbedding {
+            universe_id: uid,
+            source_type: SourceType::Entity,
+            source_id: *entity_id,
+            chunk_idx: *chunk_idx,
+            content: content.clone(),
+            model: embedder.model.clone(),
+            vector: vector.clone(),
+        })
+        .collect();
 
-    for ((entity_id, chunk_idx, content), vector) in chunks.iter().zip(vectors.iter()) {
-        repo.embeddings()
-            .insert(NewEmbedding {
-                source_type: SourceType::Entity,
-                source_id: *entity_id,
-                chunk_idx: *chunk_idx,
-                content: content.clone(),
-                model: embedder.model.clone(),
-                vector: vector.clone(),
-            })
-            .await?;
-    }
+    repo.embeddings()
+        .replace_for_sources(SourceType::Entity, &entity_ids, &rows)
+        .await?;
 
     Ok(ReindexResult {
         indexed_count: chunks.len(),
@@ -189,11 +193,11 @@ pub async fn ai_rag_query(
     // 2. Search top-k. Default 8 (P7.6 : avant 5, mais avec le chunking
     // par paragraphe il y a plus de chunks par entité, on remonte un
     // peu pour ne pas couper court).
-    let k = payload.top_k.unwrap_or(8).max(1).min(30);
+    let k = payload.top_k.unwrap_or(8).clamp(1, 30);
     use romanesk_core::rag::SearchFilter;
     let raw_hits = repo
         .embeddings()
-        .search_topk(&q_vec, k, SearchFilter::by_model(&embedder.model))
+        .search_topk(&q_vec, k, SearchFilter::scoped(uid, &embedder.model))
         .await?;
 
     // P7.6 : cutoff de score. La cosine similarity sur du texte

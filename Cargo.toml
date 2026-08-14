@@ -10,7 +10,7 @@ version = "0.6.0"
 edition = "2021"
 license = "LicenseRef-Elastic-2.0"
 repository = "https://github.com/hmorales-pro/romanesk"
-rust-version = "1.78"
+rust-version = "1.81"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

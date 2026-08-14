@@ -28,6 +28,12 @@ fn dummy_source() -> Uuid {
     Uuid::now_v7()
 }
 
+/// Univers factice pour les tests qui ne portent pas sur le
+/// cloisonnement. Pas de FK sur `embeddings.universe_id` non plus.
+fn dummy_universe() -> Uuid {
+    Uuid::now_v7()
+}
+
 // ---------------------------------------------------------------------------
 // Smoke test : insère 3 vecteurs, query, vérifie l'ordre du top-k.
 // ---------------------------------------------------------------------------
@@ -56,6 +62,7 @@ async fn insert_and_top_k_cosine() {
 
     let e_x = emb
         .insert(NewEmbedding {
+            universe_id: universe.id,
             source_type: SourceType::Entity,
             source_id: entity.id,
             chunk_idx: 0,
@@ -68,6 +75,7 @@ async fn insert_and_top_k_cosine() {
 
     let _e_y = emb
         .insert(NewEmbedding {
+            universe_id: universe.id,
             source_type: SourceType::Entity,
             source_id: entity.id,
             chunk_idx: 1,
@@ -80,6 +88,7 @@ async fn insert_and_top_k_cosine() {
 
     let e_close = emb
         .insert(NewEmbedding {
+            universe_id: universe.id,
             source_type: SourceType::Entity,
             source_id: entity.id,
             chunk_idx: 2,
@@ -114,8 +123,10 @@ async fn insert_and_top_k_cosine() {
 async fn top_k_larger_than_corpus_returns_all() {
     let (db, _) = fresh_repo().await;
     let emb = embedder(&db);
+    let universe_id = dummy_universe();
 
     emb.insert(NewEmbedding {
+        universe_id,
         source_type: SourceType::Note,
         source_id: dummy_source(),
         chunk_idx: 0,
@@ -137,7 +148,9 @@ async fn top_k_larger_than_corpus_returns_all() {
 async fn top_k_zero_returns_empty() {
     let (db, _) = fresh_repo().await;
     let emb = embedder(&db);
+    let universe_id = dummy_universe();
     emb.insert(NewEmbedding {
+        universe_id,
         source_type: SourceType::Note,
         source_id: dummy_source(),
         chunk_idx: 0,
@@ -163,8 +176,10 @@ async fn top_k_zero_returns_empty() {
 async fn dim_filter_excludes_incompatible_vectors() {
     let (db, _) = fresh_repo().await;
     let emb = embedder(&db);
+    let universe_id = dummy_universe();
 
     emb.insert(NewEmbedding {
+        universe_id,
         source_type: SourceType::Note,
         source_id: dummy_source(),
         chunk_idx: 0,
@@ -176,6 +191,7 @@ async fn dim_filter_excludes_incompatible_vectors() {
     .unwrap();
 
     emb.insert(NewEmbedding {
+        universe_id,
         source_type: SourceType::Note,
         source_id: dummy_source(),
         chunk_idx: 0,
@@ -187,14 +203,14 @@ async fn dim_filter_excludes_incompatible_vectors() {
     .unwrap();
 
     let hits_dim4 = emb
-        .search_topk(&vec![1.0; 4], 10, SearchFilter::default())
+        .search_topk(&[1.0; 4], 10, SearchFilter::default())
         .await
         .unwrap();
     assert_eq!(hits_dim4.len(), 1);
     assert_eq!(hits_dim4[0].embedding.dim, 4);
 
     let hits_dim5 = emb
-        .search_topk(&vec![1.0; 5], 10, SearchFilter::default())
+        .search_topk(&[1.0; 5], 10, SearchFilter::default())
         .await
         .unwrap();
     assert_eq!(hits_dim5.len(), 1);
@@ -209,10 +225,12 @@ async fn dim_filter_excludes_incompatible_vectors() {
 async fn model_filter_restricts_results() {
     let (db, _) = fresh_repo().await;
     let emb = embedder(&db);
+    let universe_id = dummy_universe();
 
     let v = vec![1.0_f32, 0.0, 0.0];
     for model in ["nomic-embed-text", "bge-small-en"] {
         emb.insert(NewEmbedding {
+            universe_id,
             source_type: SourceType::Note,
             source_id: dummy_source(),
             chunk_idx: 0,
@@ -240,9 +258,11 @@ async fn model_filter_restricts_results() {
 async fn source_type_filter_restricts_results() {
     let (db, _) = fresh_repo().await;
     let emb = embedder(&db);
+    let universe_id = dummy_universe();
 
     let v = vec![0.5_f32, 0.5];
     emb.insert(NewEmbedding {
+        universe_id,
         source_type: SourceType::Entity,
         source_id: dummy_source(),
         chunk_idx: 0,
@@ -253,6 +273,7 @@ async fn source_type_filter_restricts_results() {
     .await
     .unwrap();
     emb.insert(NewEmbedding {
+        universe_id,
         source_type: SourceType::Chapter,
         source_id: dummy_source(),
         chunk_idx: 0,
@@ -268,6 +289,7 @@ async fn source_type_filter_restricts_results() {
             &v,
             10,
             SearchFilter {
+                universe_id: None,
                 model: None,
                 source_type: Some(SourceType::Chapter),
             },
@@ -286,6 +308,7 @@ async fn source_type_filter_restricts_results() {
 async fn delete_for_source_clears_all_chunks() {
     let (db, _) = fresh_repo().await;
     let emb = embedder(&db);
+    let universe_id = dummy_universe();
     let source_id = dummy_source();
 
     // Tous les vecteurs identiques — le test porte sur `delete_for`, pas
@@ -293,6 +316,7 @@ async fn delete_for_source_clears_all_chunks() {
     // `clippy::cast_precision_loss`.
     for chunk_idx in 0_i64..5 {
         emb.insert(NewEmbedding {
+            universe_id,
             source_type: SourceType::Chapter,
             source_id,
             chunk_idx,
@@ -331,8 +355,10 @@ async fn delete_for_source_clears_all_chunks() {
 async fn rejects_empty_vector_on_insert() {
     let (db, _) = fresh_repo().await;
     let emb = embedder(&db);
+    let universe_id = dummy_universe();
     let err = emb
         .insert(NewEmbedding {
+            universe_id,
             source_type: SourceType::Note,
             source_id: dummy_source(),
             chunk_idx: 0,
@@ -360,8 +386,10 @@ async fn rejects_empty_query_on_search() {
 async fn rejects_empty_model_on_insert() {
     let (db, _) = fresh_repo().await;
     let emb = embedder(&db);
+    let universe_id = dummy_universe();
     let err = emb
         .insert(NewEmbedding {
+            universe_id,
             source_type: SourceType::Note,
             source_id: dummy_source(),
             chunk_idx: 0,
@@ -372,4 +400,71 @@ async fn rejects_empty_model_on_insert() {
         .await
         .expect_err("model vide");
     assert!(matches!(err, RepoError::Invalid(_)));
+}
+
+// ---------------------------------------------------------------------------
+// Cloisonnement par univers (migration 0002)
+// ---------------------------------------------------------------------------
+
+/// Régression : une recherche portant sur un univers ne doit jamais
+/// remonter de passage appartenant à un autre.
+///
+/// `SearchFilter` n'avait pas de portée d'univers et la table n'avait pas
+/// la colonne : un auteur travaillant sur deux mondes recevait, en
+/// interrogeant l'un, des extraits tirés de l'autre.
+#[tokio::test]
+async fn search_is_scoped_to_its_universe() {
+    let (db, repo) = fresh_repo().await;
+    let emb = embedder(&db);
+
+    let aether = repo
+        .universes()
+        .create(NewUniverse::named("Aether"))
+        .await
+        .unwrap();
+    let secret = repo
+        .universes()
+        .create(NewUniverse::named("Roman sous NDA"))
+        .await
+        .unwrap();
+
+    // Vecteur identique des deux côtés : seule la portée peut les
+    // départager, pas le score.
+    let v = vec![1.0_f32, 0.0, 0.0];
+    for (universe_id, content) in [
+        (aether.id, "Aldric est un mage exilé."),
+        (secret.id, "L'intrigue confidentielle du client."),
+    ] {
+        emb.insert(NewEmbedding {
+            universe_id,
+            source_type: SourceType::Entity,
+            source_id: dummy_source(),
+            chunk_idx: 0,
+            content: content.into(),
+            model: "m".into(),
+            vector: v.clone(),
+        })
+        .await
+        .unwrap();
+    }
+
+    let hits = emb
+        .search_topk(&v, 10, SearchFilter::scoped(aether.id, "m"))
+        .await
+        .unwrap();
+
+    assert_eq!(hits.len(), 1, "un seul univers doit répondre");
+    assert_eq!(hits[0].embedding.content, "Aldric est un mage exilé.");
+    assert_eq!(hits[0].embedding.universe_id, Some(aether.id));
+
+    // Et l'autre univers reste interrogeable pour lui-même.
+    let other = emb
+        .search_topk(&v, 10, SearchFilter::scoped(secret.id, "m"))
+        .await
+        .unwrap();
+    assert_eq!(other.len(), 1);
+    assert_eq!(
+        other[0].embedding.content,
+        "L'intrigue confidentielle du client."
+    );
 }

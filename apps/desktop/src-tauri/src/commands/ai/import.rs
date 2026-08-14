@@ -338,6 +338,11 @@ pub struct DiscoveredItem {
     rename_all = "camelCase",
     rename_all_fields = "camelCase"
 )]
+// Les variantes sont de tailles très inégales (une porte un résumé de
+// chunk, les autres deux `usize`). L'enum ne sert qu'à sérialiser un
+// event vers le front, jamais stocké en masse ni déplacé en boucle
+// chaude : le boxing coûterait une indirection pour rien.
+#[allow(clippy::large_enum_variant)]
 pub enum ImportProgressEvent {
     Started {
         total_chunks: usize,

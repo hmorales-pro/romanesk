@@ -90,10 +90,6 @@ pub struct UpdateEntityPayload {
     pub summary: Option<String>,
     #[serde(default = "default_empty_object")]
     pub content: Value,
-    #[serde(default)]
-    pub cover_image: Option<String>,
-    #[serde(default)]
-    pub is_real: bool,
 }
 
 #[tauri::command]
@@ -110,8 +106,6 @@ pub async fn entity_update(
         name: payload.name.trim().to_string(),
         summary: payload.summary.filter(|s| !s.trim().is_empty()),
         content: payload.content,
-        cover_image: payload.cover_image.filter(|s| !s.trim().is_empty()),
-        is_real: payload.is_real,
     };
 
     let updated = Repo::new(db.inner().clone())

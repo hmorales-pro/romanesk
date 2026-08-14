@@ -5,6 +5,8 @@
 //! Cible Phase 3 : `embed()` (via `nomic-embed-text` ou `bge-m3`) et
 //! `describe_image()` (modèles vision Gemma / Llama 3.2 Vision).
 
+use std::time::Duration;
+
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
@@ -12,6 +14,14 @@ use super::provider::{
     Capabilities, CompletionRequest, CompletionResponse, ImageInput, Message, Provider,
     ProviderError, ProviderId, Role, TokenUsage,
 };
+
+/// Plafond d'attente d'une requête au moteur, connexion comprise.
+///
+/// Cinq minutes : une génération sur un modèle 12B avec un long contexte
+/// peut légitimement durer plusieurs minutes. Au-delà, ce n'est plus de
+/// la lenteur, c'est un blocage — et l'utilisateur mérite une erreur
+/// plutôt qu'une attente sans fin.
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(300);
 
 /// Configuration d'une instance Ollama.
 #[derive(Debug, Clone)]
@@ -45,8 +55,19 @@ pub struct OllamaProvider {
 
 impl OllamaProvider {
     pub fn new(cfg: OllamaConfig) -> Self {
+        // Sans timeout, `reqwest` attend indéfiniment. Un moteur local
+        // qui se bloque — chargement d'un 12B sur une machine trop
+        // juste, saturation mémoire, génération partie en boucle —
+        // laissait alors l'interface sur un indicateur qui tourne, sans
+        // message ni possibilité d'annuler.
+        //
+        // Le plafond est généreux : une génération longue sur un gros
+        // modèle est un cas normal, pas une panne. Il est là pour
+        // borner l'attente, pas pour arbitrer la performance.
         let http = reqwest::Client::builder()
-            .user_agent("romanesk/0.0")
+            .user_agent(concat!("romanesk/", env!("CARGO_PKG_VERSION")))
+            .connect_timeout(Duration::from_secs(10))
+            .timeout(REQUEST_TIMEOUT)
             .build()
             .expect("reqwest client");
         Self { cfg, http }

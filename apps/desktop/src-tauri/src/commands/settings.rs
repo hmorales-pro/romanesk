@@ -119,8 +119,7 @@ impl AppSettings {
     pub fn save(&self, app_data_dir: &std::path::Path) -> std::io::Result<()> {
         std::fs::create_dir_all(app_data_dir)?;
         let path = settings_path(app_data_dir);
-        let json = serde_json::to_string_pretty(self)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        let json = serde_json::to_string_pretty(self).map_err(std::io::Error::other)?;
         std::fs::write(path, json)
     }
 }

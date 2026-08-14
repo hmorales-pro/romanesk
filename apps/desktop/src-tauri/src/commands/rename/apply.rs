@@ -140,8 +140,6 @@ pub async fn entity_rename_in_universe(
             name: ent.name.clone(),
             summary: new_summary,
             content: new_content,
-            cover_image: ent.cover_image.clone(),
-            is_real: ent.is_real,
         };
         repo.entities().update(euuid, update).await?;
         entities_updated += 1;
@@ -156,8 +154,6 @@ pub async fn entity_rename_in_universe(
                 name: new_name.to_string(),
                 summary: target.summary.clone(),
                 content: target.content.clone(),
-                cover_image: target.cover_image.clone(),
-                is_real: target.is_real,
             },
         )
         .await?;

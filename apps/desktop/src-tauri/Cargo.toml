@@ -39,7 +39,7 @@ base64 = "0.22"
 # tokio::sync::RwLock pour les States hot-reloadable (P5.3 + P6.2). Tauri
 # tire déjà tokio comme runtime interne, on le déclare explicitement avec
 # la feature `sync` pour utiliser RwLock côté commands.
-tokio = { version = "1", features = ["sync"] }
+tokio = { version = "1", features = ["sync", "time"] }
 # reqwest pour les commandes Tauri qui doivent parler à Ollama directement
 # (ai_list_models). Le crate core l'utilise déjà — on l'ajoute en dep explicite
 # côté src-tauri pour ne pas dépendre d'un re-export.
@@ -71,6 +71,9 @@ romanesk-core = { path = "../../../crates/core" }
 [dev-dependencies]
 # Dossiers temporaires pour les tests de backup (P16.2).
 tempfile = "3"
+# Les tests de backup ouvrent de vraies bases SQLite via sqlx : il leur
+# faut un runtime et l'attribut `#[tokio::test]`.
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 
 [features]
 # Évite que Tauri ouvre une console Windows en release.

@@ -136,14 +136,12 @@ impl<'a> EntityRepo<'a> {
 
         let res = sqlx::query(
             "UPDATE lore_entities \
-             SET name = ?, summary = ?, content_json = ?, cover_image = ?, is_real = ? \
+             SET name = ?, summary = ?, content_json = ? \
              WHERE id = ? AND deleted_at IS NULL",
         )
         .bind(&update.name)
         .bind(update.summary.as_deref())
         .bind(&content_str)
-        .bind(update.cover_image.as_deref())
-        .bind(update.is_real)
         .bind(id.to_string())
         .execute(self.db.pool())
         .await?;

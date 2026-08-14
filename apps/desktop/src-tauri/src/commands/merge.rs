@@ -36,20 +36,16 @@ use super::{CommandError, CommandResult};
 /// Stratégie de fusion par champ. Si non précisée, on garde la target.
 #[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
+#[derive(Default)]
 pub enum MergeStrategy {
     /// Garde la valeur de la cible (par défaut).
+    #[default]
     KeepTarget,
     /// Remplace par la valeur de la source.
     KeepSource,
     /// Concatène les deux (target puis source, séparés par "\n\n").
     /// Pour les arrays, union avec dedup.
     Concat,
-}
-
-impl Default for MergeStrategy {
-    fn default() -> Self {
-        Self::KeepTarget
-    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -169,10 +165,15 @@ pub async fn entity_merge(
                 name: target_name.clone(),
                 summary: new_summary,
                 content: new_content,
-                cover_image: new_cover,
-                is_real: target.is_real,
             },
         )
+        .await?;
+
+    // La couverture a son propre chemin d'écriture depuis que `update`
+    // ne touche plus cette colonne (elle effaçait l'image à chaque
+    // sauvegarde de fiche). La fusion, elle, en choisit une pour de bon.
+    repo.entities()
+        .set_cover_image(target_uuid, new_cover.as_deref())
         .await?;
 
     // ── 4. Propager le nom source → target dans chapters + autres

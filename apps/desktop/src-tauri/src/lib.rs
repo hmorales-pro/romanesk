@@ -27,7 +27,7 @@ use chrono::Utc;
 use romanesk_core::ai::{OllamaConfig, OllamaProvider};
 use romanesk_core::Database;
 use serde::Serialize;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 use commands::ai::{AiEmbedder, AiProvider};
@@ -134,17 +134,14 @@ pub fn run() {
 
             let db_path = app_data_dir.join("romanesk.db");
 
-            // P16.2 — Backup auto rotatif. Avant d'ouvrir la DB (pour
-            // copier un fichier dans un état cohérent), on snapshote
-            // la DB live vers ~/Documents/Romanesk-backups/. Best-effort :
-            // si le backup échoue (Documents pas accessible, disque
-            // plein, etc.), on log et on continue — le démarrage ne doit
-            // jamais être bloqué par un échec de backup.
-            if let Ok(docs_dir) = app.path().document_dir() {
-                safety::backup_database(&db_path, &docs_dir);
-            } else {
-                tracing::warn!("Document dir indisponible — backup auto skip");
-            }
+            // P16.2 — Backup auto rotatif vers <app_data_dir>/backups/.
+            // Avant d'ouvrir la DB, pour que le snapshot soit antérieur
+            // aux migrations. Le snapshot passe par `VACUUM INTO` : une
+            // copie fichier laisserait derrière elle les transactions
+            // encore dans le WAL (cf. safety.rs). Best-effort — si le
+            // backup échoue, on log et on continue, le démarrage ne doit
+            // jamais être bloqué par ça.
+            tauri::async_runtime::block_on(safety::backup_database(&db_path, &app_data_dir));
 
             tracing::info!(?db_path, "Ouverture de la base SQLite");
 
@@ -293,7 +290,42 @@ pub fn run() {
             commands::chapter::chapter_reorder,
             commands::chapter::chapter_delete,
             commands::detect::chapter_detect_unknown_names,
+            commands::window::close_confirmed,
         ])
+        // P16.3 — Fermeture différée. L'éditeur enregistre en debounce ;
+        // sans ce garde, fermer la fenêtre juste après une frappe perdait
+        // la saisie. On bloque la fermeture, on laisse le front vider ses
+        // sauvegardes, et il rappelle `close_confirmed`. Filet : au-delà
+        // de CLOSE_GRACE_MS on ferme quand même — une fenêtre qui refuse
+        // de se fermer serait pire que le bug d'origine.
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                tracing::info!("Fermeture demandée — flush des sauvegardes en attente");
+
+                if let Err(e) = window.emit(commands::window::CLOSE_REQUESTED_EVENT, ()) {
+                    // Front injoignable : rien ne viendra confirmer, on
+                    // ferme tout de suite plutôt que de bloquer l'app.
+                    tracing::warn!(error = %e, "émission de l'event de fermeture échouée");
+                    let _ = window.destroy();
+                    return;
+                }
+
+                let w = window.clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_millis(
+                        commands::window::CLOSE_GRACE_MS,
+                    ))
+                    .await;
+                    // Si le front a confirmé entre-temps, la fenêtre est
+                    // déjà détruite et `destroy()` échoue sans effet.
+                    if w.is_visible().unwrap_or(false) {
+                        tracing::warn!("Front muet après le délai de grâce — fermeture forcée");
+                        let _ = w.destroy();
+                    }
+                });
+            }
+        })
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
         .run(|app_handle, event| {

@@ -82,6 +82,11 @@ pub fn cosine(a: &[f32], b: &[f32]) -> f32 {
 /// Filtre optionnel appliqué côté SQL avant le calcul cosine.
 #[derive(Debug, Clone, Default)]
 pub struct SearchFilter {
+    /// Restreindre à cet univers. **À renseigner systématiquement** pour
+    /// une recherche déclenchée par l'utilisateur : sans lui, la requête
+    /// balaie tous les univers de la base et une question posée sur l'un
+    /// ramène des passages tirés des autres.
+    pub universe_id: Option<Uuid>,
     /// Restreindre aux embeddings produits par ce modèle exact (ex. `nomic-embed-text:v1.5`).
     pub model: Option<String>,
     /// Restreindre à ce type de source.
@@ -89,9 +94,22 @@ pub struct SearchFilter {
 }
 
 impl SearchFilter {
+    /// Filtre usuel d'une question utilisateur : un univers, un modèle.
+    #[must_use]
+    pub fn scoped(universe_id: Uuid, model: impl Into<String>) -> Self {
+        Self {
+            universe_id: Some(universe_id),
+            model: Some(model.into()),
+            source_type: None,
+        }
+    }
+
+    /// Filtre sans portée d'univers. Réservé aux usages internes qui
+    /// travaillent volontairement sur toute la base (tests, maintenance).
     #[must_use]
     pub fn by_model(model: impl Into<String>) -> Self {
         Self {
+            universe_id: None,
             model: Some(model.into()),
             source_type: None,
         }
@@ -123,10 +141,11 @@ impl<'a> EmbeddingRepo<'a> {
 
         sqlx::query(
             "INSERT INTO embeddings \
-                (id, source_type, source_id, chunk_idx, content, model, dim, vector) \
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (id, universe_id, source_type, source_id, chunk_idx, content, model, dim, vector) \
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id.to_string())
+        .bind(new.universe_id.to_string())
         .bind(new.source_type.as_str())
         .bind(new.source_id.to_string())
         .bind(new.chunk_idx)
@@ -141,9 +160,72 @@ impl<'a> EmbeddingRepo<'a> {
         self.get(id).await?.ok_or(RepoError::NotFound)
     }
 
+    /// Remplace en une seule transaction l'index de plusieurs sources :
+    /// purge de l'ancien, écriture du nouveau.
+    ///
+    /// La réindexation faisait auparavant une suppression par entité puis
+    /// une insertion par chunk, chacune hors transaction — donc autant
+    /// d'écritures fsync que d'instructions, et surtout une fenêtre où
+    /// l'index était à moitié purgé. Une erreur au milieu laissait le RAG
+    /// silencieusement amputé : il répondait, mais en ignorant des pans
+    /// entiers de l'univers.
+    ///
+    /// Renvoie le nombre de lignes écrites.
+    pub async fn replace_for_sources(
+        &self,
+        source_type: SourceType,
+        source_ids: &[Uuid],
+        rows: &[NewEmbedding],
+    ) -> RepoResult<u64> {
+        for r in rows {
+            if r.vector.is_empty() {
+                return Err(RepoError::Invalid("vector must not be empty".into()));
+            }
+            if r.model.trim().is_empty() {
+                return Err(RepoError::Invalid("model must not be empty".into()));
+            }
+        }
+
+        let mut tx = self.db.pool().begin().await?;
+
+        for source_id in source_ids {
+            sqlx::query("DELETE FROM embeddings WHERE source_type = ? AND source_id = ?")
+                .bind(source_type.as_str())
+                .bind(source_id.to_string())
+                .execute(&mut *tx)
+                .await?;
+        }
+
+        let mut written = 0_u64;
+        for r in rows {
+            let dim = i64::try_from(r.vector.len())
+                .map_err(|_| RepoError::Invalid("dim too large".into()))?;
+            sqlx::query(
+                "INSERT INTO embeddings \
+                    (id, universe_id, source_type, source_id, chunk_idx, content, model, dim, vector) \
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            )
+            .bind(Uuid::now_v7().to_string())
+            .bind(r.universe_id.to_string())
+            .bind(r.source_type.as_str())
+            .bind(r.source_id.to_string())
+            .bind(r.chunk_idx)
+            .bind(&r.content)
+            .bind(&r.model)
+            .bind(dim)
+            .bind(encode_vector(&r.vector))
+            .execute(&mut *tx)
+            .await?;
+            written += 1;
+        }
+
+        tx.commit().await?;
+        Ok(written)
+    }
+
     pub async fn get(&self, id: Uuid) -> RepoResult<Option<Embedding>> {
         let row = sqlx::query(
-            "SELECT id, source_type, source_id, chunk_idx, content, model, dim, vector, created_at \
+            "SELECT id, universe_id, source_type, source_id, chunk_idx, content, model, dim, vector, created_at \
              FROM embeddings WHERE id = ?",
         )
         .bind(id.to_string())
@@ -182,9 +264,12 @@ impl<'a> EmbeddingRepo<'a> {
         // On reste sur du SQL string concaténé (sans risque d'injection : pas
         // d'input utilisateur dans la structure, seulement les valeurs bindées).
         let mut sql = String::from(
-            "SELECT id, source_type, source_id, chunk_idx, content, model, dim, vector, created_at \
+            "SELECT id, universe_id, source_type, source_id, chunk_idx, content, model, dim, vector, created_at \
              FROM embeddings WHERE dim = ?",
         );
+        if filter.universe_id.is_some() {
+            sql.push_str(" AND universe_id = ?");
+        }
         if filter.model.is_some() {
             sql.push_str(" AND model = ?");
         }
@@ -193,6 +278,9 @@ impl<'a> EmbeddingRepo<'a> {
         }
 
         let mut q = sqlx::query(&sql).bind(query_dim);
+        if let Some(uid) = filter.universe_id {
+            q = q.bind(uid.to_string());
+        }
         if let Some(model) = &filter.model {
             q = q.bind(model);
         }
@@ -250,6 +338,11 @@ fn row_to_embedding(row: SqliteRow) -> RepoResult<Embedding> {
     let id_str: String = row.try_get("id")?;
     let id = Uuid::parse_str(&id_str)?;
 
+    // Nullable : les lignes antérieures à la migration 0002 dont la
+    // source n'a pas pu être rattachée à un univers restent à NULL.
+    let universe_id: Option<String> = row.try_get("universe_id")?;
+    let universe_id = universe_id.as_deref().map(Uuid::parse_str).transpose()?;
+
     let source_type_str: String = row.try_get("source_type")?;
     let source_type = SourceType::parse(&source_type_str).ok_or_else(|| {
         RepoError::Inconsistent(format!("unknown source_type in DB: `{source_type_str}`"))
@@ -270,6 +363,7 @@ fn row_to_embedding(row: SqliteRow) -> RepoResult<Embedding> {
 
     Ok(Embedding {
         id,
+        universe_id,
         source_type,
         source_id,
         chunk_idx: row.try_get("chunk_idx")?,
