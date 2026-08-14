@@ -44,6 +44,7 @@ import { Glyph } from "@/components/ui/glyph";
 import { Pill } from "@/components/ui/pill";
 import { alertDialog, confirmDialog } from "@/lib/dialog";
 import { writeToClipboard } from "@/lib/clipboard";
+import { registerFlush } from "@/lib/closeGuard";
 import { TiptapEditor, type TiptapDoc } from "@/components/TiptapEditor";
 import { AiContinuePanel } from "@/components/AiContinuePanel";
 import { AiActionsPanel } from "@/components/AiActionsPanel";
@@ -446,6 +447,13 @@ function ChapterWorkspace({
   // Tiptap garde son instance, on lui passe juste le nouveau body via
   // sa prop value (TiptapEditor a déjà un useEffect qui detect le
   // changement de prop et fait setContent sans re-déclencher onChange).
+  //
+  // P16.3 — la dépendance est `chapter.id` SEUL, volontairement.
+  // `chapter.body_json` est un objet désérialisé par `invoke` : chaque
+  // refetch en produit une nouvelle référence, même à contenu identique.
+  // Avec `body_json` en dépendance, l'invalidation déclenchée par
+  // l'autosave rejouait ce resync et écrasait ce que l'auteur avait tapé
+  // pendant l'aller-retour de sauvegarde.
   useEffect(() => {
     setTitle(chapter.title ?? "");
     setBody(chapter.body_json as TiptapDoc);
@@ -456,7 +464,7 @@ function ChapterWorkspace({
       status: chapter.status,
     };
     setSavedFlash(false);
-  }, [chapter.id, chapter.title, chapter.body_json, chapter.status]);
+  }, [chapter.id]);
 
   const wordCount = useMemo(() => countWordsInTiptap(body), [body]);
   const dirty = useMemo(() => {
@@ -482,6 +490,37 @@ function ChapterWorkspace({
     setSavedFlash(true);
     window.setTimeout(() => setSavedFlash(false), 1500);
   };
+
+  // P16.3 — un flush ne doit jamais dépendre du rendu en cours : les
+  // deux déclencheurs ci-dessous (changement de chapitre, fermeture de
+  // la fenêtre) partent d'une closure figée. On passe donc par des refs
+  // tenues à jour à chaque rendu.
+  const dirtyRef = useRef(dirty);
+  const savingRef = useRef(saving);
+  const saveRef = useRef(save);
+  dirtyRef.current = dirty;
+  savingRef.current = saving;
+  saveRef.current = save;
+
+  const flushIfDirty = async () => {
+    if (dirtyRef.current && !savingRef.current) {
+      await saveRef.current();
+    }
+  };
+
+  // Changer de chapitre pendant le délai d'autosave perdait la frappe :
+  // le resync ci-dessus réinitialisait `initialRef`, `dirty` retombait à
+  // false et le timer était annulé sans avoir écrit. Le cleanup capture
+  // les refs du chapitre qu'on quitte, donc il enregistre le bon.
+  useEffect(
+    () => () => {
+      void flushIfDirty();
+    },
+    [chapter.id],
+  );
+
+  // Fermeture de la fenêtre — le backend nous laisse le temps de vider.
+  useEffect(() => registerFlush(flushIfDirty), []);
 
   // Cmd/Ctrl-S manuel.
   useEffect(() => {

@@ -209,13 +209,70 @@ pub struct ImportResult {
     pub skipped: Vec<String>,
 }
 
+/// Applique un import analysé.
+///
+/// Les écritures ne sont pas encore couvertes par une transaction unique
+/// — chaque méthode du `Repo` prend sa propre connexion dans le pool, il
+/// faudrait leur passer une transaction pour y arriver. En attendant, on
+/// compense : si l'import crée un univers et échoue en route, l'univers
+/// est supprimé, et la cascade des clés étrangères emporte tout ce qui a
+/// été créé avec. L'auteur ne se retrouve donc pas avec un univers à
+/// moitié importé.
+///
+/// L'import vers un univers **existant** n'a pas ce filet : on ne peut
+/// pas distinguer ce qui vient d'être écrit de ce qui préexistait. Le
+/// message d'erreur le dit explicitement.
 #[tauri::command]
 pub async fn import_apply(
     db: State<'_, Database>,
     payload: ImportApplyPayload,
 ) -> CommandResult<ImportResult> {
     let repo = Repo::new(db.inner().clone());
+    let created_universe = matches!(payload.target, ImportTarget::NewUniverse { .. });
 
+    // L'id n'est connu qu'une fois l'univers résolu, donc après le début
+    // du travail : on le fait remonter par un paramètre de sortie plutôt
+    // que par le type d'erreur, pour ne pas avoir à envelopper chacun des
+    // `?` du corps.
+    let mut universe_id: Option<Uuid> = None;
+    let outcome = import_apply_inner(&repo, payload, &mut universe_id).await;
+
+    match outcome {
+        Ok(result) => Ok(result),
+        Err(err) => {
+            match (created_universe, universe_id) {
+                (true, Some(uid)) => {
+                    // Cascade ON DELETE : entités, époques, événements,
+                    // récits et chapitres partent avec l'univers.
+                    match repo.universes().hard_delete(uid).await {
+                        Ok(()) => tracing::info!(
+                            %uid,
+                            "import échoué — univers partiel supprimé, rien n'est resté en base"
+                        ),
+                        Err(e) => tracing::error!(
+                            %uid, error = %e,
+                            "import échoué ET nettoyage impossible — univers partiel laissé en base"
+                        ),
+                    }
+                    Err(err)
+                }
+                (false, Some(uid)) => Err(CommandError::Other(format!(
+                    "{err}\n\nL'import s'est arrêté en cours de route sur l'univers {uid}.                      Une partie des fiches a pu être créée : vérifiez son contenu avant de relancer."
+                ))),
+                _ => Err(err),
+            }
+        }
+    }
+}
+
+/// Corps de l'import. Publie l'`universe_id` dans `universe_id_out` dès
+/// qu'il est connu, pour que l'appelant sache quoi nettoyer en cas
+/// d'échec ultérieur.
+async fn import_apply_inner(
+    repo: &Repo,
+    payload: ImportApplyPayload,
+    universe_id_out: &mut Option<Uuid>,
+) -> CommandResult<ImportResult> {
     // 1) Résoudre l'univers cible (créer si nouvel, vérifier si existant).
     let universe_id = match payload.target {
         ImportTarget::NewUniverse { name, description } => {
@@ -245,6 +302,8 @@ pub async fn import_apply(
             uid
         }
     };
+
+    *universe_id_out = Some(universe_id);
 
     // 2) Index des noms existants pour le skip-doublons (univers existant).
     //    Construit aussi la map name → era_id pour rattacher les events.

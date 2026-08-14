@@ -40,6 +40,14 @@ pub const MANAGED_PORT: u16 = 11540;
 /// Event Tauri émis pendant `runtime_download` (front : barre de progression).
 pub const DOWNLOAD_PROGRESS_EVENT: &str = "runtime-download-progress";
 
+/// Origines autorisées à interroger le moteur managé (`OLLAMA_ORIGINS`).
+///
+/// Ce sont celles du WebView Tauri : `tauri://localhost` sur macOS et
+/// Linux, `http://tauri.localhost` sur Windows, plus le serveur Vite en
+/// développement. Volontairement pas de `*` — cf. le commentaire au
+/// point d'usage.
+const WEBVIEW_ORIGINS: &str = "tauri://localhost,http://tauri.localhost,http://localhost:1430";
+
 /// Event Tauri émis quand l'état du runtime change (démarré, arrêté…).
 /// Le front invalide sa query `runtime-status` en le recevant.
 pub const CHANGED_EVENT: &str = "runtime-changed";
@@ -144,12 +152,10 @@ impl RuntimeManager {
     /// jamais faire échouer une installation par ailleurs réussie.
     pub fn write_manifest(&self, manifest: &RuntimeManifest) {
         let path = self.manifest_path();
-        let write = std::fs::create_dir_all(self.runtime_dir())
-            .and_then(|()| {
-                let json = serde_json::to_string_pretty(manifest)
-                    .map_err(std::io::Error::other)?;
-                std::fs::write(&path, json)
-            });
+        let write = std::fs::create_dir_all(self.runtime_dir()).and_then(|()| {
+            let json = serde_json::to_string_pretty(manifest).map_err(std::io::Error::other)?;
+            std::fs::write(&path, json)
+        });
         if let Err(e) = write {
             tracing::warn!(?path, error = %e, "échec écriture manifest runtime");
         }
@@ -209,16 +215,33 @@ impl RuntimeManager {
         std::fs::create_dir_all(&models_dir)
             .map_err(|e| format!("création du dossier modèles: {e}"))?;
 
-        tracing::info!(?bin, port = MANAGED_PORT, "Démarrage du runtime Ollama managé");
+        tracing::info!(
+            ?bin,
+            port = MANAGED_PORT,
+            "Démarrage du runtime Ollama managé"
+        );
 
         let mut cmd = Command::new(&bin);
         cmd.arg("serve")
             .env("OLLAMA_HOST", format!("127.0.0.1:{MANAGED_PORT}"))
             .env("OLLAMA_MODELS", &models_dir)
-            // Le WebView Tauri a une origine tauri:// — sans ça, les
-            // requêtes directes du front seraient refusées par CORS.
-            // Le serveur n'écoute que sur 127.0.0.1, pas de risque réseau.
-            .env("OLLAMA_ORIGINS", "*")
+            // Origines autorisées à parler au moteur, en clair.
+            //
+            // La valeur précédente était `*`. Le commentaire la justifiait
+            // par « le serveur n'écoute que sur 127.0.0.1, pas de risque
+            // réseau » — ça protège du réseau, pas du navigateur de
+            // l'utilisateur : avec `*`, Ollama renvoie
+            // `Access-Control-Allow-Origin: *`, et n'importe quelle page
+            // web ouverte pendant que Romanesk tourne pouvait lire ses
+            // réponses — lister les modèles, en supprimer (plusieurs Go
+            // non sauvegardés), en télécharger, occuper le GPU.
+            //
+            // En pratique le front ne fait aucune requête navigateur vers
+            // le moteur : tout passe par `invoke` puis reqwest côté Rust,
+            // où CORS ne s'applique pas. On garde malgré tout les origines
+            // du WebView, pour qu'un futur appel direct ne casse pas sans
+            // explication.
+            .env("OLLAMA_ORIGINS", WEBVIEW_ORIGINS)
             .current_dir(bin.parent().unwrap_or(Path::new(".")))
             .stdin(Stdio::null())
             .stdout(Stdio::null())
@@ -288,9 +311,7 @@ fn query_binary_version(bin: &Path) -> Option<String> {
 /// dépendre du libellé exact, qui a déjà changé entre versions.
 fn parse_version_output(s: &str) -> Option<String> {
     s.split_whitespace()
-        .find(|tok| {
-            tok.contains('.') && tok.chars().next().is_some_and(|c| c.is_ascii_digit())
-        })
+        .find(|tok| tok.contains('.') && tok.chars().next().is_some_and(|c| c.is_ascii_digit()))
         .map(str::to_string)
 }
 
@@ -366,9 +387,9 @@ pub async fn download_runtime(app: &tauri::AppHandle) -> Result<(), String> {
         tracing::info!(%url, "Téléchargement du runtime Ollama");
         match try_download_from(app, &client, &base, asset, &runtime_dir).await {
             Ok(()) => {
-                let bin = mgr
-                    .binary_path()
-                    .ok_or_else(|| "archive décompressée mais binaire ollama introuvable".to_string())?;
+                let bin = mgr.binary_path().ok_or_else(|| {
+                    "archive décompressée mais binaire ollama introuvable".to_string()
+                })?;
                 #[cfg(unix)]
                 {
                     use std::os::unix::fs::PermissionsExt;
@@ -424,8 +445,8 @@ async fn try_download_from(
 
     let total = resp.content_length();
     let part_path = runtime_dir.join(format!("{asset}.part"));
-    let mut file = std::fs::File::create(&part_path)
-        .map_err(|e| format!("création {part_path:?}: {e}"))?;
+    let mut file =
+        std::fs::File::create(&part_path).map_err(|e| format!("création {part_path:?}: {e}"))?;
 
     let mut hasher = sha2::Sha256::new();
     let mut completed: u64 = 0;
@@ -536,7 +557,8 @@ fn unpack_tgz(archive: &Path, dest: &Path) -> Result<(), String> {
 fn unpack_zip(archive: &Path, dest: &Path) -> Result<(), String> {
     let file = std::fs::File::open(archive).map_err(|e| format!("ouverture {archive:?}: {e}"))?;
     let mut zip = zip::ZipArchive::new(file).map_err(|e| format!("lecture zip: {e}"))?;
-    zip.extract(dest).map_err(|e| format!("décompression zip: {e}"))
+    zip.extract(dest)
+        .map_err(|e| format!("décompression zip: {e}"))
 }
 
 // ---------------------------------------------------------------------------

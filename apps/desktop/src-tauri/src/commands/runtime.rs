@@ -145,7 +145,9 @@ pub async fn runtime_status(app: tauri::AppHandle) -> CommandResult<RuntimeStatu
 /// diffusé via l'event `runtime-download-progress`.
 #[tauri::command]
 pub async fn runtime_download(app: tauri::AppHandle) -> CommandResult<()> {
-    runtime::download_runtime(&app).await.map_err(CommandError::Other)
+    runtime::download_runtime(&app)
+        .await
+        .map_err(CommandError::Other)
 }
 
 /// Démarre le runtime managé et rebascule les providers IA dessus.

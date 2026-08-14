@@ -55,7 +55,7 @@ Et trois engagements :
 > ⚠️ Phase 0 en cours — le scaffolding initial arrive. Cette section sera fonctionnelle à la fin de la Semaine 1.
 
 ### Prérequis
-- Rust stable (`rustup`) — 1.78+
+- Rust stable (`rustup`) — 1.81+
 - Node 20+ et **pnpm** 9+
 - (Optionnel mais recommandé) [Ollama](https://ollama.com) avec un modèle Gemma installé : `ollama pull gemma:latest`
 

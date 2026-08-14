@@ -92,17 +92,29 @@ interface CreateEntityPayload {
   name: string;
   summary: string | null;
   content: Record<string, unknown>;
-  coverImage: string | null;
-  isReal: boolean;
+  /**
+   * Optionnels : le backend les déclare `#[serde(default)]`, donc les
+   * omettre revient exactement à envoyer `null` / `false`. Une fiche
+   * naît sans couverture et non ancrée au réel.
+   */
+  coverImage?: string | null;
+  isReal?: boolean;
 }
 
+/**
+ * Champs éditables par le formulaire de fiche.
+ *
+ * `coverImage` et `isReal` en sont absents volontairement : l'image a sa
+ * propre commande (`entitySetCoverImage`) et `isReal` se fixe à la
+ * création. Les envoyer ici revenait à les réécrire à chaque
+ * sauvegarde — le formulaire ne les connaît pas, il postait donc
+ * `null` / `false` et effaçait l'image de couverture.
+ */
 interface UpdateEntityPayload {
   id: Uuid;
   name: string;
   summary: string | null;
   content: Record<string, unknown>;
-  coverImage: string | null;
-  isReal: boolean;
 }
 
 function entityCreateRaw(payload: CreateEntityPayload): Promise<Entity> {
@@ -344,8 +356,6 @@ export function characterUpdate(args: UpdateCharacterArgs): Promise<Entity> {
       traits: (args.traits ?? []).map((t) => t.trim()).filter(Boolean),
       biography: args.biography ?? null,
     },
-    coverImage: null,
-    isReal: false,
   });
 }
 
@@ -400,8 +410,6 @@ export function locationUpdate(args: UpdateLocationArgs): Promise<Entity> {
       population: args.population?.trim() ? args.population : null,
       description: args.description ?? null,
     },
-    coverImage: null,
-    isReal: false,
   });
 }
 
@@ -459,8 +467,6 @@ export function factionUpdate(args: UpdateFactionArgs): Promise<Entity> {
       leader: args.leader?.trim() ? args.leader : null,
       description: args.description ?? null,
     },
-    coverImage: null,
-    isReal: false,
   });
 }
 
@@ -518,8 +524,6 @@ export function objectUpdate(args: UpdateObjectArgs): Promise<Entity> {
       properties: (args.properties ?? []).map((p) => p.trim()).filter(Boolean),
       description: args.description ?? null,
     },
-    coverImage: null,
-    isReal: false,
   });
 }
 
@@ -569,8 +573,6 @@ export function conceptUpdate(args: UpdateConceptArgs): Promise<Entity> {
       domain: args.domain?.trim() ? args.domain : null,
       description: args.description ?? null,
     },
-    coverImage: null,
-    isReal: false,
   });
 }
 

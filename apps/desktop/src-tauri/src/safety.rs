@@ -11,27 +11,51 @@
 //!    parallèle d'une release installée).
 //!
 //! 2. **Backup auto rotatif** (P16.2) → fonction `backup_database` ici.
-//!    À chaque démarrage de l'app, copie la DB vers
-//!    `~/Documents/Romanesk-backups/romanesk-YYYY-MM-DD_HH-mm-ss.db`
-//!    et supprime les backups au-delà de `MAX_BACKUPS`. Visible dans
-//!    le Finder, sauvegardé par Time Machine, indépendant des
-//!    manipulations dev.
+//!    À chaque démarrage de l'app, snapshote la DB vers
+//!    `<app_data_dir>/backups/romanesk-YYYY-MM-DD_HH-mm-ss.db`
+//!    et supprime les backups au-delà de `MAX_BACKUPS`.
 //!
 //! Ces deux mécanismes ensemble n'éliminent pas 100 % du risque de perte
 //! (une suppression utilisateur volontaire reste possible), mais ils
 //! couvrent les scénarios accidentels les plus fréquents : double
 //! instance, MAJ pendant que l'app tourne, migration ratée.
+//!
+//! ## Pourquoi `VACUUM INTO` et pas `fs::copy`
+//!
+//! La base tourne en `journal_mode = WAL` (cf. `db/connection.rs`). En
+//! WAL, une transaction validée vit dans le fichier `-wal` jusqu'au
+//! prochain checkpoint : le `.db` seul est en retard. Une copie fichier
+//! du seul `.db` produit donc un backup **périmé** dès que l'instance
+//! précédente ne s'est pas arrêtée proprement — crash, « Forcer à
+//! quitter », coupure de courant. C'est-à-dire exactement les scénarios
+//! qui justifient un backup.
+//!
+//! `VACUUM INTO` demande à SQLite d'écrire un fichier unique, compacté
+//! et cohérent, WAL replayé compris. On ouvre donc la base juste le
+//! temps du snapshot, avant `Database::open` pour que le backup soit
+//! antérieur aux migrations.
+//!
+//! ## Pourquoi plus dans `~/Documents`
+//!
+//! Sur macOS et Windows, `~/Documents` est fréquemment synchronisé par
+//! iCloud Drive ou OneDrive. Y déposer 14 copies intégrales de la base
+//! revenait à pousser tout l'univers de l'auteur chez un tiers, ce qui
+//! contredit la promesse « aucun cloud par défaut ». Les backups vivent
+//! donc avec les données, sous `app_data_dir`.
 
 use std::path::{Path, PathBuf};
 
-/// Nombre maximum de backups à garder dans `~/Documents/Romanesk-backups/`.
+use sqlx::sqlite::SqliteConnectOptions;
+use sqlx::{ConnectOptions, Connection, SqliteConnection};
+
+/// Nombre maximum de backups à garder dans `<app_data_dir>/backups/`.
 /// Au-delà, les plus vieux sont supprimés. ~14 backups ≈ 2 semaines à un
-/// lancement/jour. Chaque backup pèse comme la DB live (qq Mo dans la
-/// plupart des cas, qq dizaines pour les très gros univers).
+/// lancement/jour. Un backup `VACUUM INTO` est compacté, donc au plus
+/// de la taille de la DB live.
 pub const MAX_BACKUPS: usize = 14;
 
-/// Sous-dossier dans `~/Documents/` où vivent les backups.
-pub const BACKUPS_SUBDIR: &str = "Romanesk-backups";
+/// Sous-dossier de `app_data_dir` où vivent les backups.
+pub const BACKUPS_SUBDIR: &str = "backups";
 
 /// Seuil minimum (en octets) pour qu'une DB soit considérée comme
 /// « contenant des données » et donc digne d'un backup. Une DB SQLite
@@ -40,39 +64,48 @@ pub const BACKUPS_SUBDIR: &str = "Romanesk-backups";
 /// fraîchement créées qui ne contiennent rien.
 const MIN_BACKUP_SIZE_BYTES: u64 = 300 * 1024; // ~300 Ko
 
-/// Crée un backup de la DB live vers `~/Documents/Romanesk-backups/` si
-/// elle existe et qu'elle est suffisamment grosse. Best-effort : si le
-/// backup échoue (permissions, disque plein, etc.), on log un warning et
-/// on continue. Le démarrage de l'app ne doit jamais être bloqué par un
+/// Taille cumulée de la base et de son journal WAL. En WAL, une base
+/// dont le `.db` est encore minuscule peut déjà contenir plusieurs
+/// chapitres restés dans le `-wal` : ne regarder que le `.db` ferait
+/// sauter le backup au moment où il devient utile.
+fn database_footprint(db_path: &Path) -> u64 {
+    let mut total = std::fs::metadata(db_path).map(|m| m.len()).unwrap_or(0);
+    // SQLite nomme son journal `<chemin complet>-wal`, extension comprise.
+    let mut wal = db_path.as_os_str().to_owned();
+    wal.push("-wal");
+    if let Ok(m) = std::fs::metadata(PathBuf::from(wal)) {
+        total += m.len();
+    }
+    total
+}
+
+/// Crée un backup de la DB live vers `<app_data_dir>/backups/` si elle
+/// existe et qu'elle est suffisamment grosse. Best-effort : si le backup
+/// échoue (permissions, disque plein, etc.), on log un warning et on
+/// continue. Le démarrage de l'app ne doit jamais être bloqué par un
 /// échec de backup.
 ///
-/// Le path `documents_dir` doit être le résultat de
-/// `app.path().document_dir()` (Tauri).
+/// Le snapshot passe par `VACUUM INTO`, pas par une copie de fichier :
+/// voir la note « Pourquoi `VACUUM INTO` » en tête de module. On ouvre
+/// la base le temps du snapshot — l'ouverture rejoue au passage le WAL
+/// laissé par une session précédente qui se serait mal terminée.
 ///
-/// Aussi : on **ne fait pas de checkpoint WAL** ici parce qu'on est
-/// appelé avant `Database::open`, donc la DB n'est pas ouverte par sqlx
-/// — le `.db` est dans un état cohérent (les écritures précédentes ont
-/// été flushed par l'instance précédente au shutdown).
-pub fn backup_database(db_path: &Path, documents_dir: &Path) {
+/// Appelée **avant** `Database::open` pour que le backup soit antérieur
+/// aux migrations : si une migration casse la base, le fichier de
+/// secours est dans l'état d'avant.
+pub async fn backup_database(db_path: &Path, app_data_dir: &Path) {
     if !db_path.exists() {
         tracing::debug!("backup: pas de DB existante, skip");
         return;
     }
 
-    let size = match std::fs::metadata(db_path) {
-        Ok(m) => m.len(),
-        Err(e) => {
-            tracing::warn!(err = %e, "backup: impossible de lire la taille de la DB");
-            return;
-        }
-    };
-
+    let size = database_footprint(db_path);
     if size < MIN_BACKUP_SIZE_BYTES {
         tracing::debug!(size, "backup: DB trop petite, probablement vide, skip");
         return;
     }
 
-    let backups_dir = documents_dir.join(BACKUPS_SUBDIR);
+    let backups_dir = app_data_dir.join(BACKUPS_SUBDIR);
     if let Err(e) = std::fs::create_dir_all(&backups_dir) {
         tracing::warn!(err = %e, ?backups_dir, "backup: impossible de créer le dossier");
         return;
@@ -81,8 +114,11 @@ pub fn backup_database(db_path: &Path, documents_dir: &Path) {
     let timestamp = chrono::Local::now().format("%Y-%m-%d_%H-%M-%S");
     let backup_path = backups_dir.join(format!("romanesk-{timestamp}.db"));
 
-    match std::fs::copy(db_path, &backup_path) {
-        Ok(bytes) => {
+    match snapshot_to(db_path, &backup_path).await {
+        Ok(()) => {
+            let bytes = std::fs::metadata(&backup_path)
+                .map(|m| m.len())
+                .unwrap_or(0);
             tracing::info!(
                 ?backup_path,
                 bytes,
@@ -90,7 +126,9 @@ pub fn backup_database(db_path: &Path, documents_dir: &Path) {
             );
         }
         Err(e) => {
-            tracing::warn!(err = %e, ?backup_path, "backup: copy échouée");
+            tracing::warn!(err = %e, ?backup_path, "backup: snapshot échoué");
+            // Un fichier partiel ne doit pas passer pour un backup valide.
+            let _ = std::fs::remove_file(&backup_path);
             return;
         }
     }
@@ -98,6 +136,37 @@ pub fn backup_database(db_path: &Path, documents_dir: &Path) {
     // Rotation : on garde les MAX_BACKUPS plus récents, on supprime
     // les autres. Best-effort sur la suppression.
     rotate_backups(&backups_dir, MAX_BACKUPS);
+}
+
+/// Écrit un snapshot cohérent de `db_path` dans `dest` via `VACUUM INTO`.
+///
+/// `dest` ne doit pas exister : SQLite refuse d'écraser. C'est voulu —
+/// on préfère échouer que corrompre un backup antérieur.
+async fn snapshot_to(db_path: &Path, dest: &Path) -> Result<(), String> {
+    let opts = SqliteConnectOptions::new()
+        .filename(db_path)
+        // Ne jamais fabriquer une base ici : si le chemin est faux, on
+        // veut une erreur, pas un backup vide qui inspire confiance.
+        .create_if_missing(false)
+        // Le snapshot est bruyant en log et sans intérêt au niveau info.
+        .disable_statement_logging();
+
+    let mut conn = SqliteConnection::connect_with(&opts)
+        .await
+        .map_err(|e| format!("ouverture de la base pour snapshot: {e}"))?;
+
+    // `VACUUM INTO` n'accepte pas de paramètre lié : le chemin est
+    // interpolé, donc échappé à la mode SQL (une quote simple se double).
+    // Le chemin vient de `app_data_dir`, pas d'une saisie utilisateur.
+    let dest_sql = dest.to_string_lossy().replace('\'', "''");
+    let res = sqlx::query(&format!("VACUUM INTO '{dest_sql}'"))
+        .execute(&mut conn)
+        .await
+        .map(|_| ())
+        .map_err(|e| format!("VACUUM INTO: {e}"));
+
+    let _ = conn.close().await;
+    res
 }
 
 /// Supprime les backups les plus anciens si leur nombre dépasse `keep`.
@@ -149,51 +218,140 @@ fn rotate_backups(backups_dir: &Path, keep: usize) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sqlx::Row;
     use std::fs;
-    use std::io::Write;
 
-    /// Crée un fichier `.db` factice de la taille demandée (rempli de
-    /// zéros) dans un dossier temporaire.
-    fn make_fake_db(dir: &Path, name: &str, size: u64) -> PathBuf {
-        let path = dir.join(name);
-        let mut f = fs::File::create(&path).unwrap();
-        let buf = vec![0u8; size as usize];
-        f.write_all(&buf).unwrap();
-        path
+    /// Crée une vraie base SQLite en mode WAL, avec `wal_autocheckpoint`
+    /// désactivé et `rows` lignes de garnissage. Renvoie le chemin et la
+    /// connexion **encore ouverte** : tant qu'elle vit, SQLite ne
+    /// checkpointe pas, donc les données restent dans le `-wal` — ce qui
+    /// reproduit fidèlement l'état d'une base après un arrêt brutal.
+    async fn make_wal_db(dir: &Path, rows: usize) -> (PathBuf, SqliteConnection) {
+        let path = dir.join("romanesk.db");
+        let opts = SqliteConnectOptions::new()
+            .filename(&path)
+            .create_if_missing(true);
+        let mut conn = SqliteConnection::connect_with(&opts).await.unwrap();
+
+        sqlx::query("PRAGMA journal_mode = WAL")
+            .execute(&mut conn)
+            .await
+            .unwrap();
+        sqlx::query("PRAGMA wal_autocheckpoint = 0")
+            .execute(&mut conn)
+            .await
+            .unwrap();
+        sqlx::query("CREATE TABLE chapitres (id INTEGER PRIMARY KEY, texte TEXT)")
+            .execute(&mut conn)
+            .await
+            .unwrap();
+
+        let filler = "a".repeat(1024);
+        for i in 0..rows {
+            sqlx::query("INSERT INTO chapitres (id, texte) VALUES (?, ?)")
+                .bind(i as i64)
+                .bind(&filler)
+                .execute(&mut conn)
+                .await
+                .unwrap();
+        }
+
+        (path, conn)
     }
 
-    #[test]
-    fn skip_backup_if_db_missing() {
+    /// Nombre de lignes lisibles dans `db`. Renvoie 0 si la base est
+    /// inutilisable ou si la table n'y est même pas : sur une copie
+    /// tronquée, « illisible » et « vide » sont le même échec.
+    async fn count_rows(db: &Path) -> i64 {
+        let opts = SqliteConnectOptions::new()
+            .filename(db)
+            .create_if_missing(false);
+        let Ok(mut conn) = SqliteConnection::connect_with(&opts).await else {
+            return 0;
+        };
+        sqlx::query("SELECT COUNT(*) AS n FROM chapitres")
+            .fetch_one(&mut conn)
+            .await
+            .map_or(0, |row| row.get::<i64, _>("n"))
+    }
+
+    fn only_backup(backups_dir: &Path) -> PathBuf {
+        let mut entries: Vec<PathBuf> = fs::read_dir(backups_dir)
+            .unwrap()
+            .map(|e| e.unwrap().path())
+            .collect();
+        assert_eq!(entries.len(), 1, "un seul backup attendu");
+        entries.pop().unwrap()
+    }
+
+    #[tokio::test]
+    async fn skip_backup_if_db_missing() {
         let tmp = tempfile::tempdir().unwrap();
-        let docs = tempfile::tempdir().unwrap();
+        let data = tempfile::tempdir().unwrap();
         // Aucune DB → ne plante pas, log warning et passe.
-        backup_database(&tmp.path().join("nope.db"), docs.path());
-        // Pas de backup créé.
-        let backups_dir = docs.path().join(BACKUPS_SUBDIR);
-        assert!(!backups_dir.exists());
+        backup_database(&tmp.path().join("nope.db"), data.path()).await;
+        assert!(!data.path().join(BACKUPS_SUBDIR).exists());
     }
 
-    #[test]
-    fn skip_backup_if_db_too_small() {
+    #[tokio::test]
+    async fn skip_backup_if_db_too_small() {
         let tmp = tempfile::tempdir().unwrap();
-        let docs = tempfile::tempdir().unwrap();
-        // 100 Ko < MIN_BACKUP_SIZE_BYTES → considéré vide.
-        let db = make_fake_db(tmp.path(), "romanesk.db", 100 * 1024);
-        backup_database(&db, docs.path());
-        let backups_dir = docs.path().join(BACKUPS_SUBDIR);
-        assert!(!backups_dir.exists());
+        let data = tempfile::tempdir().unwrap();
+        // Une poignée de lignes → bien en dessous de MIN_BACKUP_SIZE_BYTES.
+        let (db, _conn) = make_wal_db(tmp.path(), 5).await;
+        backup_database(&db, data.path()).await;
+        assert!(!data.path().join(BACKUPS_SUBDIR).exists());
     }
 
-    #[test]
-    fn backup_created_when_db_has_data() {
+    #[tokio::test]
+    async fn backup_created_when_db_has_data() {
         let tmp = tempfile::tempdir().unwrap();
-        let docs = tempfile::tempdir().unwrap();
-        let db = make_fake_db(tmp.path(), "romanesk.db", 500 * 1024); // > 300 Ko
-        backup_database(&db, docs.path());
-        let backups_dir = docs.path().join(BACKUPS_SUBDIR);
+        let data = tempfile::tempdir().unwrap();
+        let (db, _conn) = make_wal_db(tmp.path(), 400).await;
+        backup_database(&db, data.path()).await;
+
+        let backups_dir = data.path().join(BACKUPS_SUBDIR);
         assert!(backups_dir.exists());
-        let backups: Vec<_> = fs::read_dir(&backups_dir).unwrap().collect();
-        assert_eq!(backups.len(), 1);
+        let backup = only_backup(&backups_dir);
+        assert_eq!(count_rows(&backup).await, 400);
+    }
+
+    /// Régression : le backup doit contenir les transactions restées dans
+    /// le WAL. C'est le défaut que `std::fs::copy` avait — après un crash,
+    /// le `.db` seul est en retard et la sauvegarde perdait le travail le
+    /// plus récent, c'est-à-dire celui qu'on voulait justement protéger.
+    #[tokio::test]
+    async fn backup_captures_uncheckpointed_wal() {
+        let tmp = tempfile::tempdir().unwrap();
+        let data = tempfile::tempdir().unwrap();
+        let (db, _conn) = make_wal_db(tmp.path(), 400).await;
+
+        // Le WAL porte bien les données, le `.db` ne les a pas encore.
+        let mut wal = db.as_os_str().to_owned();
+        wal.push("-wal");
+        let wal_len = fs::metadata(PathBuf::from(wal)).map(|m| m.len()).unwrap();
+        assert!(
+            wal_len > 300 * 1024,
+            "le WAL doit contenir le gros des données pour que le test ait un sens (taille {wal_len})"
+        );
+
+        // Ce que faisait l'ancien code : copier le seul `.db`.
+        let naive = tmp.path().join("copie-naive.db");
+        fs::copy(&db, &naive).unwrap();
+        let naive_rows = count_rows(&naive).await;
+
+        backup_database(&db, data.path()).await;
+        let backup = only_backup(&data.path().join(BACKUPS_SUBDIR));
+
+        assert_eq!(
+            count_rows(&backup).await,
+            400,
+            "VACUUM INTO doit rejouer le WAL"
+        );
+        assert!(
+            naive_rows < 400,
+            "la copie fichier devait être incomplète — sinon le test ne prouve rien"
+        );
     }
 
     #[test]

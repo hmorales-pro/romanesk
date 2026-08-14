@@ -126,6 +126,67 @@ async fn create_entity_in_universe() {
     assert_eq!(fetched, aldric);
 }
 
+/// Régression : éditer une fiche ne doit pas toucher à son image de
+/// couverture. Le formulaire d'édition ne connaît pas ce champ ; quand
+/// `UpdateEntity` le portait, chaque sauvegarde le remettait à NULL et
+/// l'auteur perdait l'image dès qu'il corrigeait une biographie.
+#[tokio::test]
+async fn update_entity_preserves_cover_image() {
+    let repo = fresh_repo().await;
+
+    let u = repo
+        .universes()
+        .create(NewUniverse::named("Aether"))
+        .await
+        .unwrap();
+
+    let aldric = repo
+        .entities()
+        .create(NewEntity {
+            universe_id: u.id,
+            kind: EntityType::Character,
+            name: "Aldric".into(),
+            summary: None,
+            content: json!({}),
+            cover_image: Some("media/aether/aldric/portrait.png".into()),
+            is_real: true,
+        })
+        .await
+        .expect("create entity");
+
+    let updated = repo
+        .entities()
+        .update(
+            aldric.id,
+            UpdateEntity {
+                name: "Aldric le Banni".into(),
+                summary: Some("Mage exilé.".into()),
+                content: json!({ "archetype": "mentor" }),
+            },
+        )
+        .await
+        .expect("update entity");
+
+    assert_eq!(updated.name, "Aldric le Banni");
+    assert_eq!(
+        updated.cover_image.as_deref(),
+        Some("media/aether/aldric/portrait.png"),
+        "l'édition d'une fiche ne doit pas effacer sa couverture"
+    );
+    assert!(
+        updated.is_real,
+        "l'édition ne doit pas réinitialiser is_real"
+    );
+
+    // Et l'image reste bien pilotable par son propre chemin d'écriture.
+    repo.entities()
+        .set_cover_image(aldric.id, None)
+        .await
+        .expect("clear cover");
+    let cleared = repo.entities().get(aldric.id).await.unwrap().unwrap();
+    assert_eq!(cleared.cover_image, None);
+}
+
 #[tokio::test]
 async fn list_entities_filters_by_type() {
     let repo = fresh_repo().await;
@@ -306,8 +367,6 @@ async fn update_entity_replaces_modifiable_fields() {
                 name: "Aldric le Sombre".into(),
                 summary: Some("Mage exilé.".into()),
                 content: new_content.clone(),
-                cover_image: None,
-                is_real: false,
             },
         )
         .await
@@ -352,8 +411,6 @@ async fn update_entity_rejects_empty_name() {
                 name: "   ".into(),
                 summary: None,
                 content: json!({}),
-                cover_image: None,
-                is_real: false,
             },
         )
         .await
@@ -415,8 +472,6 @@ async fn update_unknown_entity_returns_not_found() {
                 name: "x".into(),
                 summary: None,
                 content: json!({}),
-                cover_image: None,
-                is_real: false,
             },
         )
         .await

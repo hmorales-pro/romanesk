@@ -143,14 +143,19 @@ impl NewEntity {
 /// Champs d'une entité modifiables après création. Le `kind` et l'`universe_id`
 /// ne sont pas modifiables (un personnage ne devient pas un lieu, et il ne
 /// déménage pas d'univers — sa duplication est une opération distincte).
+///
+/// `cover_image` et `is_real` en sont volontairement absents : ils ont
+/// leurs propres chemins d'écriture (`EntityRepo::set_cover_image`, et
+/// `NewEntity` à la création). Les inclure ici revenait à les réécrire à
+/// chaque sauvegarde de fiche — le formulaire ne les connaît pas, il
+/// envoyait donc `None` / `false` et effaçait l'image de couverture de
+/// l'auteur à chaque correction de biographie.
 #[derive(Debug, Clone)]
 pub struct UpdateEntity {
     pub name: String,
     pub summary: Option<String>,
     /// Contenu typé (archétype, traits, biographie Tiptap…) sérialisé en JSON.
     pub content: serde_json::Value,
-    pub cover_image: Option<String>,
-    pub is_real: bool,
 }
 
 // ---------------------------------------------------------------------------
@@ -202,6 +207,10 @@ impl SourceType {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Embedding {
     pub id: Uuid,
+    /// Univers auquel appartient la source. `None` pour les lignes
+    /// antérieures à la migration 0002 dont la source n'a pas pu être
+    /// rattachée — elles sont hors périmètre d'une recherche filtrée.
+    pub universe_id: Option<Uuid>,
     pub source_type: SourceType,
     pub source_id: Uuid,
     /// Index du chunk dans le contenu source (0 si pas de chunking).
@@ -215,6 +224,10 @@ pub struct Embedding {
 
 #[derive(Debug, Clone)]
 pub struct NewEmbedding {
+    /// Univers de la source. Indispensable au cloisonnement de la
+    /// recherche : sans lui, une question posée sur un univers ramenait
+    /// des passages d'un autre.
+    pub universe_id: Uuid,
     pub source_type: SourceType,
     pub source_id: Uuid,
     pub chunk_idx: i64,

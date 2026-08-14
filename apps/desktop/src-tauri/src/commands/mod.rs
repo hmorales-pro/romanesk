@@ -28,5 +28,6 @@ pub mod snapshot;
 pub mod story;
 pub mod tag;
 pub mod universe;
+pub mod window;
 
 pub use error::{CommandError, CommandResult};
