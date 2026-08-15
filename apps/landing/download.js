@@ -152,7 +152,7 @@
         if (!Array.isArray(arr) || !arr.length) return;
         data = arr[0];
       }
-      const tag = data.tag_name || data.name || "v0.6.0";
+      const tag = data.tag_name || data.name || "v0.7.0";
       const date = data.published_at ? formatDate(data.published_at) : null;
 
       // Update la petite mention de version.

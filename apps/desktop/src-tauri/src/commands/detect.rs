@@ -25,7 +25,7 @@ use serde::Serialize;
 use tauri::State;
 use uuid::Uuid;
 
-use super::rename::{collect_text_nodes, first_excerpt};
+use super::rename::{collect_text_nodes, excerpt_around};
 use super::{CommandError, CommandResult};
 
 #[derive(Debug, Serialize, Clone)]
@@ -87,8 +87,8 @@ pub async fn chapter_detect_unknown_names(
     // Agrégation : pour chaque candidat, on garde la forme la plus
     // fréquente (la première rencontrée en cas d'égalité), le total
     // d'occurrences et l'extrait du premier match.
-    let mut acc: HashMap<String, (String, usize)> = HashMap::new();
-    for cand in &candidates {
+    let mut acc: HashMap<String, (String, usize, usize)> = HashMap::new();
+    for (cand, offset) in &candidates {
         let key = normalize_for_match(cand);
         if known.contains(&key) {
             continue;
@@ -97,18 +97,17 @@ pub async fn chapter_detect_unknown_names(
         if is_stop_word(cand) {
             continue;
         }
-        let entry = acc.entry(key).or_insert_with(|| (cand.clone(), 0));
+        let entry = acc.entry(key).or_insert_with(|| (cand.clone(), 0, *offset));
         entry.1 += 1;
     }
 
     let mut out: Vec<UnknownName> = acc
         .into_iter()
-        .map(|(_key, (name, occurrences))| {
-            // Regex échappée pour l'excerpt — `name` peut contenir des
-            // caractères spéciaux mais c'est rare ici.
-            let re = Regex::new(&format!(r"(?u)\b{}\b", regex::escape(&name)))
-                .expect("valid regex from name");
-            let excerpt = first_excerpt(&body_text, &re);
+        .map(|(_key, (name, occurrences, offset))| {
+            // La position vient du balayage de tokens déjà effectué.
+            // Compiler une regex par candidat coûtait plusieurs ordres de
+            // grandeur de plus que l'exécuter, pour un simple extrait.
+            let excerpt = excerpt_around(&body_text, offset, offset + name.len());
             UnknownName {
                 name,
                 occurrences,
@@ -133,7 +132,7 @@ pub async fn chapter_detect_unknown_names(
 
 /// Extrait les candidats noms propres : mots commençant par une majuscule
 /// (unicode), filtrés pour ignorer le premier mot de chaque phrase.
-fn extract_proper_noun_candidates(text: &str) -> Vec<String> {
+fn extract_proper_noun_candidates(text: &str) -> Vec<(String, usize)> {
     // Token : suite de lettres unicode (majuscules + minuscules + accents),
     // possiblement avec apostrophes ou tirets internes. On capture aussi
     // les acronymes ("IA", "ONU").
@@ -159,7 +158,9 @@ fn extract_proper_noun_candidates(text: &str) -> Vec<String> {
         let is_capitalized = first.is_uppercase();
 
         if is_capitalized && !at_sentence_start && tok.chars().count() >= 3 {
-            out.push(tok.to_string());
+            // On garde la position : elle sert à bâtir l'extrait sans
+            // repasser une regex neuve sur tout le texte.
+            out.push((tok.to_string(), m.start()));
         }
 
         // Tout token consomme l'état "début de phrase".
@@ -266,11 +267,18 @@ fn is_stop_word(s: &str) -> bool {
 mod tests {
     use super::*;
 
+    /// Les candidats portent désormais leur position dans le texte ;
+    /// ces tests ne s'intéressent qu'aux noms.
+    fn names(text: &str) -> Vec<String> {
+        extract_proper_noun_candidates(text)
+            .into_iter()
+            .map(|(name, _offset)| name)
+            .collect()
+    }
+
     #[test]
     fn extracts_capitalized_words_not_at_sentence_start() {
-        let cands = extract_proper_noun_candidates(
-            "Aldwen marche dans la forêt. Élodie l'attend près du Cratère.",
-        );
+        let cands = names("Aldwen marche dans la forêt. Élodie l'attend près du Cratère.");
         // « Aldwen » et « Élodie » sont en début de phrase → ignorés.
         // « Cratère » est milieu de phrase, capitalisé → gardé.
         assert_eq!(cands, vec!["Cratère".to_string()]);
@@ -278,9 +286,7 @@ mod tests {
 
     #[test]
     fn extracts_capitalized_in_middle_after_comma() {
-        let cands = extract_proper_noun_candidates(
-            "Le matin venu, Aldwen rencontra Élodie au bord du fleuve.",
-        );
+        let cands = names("Le matin venu, Aldwen rencontra Élodie au bord du fleuve.");
         // « Le » est en début de phrase, donc ignoré.
         // « Aldwen » et « Élodie » sont en milieu de phrase → gardés.
         assert!(cands.contains(&"Aldwen".to_string()));
@@ -289,7 +295,7 @@ mod tests {
 
     #[test]
     fn ignores_short_acronyms_under_3_chars() {
-        let cands = extract_proper_noun_candidates("Ils utilisent IA et UE pour gouverner.");
+        let cands = names("Ils utilisent IA et UE pour gouverner.");
         // Filtre minimum 3 chars → IA et UE exclus.
         assert!(!cands.contains(&"IA".to_string()));
         assert!(!cands.contains(&"UE".to_string()));

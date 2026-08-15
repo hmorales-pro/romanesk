@@ -4,7 +4,7 @@
 //!
 //! Pré-requis :
 //! - Ollama tourne sur `http://localhost:11434` (commande : `ollama serve`).
-//! - Un modèle est chargé (par défaut `gemma:latest`, surchargeable via
+//! - Un modèle est chargé (par défaut `gemma3:4b`, surchargeable via
 //!   la variable d'environnement `OLLAMA_MODEL`).
 //!
 //! Lancer :
@@ -27,7 +27,7 @@ use romanesk_core::ai::{CompletionRequest, Message, OllamaConfig, OllamaProvider
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> ExitCode {
-    let model = env::var("OLLAMA_MODEL").unwrap_or_else(|_| "gemma:latest".into());
+    let model = env::var("OLLAMA_MODEL").unwrap_or_else(|_| "gemma3:4b".into());
     let base_url = env::var("OLLAMA_BASE_URL").unwrap_or_else(|_| "http://localhost:11434".into());
 
     println!("Romanesk · ping Ollama");

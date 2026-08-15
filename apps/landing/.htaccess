@@ -1,4 +1,4 @@
-# Apache config pour Hostinger (équivalent du _headers Cloudflare/Netlify).
+# Apache config pour Hostinger — seule source de vérité des en-têtes.
 # Déposé à la racine de public_html/ via le workflow deploy-landing.yml.
 
 # ─── HTTPS forcé ────────────────────────────────────────────────────────
@@ -41,8 +41,3 @@
     Header set Cache-Control "public, max-age=300, must-revalidate"
   </FilesMatch>
 </IfModule>
-
-# ─── Hide _headers (héritage Cloudflare, inutile sur Apache) ────────────
-<Files "_headers">
-  Require all denied
-</Files>

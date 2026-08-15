@@ -4,9 +4,52 @@
 //! et les relations, organisé en sections. Format compatible avec
 //! Obsidian, GitHub, Pandoc, etc.
 
+use std::collections::HashMap;
+
 use serde_json::Value;
+use uuid::Uuid;
 
 use crate::domain::{Chapter, Entity, EntityType, Relation, RelationType, Story, Universe};
+
+/// Échappe le texte libre de l'auteur avant insertion dans le Markdown.
+///
+/// Un nom d'entité vaut n'importe quelle chaîne : `**Aldric**` ressortait
+/// en `- ****Aldric****`, et un synopsis contenant une ligne `---`
+/// fabriquait un séparateur fantôme, voire un délimiteur de front-matter
+/// selon l'outil qui relit. Pour un produit qui promet des formats
+/// ouverts sans perte, l'aller-retour doit être fidèle.
+///
+/// On échappe les marqueurs de style en ligne ; les `#`, `-` et `>` ne
+/// sont significatifs qu'en début de ligne et sont traités comme tels.
+#[must_use]
+pub fn escape_md(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut at_line_start = true;
+    for c in text.chars() {
+        match c {
+            '\\' | '*' | '_' | '`' | '[' | ']' | '<' => {
+                out.push('\\');
+                out.push(c);
+                at_line_start = false;
+            }
+            '#' | '-' | '+' | '>' | '=' if at_line_start => {
+                out.push('\\');
+                out.push(c);
+                at_line_start = false;
+            }
+            '\n' => {
+                out.push(c);
+                at_line_start = true;
+            }
+            ' ' | '\t' => out.push(c),
+            _ => {
+                out.push(c);
+                at_line_start = false;
+            }
+        }
+    }
+    out
+}
 
 /// Rend un univers entier en Markdown : entête + sections par type d'entité
 /// + section relations.
@@ -23,7 +66,7 @@ pub fn render_universe_markdown(
     let mut out = String::new();
 
     // Entête univers
-    out.push_str(&format!("# {}\n\n", universe.name));
+    out.push_str(&format!("# {}\n\n", escape_md(&universe.name)));
     if let Some(desc) = &universe.description {
         out.push_str(desc);
         out.push_str("\n\n");
@@ -74,20 +117,22 @@ pub fn render_universe_markdown(
     // Section relations
     if !relations.is_empty() {
         out.push_str("## Relations\n\n");
+        // Index construit une fois : le lookup par balayage était en
+        // O(relations × entités), soit un million de comparaisons sur un
+        // univers de 500 fiches et 2 000 relations.
+        let by_id: HashMap<Uuid, &Entity> = entities.iter().map(|e| (e.id, e)).collect();
         for r in relations {
-            let source = entities.iter().find(|e| e.id == r.source_id);
-            let target = entities.iter().find(|e| e.id == r.target_id);
-            let source_name = source.map(|e| e.name.as_str()).unwrap_or("?");
-            let target_name = target.map(|e| e.name.as_str()).unwrap_or("?");
+            let source_name = by_id.get(&r.source_id).map_or("?", |e| e.name.as_str());
+            let target_name = by_id.get(&r.target_id).map_or("?", |e| e.name.as_str());
             out.push_str(&format!(
                 "- **{}** {} **{}**",
-                source_name,
+                escape_md(source_name),
                 relation_label_active(r.kind),
-                target_name,
+                escape_md(target_name),
             ));
             if let Some(desc) = &r.description {
                 out.push_str(" — ");
-                out.push_str(desc);
+                out.push_str(&escape_md(desc));
             }
             out.push('\n');
         }
@@ -109,9 +154,9 @@ pub fn render_story_markdown(story: &Story, chapters: &[Chapter]) -> String {
     let mut out = String::new();
 
     // Entête story
-    out.push_str(&format!("# {}\n\n", story.title));
+    out.push_str(&format!("# {}\n\n", escape_md(&story.title)));
     if let Some(syn) = &story.synopsis {
-        out.push_str(syn);
+        out.push_str(&escape_md(syn));
         out.push_str("\n\n");
     }
     let total_words: i64 = chapters.iter().map(|c| c.word_count).sum();
@@ -133,7 +178,7 @@ pub fn render_story_markdown(story: &Story, chapters: &[Chapter]) -> String {
             .title
             .as_deref()
             .filter(|s| !s.trim().is_empty())
-            .map_or_else(|| format!("Chapitre {}", i + 1), str::to_string);
+            .map_or_else(|| format!("Chapitre {}", i + 1), escape_md);
         out.push_str(&format!("## {title}\n\n"));
         let body = render_tiptap_doc(&ch.body_json);
         if body.trim().is_empty() {
@@ -151,7 +196,7 @@ pub fn render_story_markdown(story: &Story, chapters: &[Chapter]) -> String {
 }
 
 fn render_character(c: &Entity, out: &mut String) {
-    out.push_str(&format!("### {}\n\n", c.name));
+    out.push_str(&format!("### {}\n\n", escape_md(&c.name)));
     if let Some(s) = &c.summary {
         out.push_str(&format!("*{}*\n\n", s));
     }
@@ -176,7 +221,7 @@ fn render_character(c: &Entity, out: &mut String) {
 }
 
 fn render_location(l: &Entity, out: &mut String) {
-    out.push_str(&format!("### {}\n\n", l.name));
+    out.push_str(&format!("### {}\n\n", escape_md(&l.name)));
     if let Some(s) = &l.summary {
         out.push_str(&format!("*{}*\n\n", s));
     }
@@ -201,7 +246,7 @@ fn render_location(l: &Entity, out: &mut String) {
 }
 
 fn render_generic(e: &Entity, out: &mut String) {
-    out.push_str(&format!("### {} ({:?})\n\n", e.name, e.kind));
+    out.push_str(&format!("### {} ({:?})\n\n", escape_md(&e.name), e.kind));
     if let Some(s) = &e.summary {
         out.push_str(&format!("*{}*\n\n", s));
     }
@@ -542,5 +587,40 @@ mod tests {
         });
         let md = render_tiptap_doc(&doc);
         assert!(md.contains("[voir ici](https://example.com)"), "got: {md}");
+    }
+}
+
+#[cfg(test)]
+mod escape_tests {
+    use super::escape_md;
+
+    #[test]
+    fn escapes_inline_markers() {
+        assert_eq!(escape_md("**Aldric**"), r"\*\*Aldric\*\*");
+        assert_eq!(escape_md("un_nom_technique"), r"un\_nom\_technique");
+        assert_eq!(escape_md("code `inline`"), r"code \`inline\`");
+        assert_eq!(escape_md("[lien]"), r"\[lien\]");
+    }
+
+    #[test]
+    fn escapes_block_markers_only_at_line_start() {
+        // Un `---` en début de ligne fabriquait un séparateur, voire un
+        // délimiteur de front-matter selon l'outil qui relit.
+        assert_eq!(escape_md("---"), r"\---");
+        assert_eq!(escape_md("# Titre"), r"\# Titre");
+        // Au milieu d'une phrase, ces caractères sont inoffensifs.
+        assert_eq!(escape_md("Aldric - le banni"), "Aldric - le banni");
+        assert_eq!(escape_md("page 3 # 4"), "page 3 # 4");
+    }
+
+    #[test]
+    fn leaves_ordinary_prose_untouched() {
+        let prose = "Aldric traversa la plaine, puis s'arrêta net.";
+        assert_eq!(escape_md(prose), prose);
+    }
+
+    #[test]
+    fn handles_accents_without_panicking() {
+        assert_eq!(escape_md("Élodie *la sage*"), r"Élodie \*la sage\*");
     }
 }

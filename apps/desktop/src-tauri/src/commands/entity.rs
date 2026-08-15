@@ -125,10 +125,21 @@ pub async fn entity_get(db: State<'_, Database>, id: String) -> CommandResult<Op
 #[tauri::command]
 pub async fn entity_delete(db: State<'_, Database>, id: String) -> CommandResult<()> {
     let id = Uuid::parse_str(&id)?;
-    Repo::new(db.inner().clone())
-        .entities()
-        .soft_delete(id)
+    let repo = Repo::new(db.inner().clone());
+    repo.entities().soft_delete(id).await?;
+
+    // La table `embeddings` n'a pas de clé étrangère vers `lore_entities`
+    // — elle est polymorphe par dessein. Sans purge explicite, les chunks
+    // d'une fiche supprimée restaient indexés : le RAG continuait de citer
+    // un personnage que l'auteur croyait effacé, et la réindexation ne les
+    // reprenait pas puisqu'elle ne parcourt que les entités vivantes.
+    let purged = repo
+        .embeddings()
+        .delete_for(romanesk_core::domain::SourceType::Entity, id)
         .await?;
+    if purged > 0 {
+        tracing::debug!(%id, purged, "embeddings de la fiche supprimée purgés");
+    }
     Ok(())
 }
 

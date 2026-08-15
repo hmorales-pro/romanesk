@@ -12,13 +12,18 @@ Merci de l'intérêt. Le projet est en `pre-alpha` (Phase 0). Les changements so
 - **Rust stable** (1.81+) — `rustup` recommandé
 - **Node 20+** et **pnpm 9+**
 - **SQLite 3.40+** (généralement préinstallé)
-- (Recommandé) **Ollama** + un modèle Gemma local : `ollama pull gemma:latest`
+- **Ollama** : rien à installer — l'app télécharge son propre moteur au premier lancement. Un Ollama système déjà présent est détecté et réutilisé.
 
 ### Cloner
 ```bash
 git clone https://github.com/hmorales-pro/romanesk.git
 cd romanesk
 pnpm install
+
+# Installe les hooks git (rustfmt, clippy, eslint, prettier, commit-msg).
+# Sans cette étape, aucun hook ne tourne — c'est ainsi que du code non
+# formaté a pu atteindre `main` et faire échouer le job CI `rustfmt`.
+pnpm exec lefthook install
 ```
 
 ### Lancer en dev

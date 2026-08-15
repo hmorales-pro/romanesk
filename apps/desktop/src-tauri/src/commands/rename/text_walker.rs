@@ -146,11 +146,22 @@ pub fn first_excerpt(text: &str, re: &Regex) -> String {
     let Some(m) = re.find(text) else {
         return String::new();
     };
+    excerpt_around(text, m.start(), m.end())
+}
+
+/// Extrait centré sur la plage `[start, end)` d'un texte, bornes en
+/// octets. Séparé de [`first_excerpt`] pour les appelants qui connaissent
+/// déjà la position et n'ont pas besoin de repasser une regex sur le
+/// texte pour la retrouver.
+#[must_use]
+pub fn excerpt_around(text: &str, start: usize, end: usize) -> String {
     const RADIUS: usize = 60;
+    let m_start = start.min(text.len());
+    let m_end = end.min(text.len());
     // Travaille sur les bytes mais respecte les frontières char via
     // floor/ceil_char_boundary si nécessaire.
-    let start_byte = m.start().saturating_sub(RADIUS);
-    let end_byte = (m.end() + RADIUS).min(text.len());
+    let start_byte = m_start.saturating_sub(RADIUS);
+    let end_byte = (m_end + RADIUS).min(text.len());
     // Snap aux frontières char pour ne pas couper un caractère UTF-8.
     let safe_start = (0..=start_byte)
         .rev()

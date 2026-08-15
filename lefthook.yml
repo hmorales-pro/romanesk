@@ -1,22 +1,59 @@
+# Hooks git. À poser une fois par clone :
+#
+#     pnpm exec lefthook install
+#
+# `pnpm install` s'en charge via le script `prepare` du package.json
+# racine. Jusqu'à la v0.7.0 lefthook n'était déclaré nulle part et n'était
+# documenté nulle part : personne n'a jamais eu ces hooks, ce qui explique
+# que du code non formaté ait pu atteindre `main`.
+
 pre-commit:
   parallel: true
   commands:
     rust-fmt:
       glob: "*.rs"
-      run: cargo fmt -- --check
+      # `--all` comme en CI. Sans lui, le workspace n'est que
+      # partiellement couvert et le hook laisse passer ce que la CI
+      # refuse ensuite.
+      run: cargo fmt --all -- --check
+
     rust-clippy:
       glob: "*.rs"
       run: cargo clippy --workspace --all-targets -- -D warnings
+
     eslint:
-      glob: "*.{ts,tsx,js,jsx}"
+      # `root` est indispensable : la configuration ESLint vit dans
+      # `apps/desktop/eslint.config.js`. Lancé depuis la racine du dépôt,
+      # eslint 9 ne la trouve pas et sort en erreur — le hook échouait
+      # donc systématiquement, sur n'importe quel fichier TypeScript.
+      root: "apps/desktop/"
+      glob: "apps/desktop/**/*.{ts,tsx,js,jsx}"
       run: pnpm exec eslint {staged_files}
-    prettier:
-      glob: "*.{ts,tsx,js,jsx,json,md,css,html}"
-      run: pnpm exec prettier --check {staged_files}
+
+    # prettier : volontairement absent pour l'instant.
+    #
+    # Le hook existait mais n'a jamais tourné, faute d'installation. En
+    # le rétablissant on découvre que prettier n'a en réalité jamais été
+    # passé sur le dépôt : 48 fichiers de `apps/desktop/src`, 7 Markdown
+    # et 4 fichiers de la vitrine sont non conformes. Le réactiver tel
+    # quel bloquerait tout commit tant qu'un reformatage global n'est pas
+    # fait — et ce reformatage est une décision de style à part entière,
+    # avec un diff de ~59 fichiers qui noierait toute relecture.
+    #
+    # Pour l'adopter : `pnpm exec prettier --write .` dans un commit
+    # dédié, puis décommenter le bloc ci-dessous.
+    #
+    # prettier:
+    #   glob: "*.{ts,tsx,js,jsx,json,md,css,html}"
+    #   run: pnpm exec prettier --check {staged_files}
 
 commit-msg:
   commands:
     conventional:
+      # Le chemin du fichier de message se référence par `{1}`, la
+      # substitution de lefthook — pas par `$1`. Avec `$1`, la commande
+      # recevait une chaîne vide et échouait sur
+      # `head: cannot open ''`, donc refusait tous les commits.
       run: |
         # Conventional Commits léger : feat|fix|docs|refactor|chore|test|build|ci|perf|style + scope optionnel + ! optionnel
-        head -1 "$1" | grep -qE "^(feat|fix|docs|refactor|chore|test|build|ci|perf|style)(\([a-z0-9-]+\))?!?: .{3,}"
+        head -1 {1} | grep -qE "^(feat|fix|docs|refactor|chore|test|build|ci|perf|style)(\([a-z0-9-]+\))?!?: .{3,}"

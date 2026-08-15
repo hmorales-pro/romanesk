@@ -1,7 +1,7 @@
 {
   "name": "romanesk",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.7.0",
   "description": "Romanesk monorepo — local-first writing environment for fictional universes.",
   "license": "LicenseRef-Elastic-2.0",
   "repository": {
@@ -18,7 +18,8 @@
     "tauri": "pnpm --filter @romanesk/desktop tauri",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
-    "typecheck": "pnpm --filter @romanesk/desktop exec tsc --noEmit"
+    "typecheck": "pnpm --filter @romanesk/desktop exec tsc --noEmit",
+    "prepare": "lefthook install || true"
   },
   "packageManager": "pnpm@10.33.2",
   "pnpm": {
@@ -38,5 +39,8 @@
         "GHSA-mh99-v99m-4gvg"
       ]
     }
+  },
+  "devDependencies": {
+    "lefthook": "^2.1.10"
   }
 }

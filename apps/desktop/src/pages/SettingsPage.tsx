@@ -76,7 +76,7 @@ export default function SettingsPage() {
     const next: AppSettings = {
       ollamaBaseUrl: ollamaBaseUrl.trim() || "http://localhost:11434",
       ollamaMode,
-      chatModel: chatModel.trim() || "gemma4:e2b",
+      chatModel: chatModel.trim() || "gemma3:4b",
       embedModel: embedModel.trim() || "nomic-embed-text:latest",
       creativeModel: creativeModel.trim() || null,
       literalModel: literalModel.trim() || null,
@@ -197,7 +197,7 @@ export default function SettingsPage() {
                   value={chatModel}
                   onChange={setChatModel}
                   baseUrl={modelsBaseUrl}
-                  hint="Modèle utilisé par défaut pour toutes les actions IA. Suggestions : gemma4:e2b, llama3.2:latest, mistral:latest."
+                  hint="Modèle utilisé par défaut pour toutes les actions IA. Suggestions : gemma3:4b, llama3.2:latest, mistral:latest."
                 />
                 <ModelSelect
                   id="set-embed"

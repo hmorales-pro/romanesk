@@ -1,7 +1,7 @@
 //! Implémentation `Provider` pour Ollama (local).
 //!
 //! Ollama expose une API HTTP locale (par défaut `http://localhost:11434`).
-//! Cible Phase 0 : `complete()` et `ping()` fonctionnels avec Gemma 4.
+//! Cible Phase 0 : `complete()` et `ping()` fonctionnels avec Gemma 3.
 //! Cible Phase 3 : `embed()` (via `nomic-embed-text` ou `bge-m3`) et
 //! `describe_image()` (modèles vision Gemma / Llama 3.2 Vision).
 
@@ -28,7 +28,8 @@ const REQUEST_TIMEOUT: Duration = Duration::from_secs(300);
 pub struct OllamaConfig {
     pub base_url: String,
     pub default_model: String,
-    /// Capacités du modèle actuellement sélectionné (Gemma 4 supportera vision selon variante).
+    /// Capacités du modèle actuellement sélectionné (certaines variantes
+    /// de Gemma 3 gèrent la vision, d'autres non).
     pub capabilities: Capabilities,
 }
 
@@ -36,7 +37,7 @@ impl Default for OllamaConfig {
     fn default() -> Self {
         Self {
             base_url: "http://localhost:11434".to_string(),
-            default_model: "gemma4:e2b".to_string(),
+            default_model: "gemma3:4b".to_string(),
             capabilities: Capabilities {
                 text: true,
                 vision: false, // à override selon le modèle chargé

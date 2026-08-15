@@ -45,6 +45,6 @@ pub use types::*;
 // un nouveau use-case émerge.
 #[allow(unused_imports)]
 pub use text_walker::{
-    build_word_regex, collect_text_nodes, first_excerpt, friendly_field, rename_in_content_fields,
-    rename_in_text_nodes, scan_content_for_field_mentions,
+    build_word_regex, collect_text_nodes, excerpt_around, first_excerpt, friendly_field,
+    rename_in_content_fields, rename_in_text_nodes, scan_content_for_field_mentions,
 };

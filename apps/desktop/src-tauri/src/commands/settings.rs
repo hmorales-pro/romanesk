@@ -75,7 +75,7 @@ impl Default for AppSettings {
         Self {
             ollama_base_url: "http://localhost:11434".into(),
             ollama_mode: OllamaMode::default(),
-            chat_model: "gemma4:e2b".into(),
+            chat_model: "gemma3:4b".into(),
             embed_model: "nomic-embed-text:latest".into(),
             creative_model: None,
             literal_model: None,
