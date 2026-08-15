@@ -31,6 +31,7 @@ import { aiComplete, storyListInUniverse, universeGet } from "@/lib/api";
 import { writeToClipboard } from "@/lib/clipboard";
 import { useSettings } from "@/lib/use-settings";
 import { Button } from "@/components/ui/button";
+import { useAiEnabled } from "@/lib/useAiEnabled";
 
 type Mode = "scenes" | "dilemmas" | "twists";
 
@@ -38,7 +39,7 @@ interface BrainstormPanelProps {
   universeId: string;
 }
 
-export function BrainstormPanel({ universeId }: BrainstormPanelProps) {
+function BrainstormPanelInner({ universeId }: BrainstormPanelProps) {
   const universeQuery = useQuery({
     queryKey: ["universe", universeId],
     queryFn: () => universeGet(universeId),
@@ -241,4 +242,17 @@ function buildPrompt(args: {
       break;
   }
   return lines.join("\n");
+}
+
+/**
+ * Enveloppe : masque le panneau quand l'auteur a coupé l'IA.
+ *
+ * Le garde vit ici, pas dans `BrainstormPanelInner` : un `return` anticipé
+ * placé avant les hooks du panneau les rendrait conditionnels, et React
+ * casserait au premier basculement du réglage.
+ */
+export function BrainstormPanel(props: BrainstormPanelProps) {
+  const aiEnabled = useAiEnabled();
+  if (!aiEnabled) return null;
+  return <BrainstormPanelInner {...props} />;
 }

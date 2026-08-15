@@ -158,7 +158,18 @@ export default function SettingsPage() {
                   <option value="system">
                     Mon Ollama — j'utilise mon installation (avancé)
                   </option>
+                  <option value="off">
+                    Désactivée — j'écris sans IA
+                  </option>
                 </select>
+                {ollamaMode === "off" && (
+                  <p className="text-xs text-muted-foreground">
+                    Romanesk ne contactera aucun moteur et ne lancera aucun
+                    processus. Les panneaux IA disparaissent de l'interface —
+                    fiches, relations, frise, chapitres et exports
+                    fonctionnent normalement.
+                  </p>
+                )}
                 {runtime?.managedActive && (
                   <p className="text-xs text-muted-foreground">
                     Moteur intégré
@@ -175,7 +186,7 @@ export default function SettingsPage() {
                 )}
               </div>
 
-              {ollamaMode !== "managed" && (
+              {ollamaMode !== "managed" && ollamaMode !== "off" && (
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="set-url">URL Ollama</Label>
                   <Input

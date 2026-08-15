@@ -37,6 +37,7 @@ import {
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import type { TiptapDoc } from "@/components/TiptapEditor";
+import { useAiEnabled } from "@/lib/useAiEnabled";
 
 const MAX_CONTEXT_WORDS = 600;
 const TOP_K = 6;
@@ -69,7 +70,7 @@ interface ParsedIssue {
   suggestion: string | null;
 }
 
-export function AiConsistencyPanel({
+function AiConsistencyPanelInner({
   universeId,
   story,
   chapterTitle,
@@ -460,4 +461,17 @@ function lastNWords(text: string, n: number): string {
   const words = text.split(/\s+/).filter((w) => w.length > 0);
   if (words.length <= n) return text;
   return "…" + words.slice(words.length - n).join(" ");
+}
+
+/**
+ * Enveloppe : masque le panneau quand l'auteur a coupé l'IA.
+ *
+ * Le garde vit ici, pas dans `AiConsistencyPanelInner` : un `return` anticipé
+ * placé avant les hooks du panneau les rendrait conditionnels, et React
+ * casserait au premier basculement du réglage.
+ */
+export function AiConsistencyPanel(props: AiConsistencyPanelProps) {
+  const aiEnabled = useAiEnabled();
+  if (!aiEnabled) return null;
+  return <AiConsistencyPanelInner {...props} />;
 }

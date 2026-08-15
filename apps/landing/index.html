@@ -805,8 +805,16 @@
       </div>
       <div class="news-foot">
         <label class="news-check">
-          <input type="checkbox" id="news-beta" />
+          <input type="checkbox" id="news-beta" name="BETA" />
           <span>M'inviter aussi aux tests des prochaines versions (mobile, sync, modèles distants).</span>
+        </label>
+        <label class="news-check">
+          <input type="checkbox" id="news-consent" name="OPT_IN" required />
+          <span>
+            J'accepte de recevoir la lettre de Romanesk. Je peux me
+            désinscrire à tout moment depuis n'importe quel envoi.
+            <a href="/confidentialite.html">Politique de confidentialité</a>.
+          </span>
         </label>
       </div>
       <div class="news-status" id="news-status" hidden></div>
@@ -912,25 +920,79 @@
 -->
 
 <script>
-  // Newsletter — feedback uniquement, pas d'envoi (pas encore de back).
+  // Newsletter — soumission vers Brevo (ex-Sendinblue).
+  //
+  // Le site est statique : pas de backend, donc pas de clé API côté
+  // navigateur. On poste vers l'URL publique du formulaire Brevo
+  // (`sibforms.com/serve/...`), qui ne contient aucun secret — c'est le
+  // point d'entrée prévu pour les formulaires embarqués.
+  //
+  // Brevo ne renvoie pas d'en-tête CORS, donc la requête part en
+  // `no-cors` et la réponse est opaque : impossible de distinguer un
+  // succès d'un échec côté client. Ce n'est pas gênant ici, parce que la
+  // confirmation réelle est le mail de double opt-in — c'est lui qu'on
+  // annonce, et il est vrai.
+  //
+  // Tant que FORM_URL n'est pas renseignée, le formulaire se désactive
+  // et le dit. Un faux message de confirmation vaudrait moins que rien.
   (function () {
-    const form = document.getElementById('news-form');
+    var FORM_URL = ''; // ← coller ici l'URL Brevo : https://sibforms.com/serve/MUIFxxxxxxxx
+
+    var form = document.getElementById('news-form');
     if (!form) return;
-    const status = document.getElementById('news-status');
-    const email = document.getElementById('news-email');
+    var status = document.getElementById('news-status');
+    var email = document.getElementById('news-email');
+    var consent = document.getElementById('news-consent');
+    var beta = document.getElementById('news-beta');
+    var submit = form.querySelector('.news-submit');
+
+    function say(msg, isError) {
+      status.hidden = false;
+      status.classList.toggle('is-error', !!isError);
+      status.textContent = msg;
+    }
+
+    if (!FORM_URL) {
+      submit.disabled = true;
+      say("La lettre n'est pas encore ouverte — reviens bientôt.", false);
+      return;
+    }
+
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      const v = (email.value || '').trim();
+      var v = (email.value || '').trim();
       if (!v || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
-        status.hidden = false;
-        status.classList.add('is-error');
-        status.textContent = "Cette adresse n'a pas l'air complète — vérifie.";
+        say("Cette adresse n'a pas l'air complète — vérifie.", true);
         return;
       }
-      status.hidden = false;
-      status.classList.remove('is-error');
-      status.textContent = "Noté. Tu recevras la première lettre quand l'encre sèche.";
-      email.value = '';
+      if (!consent.checked) {
+        say('Il faut accepter de recevoir la lettre pour t\'inscrire.', true);
+        return;
+      }
+
+      var data = new FormData();
+      data.append('EMAIL', v);
+      data.append('OPT_IN', '1');
+      if (beta.checked) data.append('BETA', '1');
+
+      submit.disabled = true;
+      say('Envoi…', false);
+
+      fetch(FORM_URL, { method: 'POST', body: data, mode: 'no-cors' })
+        .then(function () {
+          say(
+            'Presque : un mail de confirmation part vers toi. Clique le lien ' +
+              "qu'il contient pour valider ton inscription.",
+            false
+          );
+          form.reset();
+        })
+        .catch(function () {
+          say("L'envoi a échoué — réessaie dans un instant.", true);
+        })
+        .finally(function () {
+          submit.disabled = false;
+        });
     });
   })();
 </script>

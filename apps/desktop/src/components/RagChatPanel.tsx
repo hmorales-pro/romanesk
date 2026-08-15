@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useAiEnabled } from "@/lib/useAiEnabled";
 
 interface Props {
   universeId: string;
@@ -32,7 +33,7 @@ interface QAEntry {
  * mémoire (pas persisté). Pose une question → embed → search_topk →
  * complete avec contexte. Affiche réponse + sources cliquables.
  */
-export function RagChatPanel({ universeId }: Props) {
+function RagChatPanelInner({ universeId }: Props) {
   const [question, setQuestion] = useState("");
   const [history, setHistory] = useState<QAEntry[]>([]);
 
@@ -202,4 +203,17 @@ function QABlock({ entry, universeId }: { entry: QAEntry; universeId: string }) 
       )}
     </div>
   );
+}
+
+/**
+ * Enveloppe : masque le panneau quand l'auteur a coupé l'IA.
+ *
+ * Le garde vit ici, pas dans `RagChatPanelInner` : un `return` anticipé
+ * placé avant les hooks du panneau les rendrait conditionnels, et React
+ * casserait au premier basculement du réglage.
+ */
+export function RagChatPanel(props: Props) {
+  const aiEnabled = useAiEnabled();
+  if (!aiEnabled) return null;
+  return <RagChatPanelInner {...props} />;
 }

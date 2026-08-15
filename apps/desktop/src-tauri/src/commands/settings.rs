@@ -24,6 +24,9 @@ use super::{CommandError, CommandResult};
 ///   installé. Le bon défaut pour tout le monde.
 /// - `System` : comportement historique — `ollama_base_url`, point.
 /// - `Managed` : toujours le runtime téléchargé/lancé par Romanesk.
+/// - `Off` : aucune IA. Romanesk ne sonde rien, ne démarre rien, et
+///   masque les panneaux IA de l'interface. Écrire un roman sans
+///   assistance est un usage de premier rang, pas une dégradation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum OllamaMode {
@@ -31,6 +34,7 @@ pub enum OllamaMode {
     Auto,
     System,
     Managed,
+    Off,
 }
 
 impl OllamaMode {
@@ -39,6 +43,7 @@ impl OllamaMode {
             "auto" => Some(Self::Auto),
             "system" => Some(Self::System),
             "managed" => Some(Self::Managed),
+            "off" | "none" | "disabled" => Some(Self::Off),
             _ => None,
         }
     }

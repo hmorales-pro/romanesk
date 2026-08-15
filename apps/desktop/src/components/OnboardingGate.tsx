@@ -30,6 +30,8 @@ import {
   runtimeDownload,
   runtimeStart,
   runtimeStatus,
+  settingsGet,
+  settingsSave,
   type RuntimeDownloadProgress,
   type RuntimeStatus,
 } from "@/lib/api";
@@ -84,6 +86,12 @@ export function OnboardingGate() {
   const probe = async () => {
     if (busyRef.current) return;
     try {
+      // Choix déjà fait : on ne repropose pas l'IA à chaque démarrage.
+      const settings = await settingsGet();
+      if (settings.ollamaMode === "off") {
+        setState({ kind: "ok" });
+        return;
+      }
       const next = await probeGate();
       if (!busyRef.current) setState(next);
     } catch {
@@ -164,6 +172,21 @@ export function OnboardingGate() {
     }
     dismissedRef.current = true;
     setState({ kind: "ok" });
+  };
+
+  /**
+   * « Je n'utiliserai pas l'IA » — un vrai non, pas un « plus tard ».
+   *
+   * `dismiss` ne masquait que la modale : l'app continuait de sonder
+   * Ollama à chaque démarrage et d'afficher tous les panneaux IA. Passer
+   * le mode à `off` coupe les deux, et se retrouve dans les réglages où
+   * l'auteur peut revenir dessus.
+   */
+  const disableAi = async () => {
+    const current = await settingsGet();
+    await settingsSave({ ...current, ollamaMode: "off" });
+    await qc.invalidateQueries({ queryKey: ["settings"] });
+    dismiss();
   };
 
   const finishInstall = (baseUrl: string) => {
@@ -334,6 +357,9 @@ export function OnboardingGate() {
             </Button>
             <Button size="sm" variant="ghost" onClick={dismiss}>
               Plus tard · continuer sans IA
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => void disableAi()}>
+              Je n'utiliserai pas l'IA
             </Button>
           </div>
         </>

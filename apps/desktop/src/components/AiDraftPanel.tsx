@@ -21,6 +21,7 @@ import { aiGenerateEntityDraft, type EntityDraft } from "@/lib/api";
 import type { EntityType } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAiEnabled } from "@/lib/useAiEnabled";
 
 interface AiDraftPanelProps {
   universeId: string;
@@ -33,7 +34,7 @@ interface AiDraftPanelProps {
   onApply: (draft: EntityDraft) => void;
 }
 
-export function AiDraftPanel({
+function AiDraftPanelInner({
   universeId,
   kind,
   name,
@@ -184,4 +185,17 @@ function DraftPreview({ draft }: { draft: EntityDraft }) {
       )}
     </dl>
   );
+}
+
+/**
+ * Enveloppe : masque le panneau quand l'auteur a coupé l'IA.
+ *
+ * Le garde vit ici, pas dans `AiDraftPanelInner` : un `return` anticipé
+ * placé avant les hooks du panneau les rendrait conditionnels, et React
+ * casserait au premier basculement du réglage.
+ */
+export function AiDraftPanel(props: AiDraftPanelProps) {
+  const aiEnabled = useAiEnabled();
+  if (!aiEnabled) return null;
+  return <AiDraftPanelInner {...props} />;
 }

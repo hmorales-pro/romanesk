@@ -42,7 +42,9 @@ pub struct RuntimeStatus {
 /// Résout l'URL effective du serveur IA selon le mode et l'état réel.
 pub async fn effective_base_url(settings: &AppSettings, mgr: &RuntimeManager) -> String {
     match settings.ollama_mode {
-        OllamaMode::System => settings.ollama_base_url.clone(),
+        // Aucune sonde réseau en mode Off : on renvoie l'URL configurée
+        // telle quelle, sans chercher à savoir si quelque chose écoute.
+        OllamaMode::Off | OllamaMode::System => settings.ollama_base_url.clone(),
         OllamaMode::Managed => runtime::managed_base_url(),
         OllamaMode::Auto => {
             if runtime::probe(&settings.ollama_base_url).await {
@@ -64,6 +66,13 @@ pub async fn effective_base_url(settings: &AppSettings, mgr: &RuntimeManager) ->
 pub async fn apply_runtime_policy(app: &tauri::AppHandle, settings: &AppSettings) -> String {
     let mgr = app.state::<RuntimeManager>();
     match settings.ollama_mode {
+        OllamaMode::Off => {
+            // Aucune sonde réseau, aucun processus enfant, rien. Si un
+            // runtime managé traînait d'une session précédente, on le
+            // coupe : « je ne veux pas d'IA » doit valoir aussi pour ce
+            // qui tourne déjà.
+            mgr.stop().await;
+        }
         OllamaMode::System => {
             // L'utilisateur gère son Ollama : on libère le nôtre.
             mgr.stop().await;

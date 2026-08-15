@@ -29,6 +29,7 @@ import { writeToClipboard } from "@/lib/clipboard";
 import { useSettings } from "@/lib/use-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAiEnabled } from "@/lib/useAiEnabled";
 
 export type DescriptionTargetKind = "character" | "location" | "object";
 
@@ -50,7 +51,7 @@ interface AiDescriptionPanelProps {
   onAppend: (paragraphs: string[]) => void;
 }
 
-export function AiDescriptionPanel({
+function AiDescriptionPanelInner({
   targetKind,
   name,
   summary,
@@ -323,4 +324,17 @@ function buildVisionPrompt(args: {
     lines.push(`INDICATION SPÉCIFIQUE : ${args.hint}`);
   }
   return lines.join("\n");
+}
+
+/**
+ * Enveloppe : masque le panneau quand l'auteur a coupé l'IA.
+ *
+ * Le garde vit ici, pas dans `AiDescriptionPanelInner` : un `return` anticipé
+ * placé avant les hooks du panneau les rendrait conditionnels, et React
+ * casserait au premier basculement du réglage.
+ */
+export function AiDescriptionPanel(props: AiDescriptionPanelProps) {
+  const aiEnabled = useAiEnabled();
+  if (!aiEnabled) return null;
+  return <AiDescriptionPanelInner {...props} />;
 }

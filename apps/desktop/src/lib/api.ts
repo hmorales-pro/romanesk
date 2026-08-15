@@ -1323,7 +1323,14 @@ export function briefDelete(id: Uuid): Promise<void> {
  * - "auto"    : Ollama système s'il répond, sinon runtime managé.
  * - "system"  : toujours ollamaBaseUrl (comportement historique).
  * - "managed" : toujours le runtime téléchargé/lancé par Romanesk. */
-export type OllamaMode = "auto" | "system" | "managed";
+/**
+ * Politique de résolution du serveur IA.
+ *
+ * `off` : l'utilisateur ne veut pas d'IA. Romanesk ne sonde rien, ne
+ * démarre aucun moteur, et masque les panneaux IA — écrire sans
+ * assistance est un usage de premier rang, pas un mode dégradé.
+ */
+export type OllamaMode = "auto" | "system" | "managed" | "off";
 
 export interface AppSettings {
   ollamaBaseUrl: string;

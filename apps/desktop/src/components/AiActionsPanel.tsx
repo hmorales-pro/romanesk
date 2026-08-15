@@ -36,6 +36,7 @@ import { useSettings } from "@/lib/use-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { TiptapDoc } from "@/components/TiptapEditor";
+import { useAiEnabled } from "@/lib/useAiEnabled";
 
 type ActionKind = "summarize" | "rewrite" | "brainstorm";
 
@@ -58,7 +59,7 @@ interface RunResult {
   replaceable: boolean;
 }
 
-export function AiActionsPanel({
+function AiActionsPanelInner({
   story,
   chapterTitle,
   body,
@@ -311,4 +312,17 @@ function collectText(node: unknown): string {
     if (isBlockNode) out += "\n\n";
   }
   return out;
+}
+
+/**
+ * Enveloppe : masque le panneau quand l'auteur a coupé l'IA.
+ *
+ * Le garde vit ici, pas dans `AiActionsPanelInner` : un `return` anticipé
+ * placé avant les hooks du panneau les rendrait conditionnels, et React
+ * casserait au premier basculement du réglage.
+ */
+export function AiActionsPanel(props: AiActionsPanelProps) {
+  const aiEnabled = useAiEnabled();
+  if (!aiEnabled) return null;
+  return <AiActionsPanelInner {...props} />;
 }

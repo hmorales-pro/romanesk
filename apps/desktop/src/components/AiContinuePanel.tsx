@@ -24,6 +24,7 @@ import type { Story } from "@/lib/types";
 import { useSettings } from "@/lib/use-settings";
 import { Button } from "@/components/ui/button";
 import type { TiptapDoc } from "@/components/TiptapEditor";
+import { useAiEnabled } from "@/lib/useAiEnabled";
 
 const MAX_CONTEXT_WORDS = 600;
 const SYSTEM_PROMPT = `Tu es un romancier francophone expérimenté. On te donne le contexte d'un récit en cours d'écriture (titre, synopsis, dernier passage du chapitre courant). Ta mission : poursuivre le chapitre en restant fidèle au ton, au rythme et au point de vue de l'auteur.
@@ -42,7 +43,7 @@ interface AiContinuePanelProps {
   onAccept: (paragraphs: string[]) => void;
 }
 
-export function AiContinuePanel({
+function AiContinuePanelInner({
   story,
   chapterTitle,
   body,
@@ -232,4 +233,17 @@ function stripBoilerplate(content: string): string {
     out = out.replace(re, "");
   }
   return out.trim();
+}
+
+/**
+ * Enveloppe : masque le panneau quand l'auteur a coupé l'IA.
+ *
+ * Le garde vit ici, pas dans `AiContinuePanelInner` : un `return` anticipé
+ * placé avant les hooks du panneau les rendrait conditionnels, et React
+ * casserait au premier basculement du réglage.
+ */
+export function AiContinuePanel(props: AiContinuePanelProps) {
+  const aiEnabled = useAiEnabled();
+  if (!aiEnabled) return null;
+  return <AiContinuePanelInner {...props} />;
 }
