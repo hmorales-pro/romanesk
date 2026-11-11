@@ -85,16 +85,14 @@ pub fn scan_content_for_field_mentions<F: FnMut(String, usize, String)>(
                     cb(key.clone(), count, first_excerpt(s, re));
                 }
             }
-            Value::Object(inner) => {
-                // Hypothèse : c'est un Tiptap doc (a un champ content array).
-                if inner.contains_key("type") || inner.contains_key("content") {
-                    let mut texts: Vec<String> = Vec::new();
-                    collect_text_nodes(val, &mut texts);
-                    let combined = texts.join("\n");
-                    let count = re.find_iter(&combined).count();
-                    if count > 0 {
-                        cb(key.clone(), count, first_excerpt(&combined, re));
-                    }
+            // Hypothèse : c'est un Tiptap doc (a un champ content array).
+            Value::Object(inner) if inner.contains_key("type") || inner.contains_key("content") => {
+                let mut texts: Vec<String> = Vec::new();
+                collect_text_nodes(val, &mut texts);
+                let combined = texts.join("\n");
+                let count = re.find_iter(&combined).count();
+                if count > 0 {
+                    cb(key.clone(), count, first_excerpt(&combined, re));
                 }
             }
             _ => {}
@@ -125,11 +123,7 @@ pub fn rename_in_content_fields(
                     changed = true;
                 }
             }
-            Value::Object(_) => {
-                if rename_in_text_nodes(val, re, replacement) {
-                    changed = true;
-                }
-            }
+            Value::Object(_) => changed |= rename_in_text_nodes(val, re, replacement),
             _ => {}
         }
     }
