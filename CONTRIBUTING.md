@@ -9,7 +9,7 @@ Merci de l'intérêt. Le projet est en `pre-alpha` (Phase 0). Les changements so
 ## Setup local
 
 ### Prérequis
-- **Rust stable** (1.81+) — `rustup` recommandé
+- **Rust stable** (1.90+) — `rustup` recommandé
 - **Node 20+** et **pnpm 9+**
 - **SQLite 3.40+** (généralement préinstallé)
 - (Recommandé) **Ollama** + un modèle Gemma local : `ollama pull gemma:latest`

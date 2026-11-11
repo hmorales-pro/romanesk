@@ -37,10 +37,9 @@ pub fn decode_vector(bytes: &[u8], dim: usize) -> RepoResult<Vec<f32>> {
         )));
     }
     let mut out = Vec::with_capacity(dim);
-    for chunk in bytes.chunks_exact(4) {
-        let mut buf = [0_u8; 4];
-        buf.copy_from_slice(chunk);
-        out.push(f32::from_le_bytes(buf));
+    // La longueur est vérifiée plus haut : pas de reste.
+    for chunk in bytes.as_chunks::<4>().0 {
+        out.push(f32::from_le_bytes(*chunk));
     }
     Ok(out)
 }
