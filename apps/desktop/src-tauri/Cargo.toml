@@ -51,7 +51,7 @@ futures-util = "0.3"
 sha2 = "0.10"
 flate2 = "1"
 tar = "0.4"
-zip = { version = "2", default-features = false, features = ["deflate"] }
+zip = { version = "9", default-features = false, features = ["deflate"] }
 sysinfo = { version = "0.33", default-features = false, features = ["system"] }
 # regex pour le scan word-boundary dans le rename propagé (P14.1)
 regex = "1"

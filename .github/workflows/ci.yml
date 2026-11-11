@@ -217,13 +217,23 @@ jobs:
         #   exécuté sur des entrées runtime. Surface d'attaque nulle en
         #   production. Bumper wayland-scanner demanderait de rebumper
         #   toute la chaîne wayland-* verrouillée par tao/tauri.
+        # - RUSTSEC-2026-0459 : SQLite < 3.54 embarqué par libsqlite3-sys
+        #   0.30 (transitive via sqlx). Lecture de mémoire non initialisée
+        #   quand on ouvre une base accompagnée d'un `-wal` forgé, de page
+        #   différente. Le correctif est dans libsqlite3-sys 0.39, mais
+        #   aucune version de sqlx ne l'accepte encore (0.9 plafonne à
+        #   < 0.38). Romanesk n'ouvre que sa propre base, dans
+        #   `app_data_dir` : il faudrait déjà pouvoir écrire dans ce
+        #   dossier pour forger la paire de fichiers. À retirer dès qu'un
+        #   sqlx compatible avec libsqlite3-sys 0.39 sort.
         run: |
           cargo audit \
             --ignore RUSTSEC-2024-0436 \
             --ignore RUSTSEC-2023-0071 \
             --ignore RUSTSEC-2024-0413 \
             --ignore RUSTSEC-2026-0194 \
-            --ignore RUSTSEC-2026-0195
+            --ignore RUSTSEC-2026-0195 \
+            --ignore RUSTSEC-2026-0459
 
   # ---------------------------------------------------------------------------
   # Job 7 — pnpm audit (npm advisories).
